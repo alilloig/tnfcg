@@ -4,15 +4,6 @@ import FungibleToken from "./FungibleToken.cdc"
 
 ## The Flow Trading Non-Fungible Card Pack standard
 
-## `TradingNonFungiblePack` contract interface
-
-The interface that all trading non-fungible card game sets contracts could conform to.
-If a user wants to deploy a new TnFCG pack contract, their contract would need
-to implement the TradingNonFungiblePack interface.
-
-Their contract would have to follow all the rules and naming
-that the interface specifies.
-
 ## `Pack` resource
 
 The core resource type that represents a Pack in the smart contract.
@@ -50,30 +41,30 @@ the deposit function on another user's Vault to complete the transfer.
 // import and implement this interface
 //
 pub contract TNFCGPacks: FungibleToken{
-    // TokensInitialized
+    // PacksInitialized
     //
     // The event that is emitted when the contract is created
-    pub event TokensInitialized(initialSupply: UFix64)
+    pub event PacksInitialized(initialSupply: UFix64)
 
-    // TokensWithdrawn
+    // PacksWithdrawn
     //
     // The event that is emitted when tokens are withdrawn from a Vault
-    pub event TokensWithdrawn(amount: UFix64, from: Address?)
+    pub event PacksWithdrawn(amount: UFix64, from: Address?)
 
-    // TokensDeposited
+    // PacksDeposited
     //
     // The event that is emitted when tokens are deposited to a Vault
-    pub event TokensDeposited(amount: UFix64, to: Address?)
+    pub event PacksDeposited(amount: UFix64, to: Address?)
 
     // TokensMinted
     //
     // The event that is emitted when new tokens are minted
-    pub event TokensMinted(amount: UFix64)
+    pub event PacksMinted(amount: UFix64)
 
     // TokensBurned
     //
     // The event that is emitted when tokens are destroyed
-    pub event TokensBurned(amount: UFix64)
+    pub event PacksBurned(amount: UFix64)
 
     // MinterCreated
     //
@@ -87,7 +78,7 @@ pub contract TNFCGPacks: FungibleToken{
     pub let BalancePublicPath: PublicPath
     pub let AdminStoragePath: StoragePath
 
-    // Total supply of TNFCGPacks in existence
+    // Total supply of Packs in existence
     pub var totalSupply: UFix64
 
     // Vault
@@ -124,7 +115,7 @@ pub contract TNFCGPacks: FungibleToken{
         //
         pub fun withdraw(amount: UFix64): @FungibleToken.Vault {
             self.balance = self.balance - amount
-            emit TokensWithdrawn(amount: amount, from: self.owner?.address)
+            emit PacksWithdrawn(amount: amount, from: self.owner?.address)
             return <-create Vault(balance: amount)
         }
 
