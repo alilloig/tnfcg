@@ -1,7 +1,7 @@
 import FungibleToken from "../../contracts/FungibleToken.cdc"
 import NonFungibleToken from "../../contracts/NonFungibleToken.cdc"
 import FlowToken from "../../contracts/FlowToken.cdc"
-import KittyItems from "../../contracts/KittyItems.cdc"
+import TNFCGCards from "../../contracts/TNFCGCards.cdc"
 import NFTStorefront from "../../contracts/NFTStorefront.cdc"
 
 pub fun getOrCreateStorefront(account: AuthAccount): &NFTStorefront.Storefront {
@@ -23,24 +23,24 @@ pub fun getOrCreateStorefront(account: AuthAccount): &NFTStorefront.Storefront {
 transaction(saleItemID: UInt64, saleItemPrice: UFix64) {
 
     let flowReceiver: Capability<&FlowToken.Vault{FungibleToken.Receiver}>
-    let kittyItemsProvider: Capability<&KittyItems.Collection{NonFungibleToken.Provider, NonFungibleToken.CollectionPublic}>
+    let TNFCGCardsProvider: Capability<&TNFCGCards.Collection{NonFungibleToken.Provider, NonFungibleToken.CollectionPublic}>
     let storefront: &NFTStorefront.Storefront
 
     prepare(account: AuthAccount) {
         // We need a provider capability, but one is not provided by default so we create one if needed.
-        let kittyItemsCollectionProviderPrivatePath = /private/kittyItemsCollectionProvider
+        let TNFCGCardsCollectionProviderPrivatePath = /private/TNFCGCardsCollectionProvider
 
         self.flowReceiver = account.getCapability<&FlowToken.Vault{FungibleToken.Receiver}>(/public/flowTokenReceiver)!
 
         assert(self.flowReceiver.borrow() != nil, message: "Missing or mis-typed FLOW receiver")
 
-        if !account.getCapability<&KittyItems.Collection{NonFungibleToken.Provider, NonFungibleToken.CollectionPublic}>(kittyItemsCollectionProviderPrivatePath)!.check() {
-            account.link<&KittyItems.Collection{NonFungibleToken.Provider, NonFungibleToken.CollectionPublic}>(kittyItemsCollectionProviderPrivatePath, target: KittyItems.CollectionStoragePath)
+        if !account.getCapability<&TNFCGCards.Collection{NonFungibleToken.Provider, NonFungibleToken.CollectionPublic}>(TNFCGCardsCollectionProviderPrivatePath)!.check() {
+            account.link<&TNFCGCards.Collection{NonFungibleToken.Provider, NonFungibleToken.CollectionPublic}>(TNFCGCardsCollectionProviderPrivatePath, target: TNFCGCards.CollectionStoragePath)
         }
 
-        self.kittyItemsProvider = account.getCapability<&KittyItems.Collection{NonFungibleToken.Provider, NonFungibleToken.CollectionPublic}>(kittyItemsCollectionProviderPrivatePath)!
+        self.TNFCGCardsProvider = account.getCapability<&TNFCGCards.Collection{NonFungibleToken.Provider, NonFungibleToken.CollectionPublic}>(TNFCGCardsCollectionProviderPrivatePath)!
 
-        assert(self.kittyItemsProvider.borrow() != nil, message: "Missing or mis-typed KittyItems.Collection provider")
+        assert(self.TNFCGCardsProvider.borrow() != nil, message: "Missing or mis-typed TNFCGCards.Collection provider")
 
         self.storefront = getOrCreateStorefront(account: account)
     }
@@ -51,8 +51,8 @@ transaction(saleItemID: UInt64, saleItemPrice: UFix64) {
             amount: saleItemPrice
         )
         self.storefront.createListing(
-            nftProviderCapability: self.kittyItemsProvider,
-            nftType: Type<@KittyItems.NFT>(),
+            nftProviderCapability: self.TNFCGCardsProvider,
+            nftType: Type<@TNFCGCards.NFT>(),
             nftID: saleItemID,
             salePaymentVaultType: Type<@FlowToken.Vault>(),
             saleCuts: [saleCut]

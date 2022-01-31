@@ -1,24 +1,24 @@
 import FungibleToken from "../../contracts/FungibleToken.cdc"
 import NonFungibleToken from "../../contracts/NonFungibleToken.cdc"
 import FlowToken from "../../contracts/FlowToken.cdc"
-import KittyItems from "../../contracts/KittyItems.cdc"
+import TNFCGCards from "../../contracts/TNFCGCards.cdc"
 import NFTStorefront from "../../contracts/NFTStorefront.cdc"
 
-pub fun getOrCreateCollection(account: AuthAccount): &KittyItems.Collection{NonFungibleToken.Receiver} {
-    if let collectionRef = account.borrow<&KittyItems.Collection>(from: KittyItems.CollectionStoragePath) {
+pub fun getOrCreateCollection(account: AuthAccount): &TNFCGCards.Collection{NonFungibleToken.Receiver} {
+    if let collectionRef = account.borrow<&TNFCGCards.Collection>(from: TNFCGCards.CollectionStoragePath) {
         return collectionRef
     }
 
     // create a new empty collection
-    let collection <- KittyItems.createEmptyCollection() as! @KittyItems.Collection
+    let collection <- TNFCGCards.createEmptyCollection() as! @TNFCGCards.Collection
 
-    let collectionRef = &collection as &KittyItems.Collection
+    let collectionRef = &collection as &TNFCGCards.Collection
     
     // save it to the account
-    account.save(<-collection, to: KittyItems.CollectionStoragePath)
+    account.save(<-collection, to: TNFCGCards.CollectionStoragePath)
 
     // create a public capability for the collection
-    account.link<&KittyItems.Collection{NonFungibleToken.CollectionPublic, KittyItems.KittyItemsCollectionPublic}>(KittyItems.CollectionPublicPath, target: KittyItems.CollectionStoragePath)
+    account.link<&TNFCGCards.Collection{NonFungibleToken.CollectionPublic, TNFCGCards.TNFCGCardsCollectionPublic}>(TNFCGCards.CollectionPublicPath, target: TNFCGCards.CollectionStoragePath)
 
     return collectionRef
 }
@@ -26,7 +26,7 @@ pub fun getOrCreateCollection(account: AuthAccount): &KittyItems.Collection{NonF
 transaction(listingResourceID: UInt64, storefrontAddress: Address) {
 
     let paymentVault: @FungibleToken.Vault
-    let kittyItemsCollection: &KittyItems.Collection{NonFungibleToken.Receiver}
+    let TNFCGCardsCollection: &TNFCGCards.Collection{NonFungibleToken.Receiver}
     let storefront: &NFTStorefront.Storefront{NFTStorefront.StorefrontPublic}
     let listing: &NFTStorefront.Listing{NFTStorefront.ListingPublic}
 
@@ -48,7 +48,7 @@ transaction(listingResourceID: UInt64, storefrontAddress: Address) {
         
         self.paymentVault <- mainFLOWVault.withdraw(amount: price)
 
-        self.kittyItemsCollection = getOrCreateCollection(account: account)
+        self.TNFCGCardsCollection = getOrCreateCollection(account: account)
     }
 
     execute {
@@ -56,7 +56,7 @@ transaction(listingResourceID: UInt64, storefrontAddress: Address) {
             payment: <-self.paymentVault
         )
 
-        self.kittyItemsCollection.deposit(token: <-item)
+        self.TNFCGCardsCollection.deposit(token: <-item)
 
         self.storefront.cleanup(listingResourceID: listingResourceID)
     }
