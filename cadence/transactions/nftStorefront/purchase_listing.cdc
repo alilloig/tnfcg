@@ -5,7 +5,7 @@ import TNFCGCards from "../../contracts/TNFCGCards.cdc"
 import NFTStorefront from "../../contracts/NFTStorefront.cdc"
 
 pub fun getOrCreateCollection(account: AuthAccount): &TNFCGCards.Collection{NonFungibleToken.Receiver} {
-    if let collectionRef = account.borrow<&TNFCGCards.Collection>(from: TNFCGCards.CollectionStoragePath) {
+    if let collectionRef = account.borrow<&TNFCGCards.Collection>(from: TNFCGCards.PrintedCardsStoragePath) {
         return collectionRef
     }
 
@@ -15,10 +15,10 @@ pub fun getOrCreateCollection(account: AuthAccount): &TNFCGCards.Collection{NonF
     let collectionRef = &collection as &TNFCGCards.Collection
     
     // save it to the account
-    account.save(<-collection, to: TNFCGCards.CollectionStoragePath)
+    account.save(<-collection, to: TNFCGCards.PrintedCardsStoragePath)
 
     // create a public capability for the collection
-    account.link<&TNFCGCards.Collection{NonFungibleToken.CollectionPublic, TNFCGCards.TNFCGCardsCollectionPublic}>(TNFCGCards.CollectionPublicPath, target: TNFCGCards.CollectionStoragePath)
+    account.link<&TNFCGCards.Collection{NonFungibleToken.CollectionPublic, TNFCGCards.TNFCGCardsCollectionPublic}>(TNFCGCards.PrintedCardsPublicPath, target: TNFCGCards.PrintedCardsStoragePath)
 
     return collectionRef
 }

@@ -21,7 +21,7 @@ transaction(recipient: Address, typeID: UInt64, setCards: {UInt16: {UInt8: TNFCG
 
     execute {
         // get the public account object for the recipient
-/*         let recipient = getAccount(recipient)
+        /*         let recipient = getAccount(recipient)
 
         // borrow the recipient's public NFT collection reference
         let receiver = recipient
@@ -31,6 +31,6 @@ transaction(recipient: Address, typeID: UInt64, setCards: {UInt16: {UInt8: TNFCG
 
         // mint the NFT and deposit it to the recipient's collection
         //esto en vez de mintNFT tiene que ser crackPacks? devuelve un diccionario de nfts?
-        self.minter.mintNFT(recipient: receiver, typeID: typeID)
+        //self.minter.mintNFT(recipient: receiver, typeID: typeID)
     }
 }

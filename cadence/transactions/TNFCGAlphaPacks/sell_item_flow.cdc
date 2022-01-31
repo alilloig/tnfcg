@@ -35,7 +35,7 @@ transaction(saleItemID: UInt64, saleItemPrice: UFix64) {
             receiver: self.flowTokenReceiver,
             amount: saleItemPrice
         )
-        self.storefront.createSaleOffer(
+        self.storefront.createListing(
             nftProviderCapability: self.kittyItemsProvider,
             nftType: Type<@TNFCGCards.NFT>(),
             nftID: saleItemID,
