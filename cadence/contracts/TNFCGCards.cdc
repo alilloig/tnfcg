@@ -84,17 +84,49 @@ pub contract TNFCGCards: NonFungibleToken {
 
     // Named Paths
     //
-    pub let CollectionStoragePath: StoragePath
-    pub let CollectionPublicPath: PublicPath
+    pub let PrintedCardsStoragePath: StoragePath
+    pub let PrintedCardsPublicPath: PublicPath
     pub let MinterStoragePath: StoragePath
+    pub let AdminStoragePath: StoragePath
 
     // totalSupply
     // The total number of TNFCGCards that have been minted
     //
     pub var totalSupply: UInt64
 
+    // onPrinting
+    // The printing status of the set. If false, no cards can be minted
+    //
+    pub var onPrinting: Bool
+    
+    // setCards
+    // Diccionario con clave la id de la carta y valor {rareza, CardInfo}
+    // Darle unas vueltitas para ver como hacerlo mejor a la hora de decidir cuando reimprimir
+    //MAL!!! ESTO VA A SER DEL SET!!!!
+    //pub var setCards: {UInt16: {UInt8: CardInfo}}
+
+    pub struct CardInfo {
+        pub let cardID: UInt32
+        pub let setID: UInt32
+        pub let name: String
+        pub let rarity: UInt8
+        pub let rules: {String: String}
+        pub let metadata: {String: String}
+
+        init(cardID: UInt32, setID: UInt32, name: String, rarity: UInt8, rules: {String: String}, metadata: {String: String}) {
+            self.cardID = cardID
+            self.setID = setID
+            self.name = name
+            self.rarity = rarity
+            self.rules = rules
+            self.metadata = metadata
+        }
+    }
+
+
+
     // NFT
-    // A Kitty Item as an NFT
+    // A Card as an NFT
     //
     pub resource NFT: NonFungibleToken.INFT {
         // The token's ID
@@ -108,6 +140,18 @@ pub contract TNFCGCards: NonFungibleToken {
             self.id = initID
             self.typeID = initTypeID
         }
+    /**
+        // The token's ID
+        pub let id: UInt64
+        // The token's card
+        pub let data: CardInfo
+        // initializer
+        //faltan comprobaciones de si esta vacio card templates rollo ?? panic
+        init(initID: UInt64, initCardTemplateID: UInt8) {
+            self.id = initID
+            self.data = self.cardTemplates[initCardTemplateID]
+        }
+     */
     }
 
     // This is the interface that users can cast their TNFCGCards Collection as
@@ -212,6 +256,68 @@ pub contract TNFCGCards: NonFungibleToken {
         return <- create Collection()
     }
 
+    pub resource Administrator {
+
+        // createNewMinter
+        //
+        // Function that creates and returns a new minter resource
+        //
+        pub fun createNewMinter(allowedAmount: UFix64): @NFTMinter {
+            return <-create NFTMinter()
+        }
+
+        /** 
+        pub fun createNewPackOpener(allowedAmount: UFix64): @PackOpener {
+            //emit??
+            return <- create PackOpener(allowedAmount: allowedAmount)
+        }
+        */
+
+        
+
+
+
+
+    }
+
+
+    //PackOpener
+    // ESTE ES EL PACK OPENER DE PACKS; AQUI HAY QUE HACER EL DE CARDS
+    // que tiene que hacer? dar nfts aleatorios-ish
+    //
+    // ReResource object that token admin accounts can hold to receive packs and burn them
+    // Los UFix hay que cambiarlos a enteros, no se valen decimales
+    /** 
+    pub resource PackOpener {
+
+        pub var allowedAmount: UFix64
+        // openPacks
+        //
+        // Function that mints new tokens, adds them to the total supply,
+        // and returns them to the calling context.
+        //
+        pub fun openPacks(payment: @TNFCGPacks.Vault): @TNFCGCards.Vault {
+            pre {
+                amount <= self.allowedAmount: "Amount minted must be less than the allowed amount"
+            }
+            
+            self.allowedAmount = self.allowedAmount - amount
+            emit TokensBurned(amount: amount)
+            //como se queman los FT? pos en vez de ese return eso
+            //y como se usa esto pa que se minteen X? pues creo q simplemente Cards tiene una funcion que llama N veces a minter
+            return <-create Vault(balance: amount)
+        }
+        init(allowedAmount: UFix64) {
+            self.allowedAmount = allowedAmount
+        }
+
+    }
+    */
+
+    //PackPrinter
+    // Un recurso para que un admin mintee N cartas
+
+
     // NFTMinter
     // Resource that an admin or something similar would own to be
     // able to mint new NFTs
@@ -230,6 +336,24 @@ pub contract TNFCGCards: NonFungibleToken {
 
             TNFCGCards.totalSupply = TNFCGCards.totalSupply + (1 as UInt64)
 		}
+    /** 
+	    // mintNFT
+        // Mints a new NFT with a new ID
+	    // and deposit it in the recipients collection using their collection reference
+        //
+	    access(self) fun mintNFT(recipient: &{NonFungibleToken.CollectionPublic}, typeID: UInt64, rarity: UInt8) {
+            emit Minted(id: alphaWTR.totalSupply, typeID: typeID)
+	        
+            // deposit it in the recipient's account using their reference
+	        recipient.deposit(token: <-create alphaWTR.NFT(initID: alphaWTR.totalSupply, initTypeID: typeID))
+            alphaWTR.totalSupply = alphaWTR.totalSupply + (1 as UInt64)
+	    }
+
+        access(contract) fun mintSET(recipient: &{NonFungibleToken.CollectionPublic}){
+            for key in dictionary.keys {
+            let value = dictionary[key]!
+        }
+    */
 	}
 
     // fetch
@@ -240,7 +364,7 @@ pub contract TNFCGCards: NonFungibleToken {
     //
     pub fun fetch(_ from: Address, itemID: UInt64): &TNFCGCards.NFT? {
         let collection = getAccount(from)
-            .getCapability(TNFCGCards.CollectionPublicPath)!
+            .getCapability(TNFCGCards.PrintedCardsPublicPath)!
             .borrow<&TNFCGCards.Collection{TNFCGCards.TNFCGCardsCollectionPublic}>()
             ?? panic("Couldn't get collection")
         // We trust TNFCGCards.Collection.borowTNFCGCard to get the correct itemID
@@ -252,17 +376,28 @@ pub contract TNFCGCards: NonFungibleToken {
     //
 	init() {
         // Set our named paths
-        self.CollectionStoragePath = /storage/kittyItemsCollection
-        self.CollectionPublicPath = /public/kittyItemsCollection
-        self.MinterStoragePath = /storage/kittyItemsMinter
+        self.PrintedCardsStoragePath = /storage/PrintedCardsCollection
+        self.PrintedCardsPublicPath = /public/PrintedCardsCollection
+        self.MinterStoragePath = /storage/CardsMinter
+        self.AdminStoragePath = /storage/TNFCGCardsAdmin
 
         // Initialize the total supply
         self.totalSupply = 0
-
+        // Initialize the on printing flag of the set
+        self.onPrinting = true
         // Create a Minter resource and save it to storage
         let minter <- create NFTMinter()
         self.account.save(<-minter, to: self.MinterStoragePath)
+        // create a new empty collection for storing the printed cards
+        let printedCards <- create Collection()
+        // save it to the account
+        self.account.save(<-printedCards, to: self.PrintedCardsStoragePath)
+
+        // Create the one true Admin object and deposit it into the conttract account.
+        let admin <- create Administrator()
+        self.account.save(<-admin, to: self.AdminStoragePath)
 
         emit ContractInitialized()
 	}
 }
+ 

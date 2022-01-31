@@ -135,12 +135,12 @@ pub contract NFTStorefront {
         // initializer
         //
         init (
-            nftType: Type,
-            nftID: UInt64,
-            salePaymentVaultType: Type,
-            saleCuts: [SaleCut],
-            storefrontID: UInt64
-        ) {
+                nftType: Type,
+                nftID: UInt64,
+                salePaymentVaultType: Type,
+                saleCuts: [SaleCut],
+                storefrontID: UInt64
+             ) {
             self.storefrontID = storefrontID
             self.accepted = false
             self.nftType = nftType
@@ -369,7 +369,7 @@ pub contract NFTStorefront {
         pub fun getSaleOfferIDs(): [UInt64]
         pub fun borrowSaleOffer(saleOfferResourceID: UInt64): &SaleOffer{SaleOfferPublic}?
         pub fun cleanup(saleOfferResourceID: UInt64)
-   }
+    }
 
     // Storefront
     // A resource that allows its owner to manage a list of SaleOffers, and anyone to interact with them
@@ -496,3 +496,4 @@ pub contract NFTStorefront {
         emit NFTStorefrontInitialized()
     }
 }
+ 

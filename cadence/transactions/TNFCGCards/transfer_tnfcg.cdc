@@ -10,11 +10,11 @@ transaction(recipient: Address, withdrawID: UInt64) {
         let recipient = getAccount(recipient)
 
         // borrow a reference to the signer's NFT collection
-        let collectionRef = signer.borrow<&TNFCGCards.Collection>(from: TNFCGCards.CollectionStoragePath)
+        let collectionRef = signer.borrow<&TNFCGCards.Collection>(from: TNFCGCards.PrintedCardsStoragePath)
             ?? panic("Could not borrow a reference to the owner's collection")
 
         // borrow a public reference to the receivers collection
-        let depositRef = recipient.getCapability(TNFCGCards.CollectionPublicPath)!.borrow<&{NonFungibleToken.CollectionPublic}>()!
+        let depositRef = recipient.getCapability(TNFCGCards.PrintedCardsPublicPath)!.borrow<&{NonFungibleToken.CollectionPublic}>()!
 
         // withdraw the NFT from the owner's collection
         let nft <- collectionRef.withdraw(withdrawID: withdrawID)

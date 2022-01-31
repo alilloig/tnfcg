@@ -40,31 +40,31 @@ the deposit function on another user's Vault to complete the transfer.
 // The main TnFCG contract interface. Other TnFCG contracts will
 // import and implement this interface
 //
-pub contract TNFCGPacks: FungibleToken{
+pub contract TNFCGAlphaPacks: FungibleToken{
     // PacksInitialized
     //
     // The event that is emitted when the contract is created
-    pub event PacksInitialized(initialSupply: UFix64)
+    pub event TokensInitialized(initialSupply: UFix64)
 
     // PacksWithdrawn
     //
     // The event that is emitted when tokens are withdrawn from a Vault
-    pub event PacksWithdrawn(amount: UFix64, from: Address?)
+    pub event TokensWithdrawn(amount: UFix64, from: Address?)
 
     // PacksDeposited
     //
     // The event that is emitted when tokens are deposited to a Vault
-    pub event PacksDeposited(amount: UFix64, to: Address?)
+    pub event TokensDeposited(amount: UFix64, to: Address?)
 
     // TokensMinted
     //
     // The event that is emitted when new tokens are minted
-    pub event PacksMinted(amount: UFix64)
+    pub event TokensMinted(amount: UFix64)
 
     // TokensBurned
     //
     // The event that is emitted when tokens are destroyed
-    pub event PacksBurned(amount: UFix64)
+    pub event TokensBurned(amount: UFix64)
 
     // MinterCreated
     //
@@ -115,7 +115,7 @@ pub contract TNFCGPacks: FungibleToken{
         //
         pub fun withdraw(amount: UFix64): @FungibleToken.Vault {
             self.balance = self.balance - amount
-            emit PacksWithdrawn(amount: amount, from: self.owner?.address)
+            emit TokensWithdrawn(amount: amount, from: self.owner?.address)
             return <-create Vault(balance: amount)
         }
 
@@ -129,7 +129,7 @@ pub contract TNFCGPacks: FungibleToken{
         // been consumed and therefore can be destroyed.
         //
         pub fun deposit(from: @FungibleToken.Vault) {
-            let vault <- from as! @TNFCGPacks.Vault
+            let vault <- from as! @TNFCGAlphaPacks.Vault
             self.balance = self.balance + vault.balance
             emit TokensDeposited(amount: vault.balance, to: self.owner?.address)
             vault.balance = 0.0
@@ -137,7 +137,7 @@ pub contract TNFCGPacks: FungibleToken{
         }
 
         destroy() {
-            TNFCGPacks.totalSupply = TNFCGPacks.totalSupply - self.balance
+            TNFCGAlphaPacks.totalSupply = TNFCGAlphaPacks.totalSupply - self.balance
             if(self.balance > 0.0) {
                 emit TokensBurned(amount: self.balance)
             }
@@ -165,6 +165,41 @@ pub contract TNFCGPacks: FungibleToken{
             emit MinterCreated(allowedAmount: allowedAmount)
             return <-create Minter(allowedAmount: allowedAmount)
         }
+
+        pub fun createNewPackOpener(allowedAmount: UFix64): @PackOpener {
+            //emit??
+            return <- create PackOpener(allowedAmount: allowedAmount)
+        }
+    }
+
+    //PAckOpener
+    //
+    // ReResource object that token admin accounts can hold to receive packs and burn them
+    // Los UFix hay que cambiarlos a enteros, no se valen decimales
+    pub resource PackOpener {
+
+        pub var allowedAmount: UFix64
+        // openPacks
+        //
+        // Function that mints new tokens, adds them to the total supply,
+        // and returns them to the calling context.
+        //
+        pub fun openPacks(amount: UFix64): @TNFCGAlphaPacks.Vault {
+            pre {
+                amount > 0.0: "Amount opened must be greater than zero"
+                amount <= self.allowedAmount: "Amount minted must be less than the allowed amount"
+            }
+            TNFCGAlphaPacks.totalSupply = TNFCGAlphaPacks.totalSupply - amount
+            self.allowedAmount = self.allowedAmount - amount
+            emit TokensBurned(amount: amount)
+            //como se queman los FT? pos en vez de ese return eso
+            //y como se usa esto pa que se minteen X? pues creo q simplemente Cards tiene una funcion que llama N veces a minter
+            return <-create Vault(balance: amount)
+        }
+        init(allowedAmount: UFix64) {
+            self.allowedAmount = allowedAmount
+        }
+
     }
 
     // Minter
@@ -181,12 +216,12 @@ pub contract TNFCGPacks: FungibleToken{
         // Function that mints new tokens, adds them to the total supply,
         // and returns them to the calling context.
         //
-        pub fun mintTokens(amount: UFix64): @TNFCGPacks.Vault {
+        pub fun mintTokens(amount: UFix64): @TNFCGAlphaPacks.Vault {
             pre {
                 amount > 0.0: "Amount minted must be greater than zero"
                 amount <= self.allowedAmount: "Amount minted must be less than the allowed amount"
             }
-            TNFCGPacks.totalSupply = TNFCGPacks.totalSupply + amount
+            TNFCGAlphaPacks.totalSupply = TNFCGAlphaPacks.totalSupply + amount
             self.allowedAmount = self.allowedAmount - amount
             emit TokensMinted(amount: amount)
             return <-create Vault(balance: amount)
@@ -200,10 +235,10 @@ pub contract TNFCGPacks: FungibleToken{
     init() {
         // Set our named paths.
         //FIXME: REMOVE SUFFIX BEFORE RELEASE
-        self.VaultStoragePath = /storage/TNFCGPacksVault002
-        self.ReceiverPublicPath = /public/TNFCGPacksReceiver002
-        self.BalancePublicPath = /public/TNFCGPacksBalance002
-        self.AdminStoragePath = /storage/TNFCGPacksAdmin002
+        self.VaultStoragePath = /storage/TNFCGAlphaPacksVault
+        self.ReceiverPublicPath = /public/TNFCGAlphaPacksReceiver
+        self.BalancePublicPath = /public/TNFCGAlphaPacksBalance
+        self.AdminStoragePath = /storage/TNFCGAlphaPacksAdmin
 
         // Initialize contract state.
         self.totalSupply = 0.0

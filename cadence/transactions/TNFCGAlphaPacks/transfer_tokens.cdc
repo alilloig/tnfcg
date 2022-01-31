@@ -1,5 +1,5 @@
 import FungibleToken from "../../contracts/FungibleToken.cdc"
-import TNFCGPacks from "../../contracts/TNFCGPacks.cdc"
+import TNFCGAlphaPacks from "../../contracts/TNFCGAlphaPacks.cdc"
 
 // This transaction is a template for a transaction that
 // could be used by anyone to send tokens to another account
@@ -16,7 +16,7 @@ transaction(amount: UFix64, to: Address) {
     prepare(signer: AuthAccount) {
 
         // Get a reference to the signer's stored vault
-        let vaultRef = signer.borrow<&TNFCGPacks.Vault>(from: TNFCGPacks.VaultStoragePath)
+        let vaultRef = signer.borrow<&TNFCGAlphaPacks.Vault>(from: TNFCGAlphaPacks.VaultStoragePath)
 			?? panic("Could not borrow reference to the owner's Vault!")
 
         // Withdraw tokens from the signer's stored vault
@@ -29,7 +29,7 @@ transaction(amount: UFix64, to: Address) {
         let recipient = getAccount(to)
 
         // Get a reference to the recipient's Receiver
-        let receiverRef = recipient.getCapability(TNFCGPacks.ReceiverPublicPath)!.borrow<&{FungibleToken.Receiver}>()
+        let receiverRef = recipient.getCapability(TNFCGAlphaPacks.ReceiverPublicPath)!.borrow<&{FungibleToken.Receiver}>()
 			?? panic("Could not borrow receiver reference to the recipient's Vault")
 
         // Deposit the withdrawn tokens in the recipient's receiver
