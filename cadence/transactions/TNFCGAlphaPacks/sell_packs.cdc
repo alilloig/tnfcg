@@ -1,4 +1,5 @@
 import FungibleToken from "../../contracts/FungibleToken.cdc"
+
 import TNFCGAlphaPacks from "../../contracts/TNFCGAlphaPacks.cdc"
 import TNFCGCards from "../../contracts/TNFCGCards.cdc"
 
