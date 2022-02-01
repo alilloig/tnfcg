@@ -1,4 +1,4 @@
-import FungibleToken from "./FungibleToken.cdc"
+import FungiblePack from "./FungiblePack.cdc"
 
 /**
 
@@ -37,34 +37,34 @@ the deposit function on another user's Vault to complete the transfer.
 
 */
 
-// The main TnFCG contract interface. Other TnFCG contracts will
-// import and implement this interface
+// This will be a nice interface for any TNFCG Packs to implement
+// when an interface is able to ""implement"" another one
 //
-pub contract TNFCGAlphaPacks: FungibleToken{
+pub contract TNFCGAlphaPacks: FungiblePack{
     // PacksInitialized
     //
     // The event that is emitted when the contract is created
-    pub event TokensInitialized(initialSupply: UFix64)
+    pub event PacksInitialized(initialSupply: UFix64)
 
     // PacksWithdrawn
     //
-    // The event that is emitted when tokens are withdrawn from a Vault
-    pub event TokensWithdrawn(amount: UFix64, from: Address?)
+    // The event that is emitted when Packs are withdrawn from a Vault
+    pub event PacksWithdrawn(amount: UFix64, from: Address?)
 
     // PacksDeposited
     //
-    // The event that is emitted when tokens are deposited to a Vault
-    pub event TokensDeposited(amount: UFix64, to: Address?)
+    // The event that is emitted when Packs are deposited to a Vault
+    pub event PacksDeposited(amount: UFix64, to: Address?)
 
-    // TokensMinted
+    // PacksMinted
     //
-    // The event that is emitted when new tokens are minted
-    pub event TokensMinted(amount: UFix64)
+    // The event that is emitted when new Packs are minted
+    pub event PacksMinted(amount: UFix64)
 
-    // TokensBurned
+    // PacksBurned
     //
-    // The event that is emitted when tokens are destroyed
-    pub event TokensBurned(amount: UFix64)
+    // The event that is emitted when Packs are destroyed
+    pub event PacksBurned(amount: UFix64)
 
     // MinterCreated
     //
@@ -85,15 +85,15 @@ pub contract TNFCGAlphaPacks: FungibleToken{
     //
     // Each user stores an instance of only the Vault in their storage
     // The functions in the Vault and governed by the pre and post conditions
-    // in FungibleToken when they are called.
+    // in FungiblePack when they are called.
     // The checks happen at runtime whenever a function is called.
     //
     // Resources can only be created in the context of the contract that they
     // are defined in, so there is no way for a malicious user to create Vaults
     // out of thin air. A special Minter resource needs to be defined to mint
-    // new tokens.
+    // new Packs.
     //
-    pub resource Vault: FungibleToken.Provider, FungibleToken.Receiver, FungibleToken.Balance {
+    pub resource Vault: FungiblePack.Provider, FungiblePack.Receiver, FungiblePack.Balance {
 
         // The total balance of this vault
         pub var balance: UFix64
@@ -113,9 +113,9 @@ pub contract TNFCGAlphaPacks: FungibleToken{
         // created Vault to the context that called so it can be deposited
         // elsewhere.
         //
-        pub fun withdraw(amount: UFix64): @FungibleToken.Vault {
+        pub fun withdraw(amount: UFix64): @FungiblePack.Vault {
             self.balance = self.balance - amount
-            emit TokensWithdrawn(amount: amount, from: self.owner?.address)
+            emit PacksWithdrawn(amount: amount, from: self.owner?.address)
             return <-create Vault(balance: amount)
         }
 
@@ -125,13 +125,13 @@ pub contract TNFCGAlphaPacks: FungibleToken{
         // its balance to the balance of the owners Vault.
         //
         // It is allowed to destroy the sent Vault because the Vault
-        // was a temporary holder of the tokens. The Vault's balance has
+        // was a temporary holder of the Packs. The Vault's balance has
         // been consumed and therefore can be destroyed.
         //
-        pub fun deposit(from: @FungibleToken.Vault) {
+        pub fun deposit(from: @FungiblePack.Vault) {
             let vault <- from as! @TNFCGAlphaPacks.Vault
             self.balance = self.balance + vault.balance
-            emit TokensDeposited(amount: vault.balance, to: self.owner?.address)
+            emit PacksDeposited(amount: vault.balance, to: self.owner?.address)
             vault.balance = 0.0
             destroy vault
         }
@@ -139,7 +139,7 @@ pub contract TNFCGAlphaPacks: FungibleToken{
         destroy() {
             TNFCGAlphaPacks.totalSupply = TNFCGAlphaPacks.totalSupply - self.balance
             if(self.balance > 0.0) {
-                emit TokensBurned(amount: self.balance)
+                emit PacksBurned(amount: self.balance)
             }
         }
     }
@@ -149,7 +149,7 @@ pub contract TNFCGAlphaPacks: FungibleToken{
     // Function that creates a new Vault with a balance of zero
     // and returns it to the calling context. A user must call this function
     // and store the returned Vault in their storage in order to allow their
-    // account to be able to receive deposits of this token type.
+    // account to be able to receive deposits of this Pack type.
     //
     pub fun createEmptyVault(): @Vault {
         return <-create Vault(balance: 0.0)
@@ -174,14 +174,14 @@ pub contract TNFCGAlphaPacks: FungibleToken{
 
     //PAckOpener
     //
-    // ReResource object that token admin accounts can hold to receive packs and burn them
+    // ReResource object that Pack admin accounts can hold to receive packs and burn them
     // Los UFix hay que cambiarlos a enteros, no se valen decimales
     pub resource PackOpener {
 
         pub var allowedAmount: UFix64
         // openPacks
         //
-        // Function that mints new tokens, adds them to the total supply,
+        // Function that mints new Packs, adds them to the total supply,
         // and returns them to the calling context.
         //
         pub fun openPacks(amount: UFix64): @TNFCGAlphaPacks.Vault {
@@ -191,7 +191,7 @@ pub contract TNFCGAlphaPacks: FungibleToken{
             }
             TNFCGAlphaPacks.totalSupply = TNFCGAlphaPacks.totalSupply - amount
             self.allowedAmount = self.allowedAmount - amount
-            emit TokensBurned(amount: amount)
+            emit PacksBurned(amount: amount)
             //como se queman los FT? pos en vez de ese return eso
             //y como se usa esto pa que se minteen X? pues creo q simplemente Cards tiene una funcion que llama N veces a minter
             return <-create Vault(balance: amount)
@@ -204,26 +204,26 @@ pub contract TNFCGAlphaPacks: FungibleToken{
 
     // Minter
     //
-    // Resource object that token admin accounts can hold to mint new tokens.
+    // Resource object that Pack admin accounts can hold to mint new Packs.
     //
     pub resource Minter {
 
-        // The amount of tokens that the minter is allowed to mint
+        // The amount of Packs that the minter is allowed to mint
         pub var allowedAmount: UFix64
 
-        // mintTokens
+        // mintPacks
         //
-        // Function that mints new tokens, adds them to the total supply,
+        // Function that mints new Packs, adds them to the total supply,
         // and returns them to the calling context.
         //
-        pub fun mintTokens(amount: UFix64): @TNFCGAlphaPacks.Vault {
+        pub fun mintPacks(amount: UFix64): @TNFCGAlphaPacks.Vault {
             pre {
                 amount > 0.0: "Amount minted must be greater than zero"
                 amount <= self.allowedAmount: "Amount minted must be less than the allowed amount"
             }
             TNFCGAlphaPacks.totalSupply = TNFCGAlphaPacks.totalSupply + amount
             self.allowedAmount = self.allowedAmount - amount
-            emit TokensMinted(amount: amount)
+            emit PacksMinted(amount: amount)
             return <-create Vault(balance: amount)
         }
 
@@ -233,21 +233,23 @@ pub contract TNFCGAlphaPacks: FungibleToken{
     }
 
     init() {
-        // Set our named paths.
-        //FIXME: REMOVE SUFFIX BEFORE RELEASE
+        // path para guardar el recurso vault (se guarda en setup account)
         self.VaultStoragePath = /storage/TNFCGAlphaPacksVault
+        // path para guardar el recurso Admin (se guarda aqui en init)
+        self.AdminStoragePath = /storage/TNFCGAlphaPacksAdmin
+        // paths para guardar las capabilities publicas (se guarda en setup)
         self.ReceiverPublicPath = /public/TNFCGAlphaPacksReceiver
         self.BalancePublicPath = /public/TNFCGAlphaPacksBalance
-        self.AdminStoragePath = /storage/TNFCGAlphaPacksAdmin
-
+        
         // Initialize contract state.
         self.totalSupply = 0.0
 
         // Create the one true Admin object and deposit it into the conttract account.
-        let admin <- create Administrator()
-        self.account.save(<-admin, to: self.AdminStoragePath)
+        // es peor esto que crear una variable con el recurso y luego
+        // mover el recurso al almacenamiento????
+        self.account.save(<-create Administrator(), to: self.AdminStoragePath)
 
         // Emit an event that shows that the contract was initialized.
-        emit TokensInitialized(initialSupply: self.totalSupply)
+        emit PacksInitialized(initialSupply: self.totalSupply)
     }
 }

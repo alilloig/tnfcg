@@ -37,7 +37,7 @@ transaction(recipient: Address, amount: UFix64) {
         //y aqui ya se crea el minter
         let minter <- self.packsAdmin.createNewMinter(allowedAmount: amount)
         //con que el que se crea una Vault con N tokens (esto lo vamos a renombrar a packs a la de ya)
-        let mintedVault <- minter.mintTokens(amount: amount)
+        let mintedVault <- minter.mintPacks(amount: amount)
 
         self.packsReceiver.deposit(from: <-mintedVault)
 
