@@ -50,25 +50,25 @@ pub contract interface FungiblePack {
     /// It is up to the implementer to ensure that the total supply
     /// stays accurate and up to date
     ///
-    pub var totalSupply: UFix64
+    pub var totalSupply: UInt256
 
     /// PacksInitialized
     ///
     /// The event that is emitted when the contract is created
     ///
-    pub event PacksInitialized(initialSupply: UFix64)
+    pub event PacksInitialized(initialSupply: UInt256)
 
     /// PacksWithdrawn
     ///
     /// The event that is emitted when Packs are withdrawn from a Vault
     ///
-    pub event PacksWithdrawn(amount: UFix64, from: Address?)
+    pub event PacksWithdrawn(amount: UInt256, from: Address?)
 
     /// PacksDeposited
     ///
     /// The event that is emitted when Packs are deposited into a Vault
     ///
-    pub event PacksDeposited(amount: UFix64, to: Address?)
+    pub event PacksDeposited(amount: UInt256, to: Address?)
 
     /// Provider
     ///
@@ -96,7 +96,7 @@ pub contract interface FungiblePack {
         /// capability that allows all users to access the provider
         /// resource through a reference.
         ///
-        pub fun withdraw(amount: UFix64): @Vault {
+        pub fun withdraw(amount: UInt256): @Vault {
             post {
                 // `result` refers to the return value
                 result.balance == amount:
@@ -132,9 +132,9 @@ pub contract interface FungiblePack {
 
         /// The total balance of a vault
         ///
-        pub var balance: UFix64
+        pub var balance: UInt256
 
-        init(balance: UFix64) {
+        init(balance: UInt256) {
             post {
                 self.balance == balance:
                     "Balance must be initialized to the initial balance"
@@ -155,17 +155,17 @@ pub contract interface FungiblePack {
 
         /// The total balance of the vault
         ///
-        pub var balance: UFix64
+        pub var balance: UInt256
 
         // The conforming type must declare an initializer
         // that allows prioviding the initial balance of the Vault
         //
-        init(balance: UFix64)
+        init(balance: UInt256)
 
         /// withdraw subtracts `amount` from the Vault's balance
         /// and returns a new Vault with the subtracted balance
         ///
-        pub fun withdraw(amount: UFix64): @Vault {
+        pub fun withdraw(amount: UInt256): @Vault {
             pre {
                 self.balance >= amount:
                     "Amount withdrawn must be less than or equal than the balance of the Vault"
@@ -193,7 +193,7 @@ pub contract interface FungiblePack {
     ///
     pub fun createEmptyVault(): @Vault {
         post {
-            result.balance == 0.0: "The newly created Vault must have zero balance"
+            result.balance == 0: "The newly created Vault must have zero balance"
         }
     }
 }

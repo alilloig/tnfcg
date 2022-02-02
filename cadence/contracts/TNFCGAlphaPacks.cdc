@@ -44,32 +44,32 @@ pub contract TNFCGAlphaPacks: FungiblePack{
     // PacksInitialized
     //
     // The event that is emitted when the contract is created
-    pub event PacksInitialized(initialSupply: UFix64)
+    pub event PacksInitialized(initialSupply: UInt256)
 
     // PacksWithdrawn
     //
     // The event that is emitted when Packs are withdrawn from a Vault
-    pub event PacksWithdrawn(amount: UFix64, from: Address?)
+    pub event PacksWithdrawn(amount: UInt256, from: Address?)
 
     // PacksDeposited
     //
     // The event that is emitted when Packs are deposited to a Vault
-    pub event PacksDeposited(amount: UFix64, to: Address?)
+    pub event PacksDeposited(amount: UInt256, to: Address?)
 
     // PacksMinted
     //
     // The event that is emitted when new Packs are minted
-    pub event PacksMinted(amount: UFix64)
+    pub event PacksMinted(amount: UInt256)
 
     // PacksBurned
     //
     // The event that is emitted when Packs are destroyed
-    pub event PacksBurned(amount: UFix64)
+    pub event PacksBurned(amount: UInt256)
 
     // MinterCreated
     //
     // The event that is emitted when a new minter resource is created
-    pub event MinterCreated(allowedAmount: UFix64)
+    pub event MinterCreated(allowedAmount: UInt256)
 
     // Named paths
     //
@@ -79,7 +79,7 @@ pub contract TNFCGAlphaPacks: FungiblePack{
     pub let AdminStoragePath: StoragePath
 
     // Total supply of Packs in existence
-    pub var totalSupply: UFix64
+    pub var totalSupply: UInt256
 
     // Vault
     //
@@ -96,10 +96,10 @@ pub contract TNFCGAlphaPacks: FungiblePack{
     pub resource Vault: FungiblePack.Provider, FungiblePack.Receiver, FungiblePack.Balance {
 
         // The total balance of this vault
-        pub var balance: UFix64
+        pub var balance: UInt256
 
         // initialize the balance at resource creation time
-        init(balance: UFix64) {
+        init(balance: UInt256) {
             self.balance = balance
         }
 
@@ -113,7 +113,7 @@ pub contract TNFCGAlphaPacks: FungiblePack{
         // created Vault to the context that called so it can be deposited
         // elsewhere.
         //
-        pub fun withdraw(amount: UFix64): @FungiblePack.Vault {
+        pub fun withdraw(amount: UInt256): @FungiblePack.Vault {
             self.balance = self.balance - amount
             emit PacksWithdrawn(amount: amount, from: self.owner?.address)
             return <-create Vault(balance: amount)
@@ -132,13 +132,13 @@ pub contract TNFCGAlphaPacks: FungiblePack{
             let vault <- from as! @TNFCGAlphaPacks.Vault
             self.balance = self.balance + vault.balance
             emit PacksDeposited(amount: vault.balance, to: self.owner?.address)
-            vault.balance = 0.0
+            vault.balance = 0
             destroy vault
         }
 
         destroy() {
             TNFCGAlphaPacks.totalSupply = TNFCGAlphaPacks.totalSupply - self.balance
-            if(self.balance > 0.0) {
+            if(self.balance > 0) {
                 emit PacksBurned(amount: self.balance)
             }
         }
@@ -152,7 +152,7 @@ pub contract TNFCGAlphaPacks: FungiblePack{
     // account to be able to receive deposits of this Pack type.
     //
     pub fun createEmptyVault(): @Vault {
-        return <-create Vault(balance: 0.0)
+        return <-create Vault(balance: 0)
     }
 
     pub resource Administrator {
@@ -161,12 +161,12 @@ pub contract TNFCGAlphaPacks: FungiblePack{
         //
         // Function that creates and returns a new minter resource
         //
-        pub fun createNewMinter(allowedAmount: UFix64): @Minter {
+        pub fun createNewMinter(allowedAmount: UInt256): @Minter {
             emit MinterCreated(allowedAmount: allowedAmount)
             return <-create Minter(allowedAmount: allowedAmount)
         }
 
-        pub fun createNewPackOpener(allowedAmount: UFix64): @PackOpener {
+        pub fun createNewPackOpener(allowedAmount: UInt256): @PackOpener {
             //emit??
             return <- create PackOpener(allowedAmount: allowedAmount)
         }
@@ -178,15 +178,15 @@ pub contract TNFCGAlphaPacks: FungiblePack{
     // Los UFix hay que cambiarlos a enteros, no se valen decimales
     pub resource PackOpener {
 
-        pub var allowedAmount: UFix64
+        pub var allowedAmount: UInt256
         // openPacks
         //
         // Function that mints new Packs, adds them to the total supply,
         // and returns them to the calling context.
         //
-        pub fun openPacks(amount: UFix64): @TNFCGAlphaPacks.Vault {
+        pub fun openPacks(amount: UInt256): @TNFCGAlphaPacks.Vault {
             pre {
-                amount > 0.0: "Amount opened must be greater than zero"
+                amount > 0: "Amount opened must be greater than zero"
                 amount <= self.allowedAmount: "Amount minted must be less than the allowed amount"
             }
             TNFCGAlphaPacks.totalSupply = TNFCGAlphaPacks.totalSupply - amount
@@ -196,7 +196,7 @@ pub contract TNFCGAlphaPacks: FungiblePack{
             //y como se usa esto pa que se minteen X? pues creo q simplemente Cards tiene una funcion que llama N veces a minter
             return <-create Vault(balance: amount)
         }
-        init(allowedAmount: UFix64) {
+        init(allowedAmount: UInt256) {
             self.allowedAmount = allowedAmount
         }
 
@@ -209,16 +209,16 @@ pub contract TNFCGAlphaPacks: FungiblePack{
     pub resource Minter {
 
         // The amount of Packs that the minter is allowed to mint
-        pub var allowedAmount: UFix64
+        pub var allowedAmount: UInt256
 
         // mintPacks
         //
         // Function that mints new Packs, adds them to the total supply,
         // and returns them to the calling context.
         //
-        pub fun mintPacks(amount: UFix64): @TNFCGAlphaPacks.Vault {
+        pub fun mintPacks(amount: UInt256): @TNFCGAlphaPacks.Vault {
             pre {
-                amount > 0.0: "Amount minted must be greater than zero"
+                amount > 0: "Amount minted must be greater than zero"
                 amount <= self.allowedAmount: "Amount minted must be less than the allowed amount"
             }
             TNFCGAlphaPacks.totalSupply = TNFCGAlphaPacks.totalSupply + amount
@@ -227,7 +227,7 @@ pub contract TNFCGAlphaPacks: FungiblePack{
             return <-create Vault(balance: amount)
         }
 
-        init(allowedAmount: UFix64) {
+        init(allowedAmount: UInt256) {
             self.allowedAmount = allowedAmount
         }
     }
@@ -242,7 +242,7 @@ pub contract TNFCGAlphaPacks: FungiblePack{
         self.BalancePublicPath = /public/TNFCGAlphaPacksBalance
         
         // Initialize contract state.
-        self.totalSupply = 0.0
+        self.totalSupply = 0
 
         // Create the one true Admin object and deposit it into the conttract account.
         // es peor esto que crear una variable con el recurso y luego
