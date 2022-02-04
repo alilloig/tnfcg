@@ -15,6 +15,10 @@
 		"emulator-account": {
 			"address": "f8d6e0586b0a20c7",
 			"key": "217c5174eb967b168c2dc108996bee8d794ecd0589cc765a20ee796e282f3554"
+		},
+		"jairo": {
+			"address": "e03daebed8ca0615",
+			"key": "9c50b940b7ed5901f880ca6b011326441aa4c2407cab8546bc0b5a4a427e2af0"
 		}
 	},
 	"deployments": {}
