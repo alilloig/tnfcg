@@ -1,35 +1,39 @@
-import FungiblePack from "../../contracts/FungiblePack.cdc"
+import FungiblePack from 0xf8d6e0586b0a20c7//"../../contracts/FungiblePack.cdc"
+import TNFCGAlphaPacks from 0xf8d6e0586b0a20c7//"../../contracts/TNFCGAlphaPacks.cdc"
 
-import TNFCGAlphaPacks from "../../contracts/TNFCGAlphaPacks.cdc"
-import TNFCGCards from "../../contracts/TNFCGCards.cdc"
+// This transaction is a template for a transaction that
+// could be used by anyone to send tokens to another account
+// that has been set up to receive tokens.
+//
+// The withdraw amount and the account from getAccount
+// would be the parameters to the transaction
 
-transaction(recipient: Address, amount: UFix64) {
-    let packsAdmin: &TNFCGAlphaPacks.Administrator
-    let packsReceiver: &{FungiblePack.Receiver}
+transaction(amount: UInt256, to: Address) {
+
+    // The Vault resource that holds the tokens that are being transferred
+    let sentVault: @FungiblePack.Vault
 
     prepare(signer: AuthAccount) {
-        
-        //mete en PackAdmin de la tx una capability de admin que este en signer, esta capability solo la tiene la cuenta que inicializo el contrato asi q si no panic
-        self.packsAdmin = signer.borrow<&TNFCGAlphaPacks.Administrator>(from: TNFCGAlphaPacks.AdminStoragePath)
-            ?? panic("Signer is not the packs admin")
 
-        //y con esto sacamos el recibidor de sobres del q los compra, o k
-        //y aqui mete en PackReceiver de la tx lacapability de recibir sobres del recipient
-        self.packsReceiver = getAccount(recipient)
-        .getCapability(TNFCGAlphaPacks.ReceiverPublicPath)!
-        .borrow<&{FungiblePack.Receiver}>()
-        ?? panic("Unable to borrow receiver reference")
+        // Get a reference to the signer's stored vault
+        let vaultRef = signer.borrow<&TNFCGAlphaPacks.Vault>(from: TNFCGAlphaPacks.VaultStoragePath)
+			?? panic("Could not borrow reference to the owner's Vault!")
+
+        // Withdraw tokens from the signer's stored vault
+        self.sentVault <- vaultRef.withdraw(amount: amount)
     }
 
     execute {
-        //y aqui ya se crea el minter
-        let minter <- self.packsAdmin.createNewMinter(allowedAmount: amount)
-        //con que el que se crea una Vault con N Packs (esto lo vamos a renombrar a packs a la de ya)
-        let mintedVault <- minter.mintPacks(amount: amount)
 
-        self.packsReceiver.deposit(from: <-mintedVault)
+        // Get the recipient's public account object
+        let recipient = getAccount(to)
 
-        destroy minter
+        // Get a reference to the recipient's Receiver
+        let receiverRef = recipient.getCapability(TNFCGAlphaPacks.ReceiverPublicPath)!.borrow<&{FungiblePack.Receiver}>()
+			?? panic("Could not borrow receiver reference to the recipient's Vault")
+
+        // Deposit the withdrawn tokens in the recipient's receiver
+        receiverRef.deposit(from: <-self.sentVault)
     }
 }
  

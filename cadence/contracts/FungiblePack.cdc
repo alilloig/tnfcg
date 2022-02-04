@@ -70,6 +70,7 @@ pub contract interface FungiblePack {
     ///
     pub event PacksDeposited(amount: UInt256, to: Address?)
 
+
     /// Provider
     ///
     /// The interface that enforces the requirements for withdrawing
@@ -116,7 +117,6 @@ pub contract interface FungiblePack {
     /// send them to different places.
     ///
     pub resource interface Receiver {
-
         /// deposit takes a Vault and deposits it into the implementing resource type
         ///
         pub fun deposit(from: @Vault)
@@ -196,4 +196,20 @@ pub contract interface FungiblePack {
             result.balance == 0: "The newly created Vault must have zero balance"
         }
     }
-}
+
+    /// Pack Opener
+    ///
+    /// The interface that enforces the requirements for opening Packs
+    ///
+    /// We do not include a condition that checks the balance because
+    /// we want to give users the ability to make custom receivers that
+    /// can do custom things with the Packs, like split them up and
+    /// send them to different places.
+    ///
+    pub resource interface PackOpener{
+        /// openPacks takes a Vault and destroys it returning the number of opened packs
+        ///
+        pub fun openPacks(packsToOpen: @Vault, packOwner: Address): {Address: UInt256}
+    }  
+}   
+ 

@@ -1,4 +1,5 @@
-import FungiblePack from "./FungiblePack.cdc"
+import FungiblePack from 0xf8d6e0586b0a20c7
+//import FungiblePack from "./FungiblePack.cdc"
 
 /**
 
@@ -37,9 +38,6 @@ the deposit function on another user's Vault to complete the transfer.
 
 */
 
-// This will be a nice interface for any TNFCG Packs to implement
-// when an interface is able to ""implement"" another one
-//
 pub contract TNFCGAlphaPacks: FungiblePack{
     // PacksInitialized
     //
@@ -66,10 +64,15 @@ pub contract TNFCGAlphaPacks: FungiblePack{
     // The event that is emitted when Packs are destroyed
     pub event PacksBurned(amount: UInt256)
 
-    // MinterCreated
+    // PackMinterCreated
     //
-    // The event that is emitted when a new minter resource is created
-    pub event MinterCreated(allowedAmount: UInt256)
+    // The event that is emitted when a new PackMinter resource is created
+    pub event PackMinterCreated(allowedAmount: UInt256)
+
+    // PackOpenerCreated
+    //
+    // The event that is emitted when a new opener resource is created
+    pub event PackOpenerCreated(allowedAmount: UInt256)
 
     // Named paths
     //
@@ -77,6 +80,7 @@ pub contract TNFCGAlphaPacks: FungiblePack{
     pub let ReceiverPublicPath: PublicPath
     pub let BalancePublicPath: PublicPath
     pub let AdminStoragePath: StoragePath
+    pub let PackOpenerPublicPath: PublicPath
 
     // Total supply of Packs in existence
     pub var totalSupply: UInt256
@@ -90,7 +94,7 @@ pub contract TNFCGAlphaPacks: FungiblePack{
     //
     // Resources can only be created in the context of the contract that they
     // are defined in, so there is no way for a malicious user to create Vaults
-    // out of thin air. A special Minter resource needs to be defined to mint
+    // out of thin air. A special PackMinter resource needs to be defined to mint
     // new Packs.
     //
     pub resource Vault: FungiblePack.Provider, FungiblePack.Receiver, FungiblePack.Balance {
@@ -155,60 +159,42 @@ pub contract TNFCGAlphaPacks: FungiblePack{
         return <-create Vault(balance: 0)
     }
 
-    pub resource Administrator {
 
-        // createNewMinter
-        //
-        // Function that creates and returns a new minter resource
-        //
-        pub fun createNewMinter(allowedAmount: UInt256): @Minter {
-            emit MinterCreated(allowedAmount: allowedAmount)
-            return <-create Minter(allowedAmount: allowedAmount)
-        }
 
-        pub fun createNewPackOpener(allowedAmount: UInt256): @PackOpener {
-            //emit??
-            return <- create PackOpener(allowedAmount: allowedAmount)
-        }
-    }
 
-    //PAckOpener
-    //
-    // ReResource object that Pack admin accounts can hold to receive packs and burn them
-    // Los UFix hay que cambiarlos a enteros, no se valen decimales
-    pub resource PackOpener {
 
-        pub var allowedAmount: UInt256
+    pub resource Administrator: FungiblePack.PackOpener{
         // openPacks
         //
-        // Function that mints new Packs, adds them to the total supply,
-        // and returns them to the calling context.
+        // Function for destroying packs
         //
-        pub fun openPacks(amount: UInt256): @TNFCGAlphaPacks.Vault {
+        pub fun openPacks(packsToOpen: @FungiblePack.Vault, packOwner: Address): {Address: UInt256}{
             pre {
-                amount > 0: "Amount opened must be greater than zero"
-                amount <= self.allowedAmount: "Amount minted must be less than the allowed amount"
+                packsToOpen.balance > 0: "Amount opened must be greater than zero"
             }
-            TNFCGAlphaPacks.totalSupply = TNFCGAlphaPacks.totalSupply - amount
-            self.allowedAmount = self.allowedAmount - amount
-            emit PacksBurned(amount: amount)
-            //como se queman los FT? pos en vez de ese return eso
-            //y como se usa esto pa que se minteen X? pues creo q simplemente Cards tiene una funcion que llama N veces a minter
-            return <-create Vault(balance: amount)
-        }
-        init(allowedAmount: UInt256) {
-            self.allowedAmount = allowedAmount
+            let amountOpenedPacks: UInt256 = packsToOpen.balance
+            destroy packsToOpen
+            emit PacksBurned(amount: amountOpenedPacks)
+            return {packOwner: amountOpenedPacks}
         }
 
+        // createNewPackMinter
+        //
+        // Function that creates and returns a new PackMinter resource
+        //
+        pub fun createNewPackMinter(allowedAmount: UInt256): @PackMinter {
+            emit PackMinterCreated(allowedAmount: allowedAmount)
+            return <-create PackMinter(allowedAmount: allowedAmount)
+        }
     }
 
-    // Minter
+    // PackMinter
     //
     // Resource object that Pack admin accounts can hold to mint new Packs.
     //
-    pub resource Minter {
+    pub resource PackMinter {
 
-        // The amount of Packs that the minter is allowed to mint
+        // The amount of Packs that the PackMinter is allowed to mint
         pub var allowedAmount: UInt256
 
         // mintPacks
@@ -232,6 +218,7 @@ pub contract TNFCGAlphaPacks: FungiblePack{
         }
     }
 
+
     init() {
         // path para guardar el recurso vault (se guarda en setup account)
         self.VaultStoragePath = /storage/TNFCGAlphaPacksVault
@@ -240,6 +227,8 @@ pub contract TNFCGAlphaPacks: FungiblePack{
         // paths para guardar las capabilities publicas (se guarda en setup)
         self.ReceiverPublicPath = /public/TNFCGAlphaPacksReceiver
         self.BalancePublicPath = /public/TNFCGAlphaPacksBalance
+        // path pa la capability del opener
+        self.PackOpenerPublicPath = /public/TNFCGAlphaPacksPackOpener
         
         // Initialize contract state.
         self.totalSupply = 0
@@ -253,3 +242,4 @@ pub contract TNFCGAlphaPacks: FungiblePack{
         emit PacksInitialized(initialSupply: self.totalSupply)
     }
 }
+ 
