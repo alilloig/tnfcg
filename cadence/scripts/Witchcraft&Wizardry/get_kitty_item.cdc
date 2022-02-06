@@ -1,13 +1,15 @@
 import NonFungibleToken from "../../contracts/NonFungibleToken.cdc"
-import TNFCGCards from "../../contracts/TNFCGCards.cdc"
+import WnW from "../../contracts/Witchcraft&Wizardry.cdc"
+//import NonFungibleToken from 0xf8d6e0586b0a20c7
+//import WnW from 0xf8d6e0586b0a20c7
 
 pub struct AccountItem {
   pub let itemID: UInt64
-  pub let typeID: UInt64
+  pub let typeID: UInt8
   pub let resourceID: UInt64
   pub let owner: Address
 
-  init(itemID: UInt64, typeID: UInt64, resourceID: UInt64, owner: Address) {
+  init(itemID: UInt64, typeID: UInt8, resourceID: UInt64, owner: Address) {
     self.itemID = itemID
     self.typeID = typeID
     self.resourceID = resourceID
@@ -16,7 +18,7 @@ pub struct AccountItem {
 }
 
 pub fun main(address: Address, itemID: UInt64): AccountItem? {
-  if let collection = getAccount(address).getCapability<&TNFCGCards.Collection{NonFungibleToken.CollectionPublic, TNFCGCards.TNFCGCardsCollectionPublic}>(TNFCGCards.CollectionPublicPath).borrow() {
+  if let collection = getAccount(address).getCapability<&WnW.Collection{NonFungibleToken.CollectionPublic, WnW.WnWCollectionPublic}>(WnW.PrintedCardsPublicPath).borrow() {
     if let item = collection.borrowTNFCGCard(id: itemID) {
       return AccountItem(itemID: itemID, typeID: item.typeID, resourceID: item.uuid, owner: address)
     }

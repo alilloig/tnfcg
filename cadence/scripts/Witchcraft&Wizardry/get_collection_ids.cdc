@@ -1,12 +1,14 @@
 import NonFungibleToken from "../../contracts/NonFungibleToken.cdc"
-import TNFCGCards from "../../contracts/TNFCGCards.cdc"
+import WnW from "../../contracts/Witchcraft&Wizardry.cdc"
+//import NonFungibleToken from 0xf8d6e0586b0a20c7
+//import WnW from 0xf8d6e0586b0a20c7
 
 // This script returns an array of all the NFT IDs in an account's collection.
 
 pub fun main(address: Address): [UInt64] {
     let account = getAccount(address)
 
-    let collectionRef = account.getCapability(TNFCGCards.CollectionPublicPath)!.borrow<&{NonFungibleToken.CollectionPublic}>()
+    let collectionRef = account.getCapability(WnW.PrintedCardsPublicPath)!.borrow<&{NonFungibleToken.CollectionPublic}>()
         ?? panic("Could not borrow capability from public collection")
     
     return collectionRef.getIDs()
