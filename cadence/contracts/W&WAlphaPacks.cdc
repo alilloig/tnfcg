@@ -1,5 +1,10 @@
-import FungiblePack from 0xf8d6e0586b0a20c7
-//import FungiblePack from "./FungiblePack.cdc"
+//import FungibleToken from 0xf8d6e0586b0a20c7
+//import TradingFungiblePack from 0xf8d6e0586b0a20c7
+//import WnW from 0xf8d6e0586b0a20c7
+import FungibleToken from "./FungibleToken.cdc"
+import TradingFungiblePack from "./TradingFungiblePack.cdc"
+import WnW from "./Witchcraft&Wizardry.cdc"
+
 
 /**
 
@@ -38,41 +43,45 @@ the deposit function on another user's Vault to complete the transfer.
 
 */
 
-pub contract TNFCGAlphaPacks: FungiblePack{
-    // PacksInitialized
+pub contract WnWAlphaPacks: FungibleToken, TradingFungiblePack{
+
+    // Total supply of Packs in existence
+    pub var totalSupply: UFix64
+
+    // TokensInitialized
     //
     // The event that is emitted when the contract is created
-    pub event PacksInitialized(initialSupply: UInt256)
+    pub event TokensInitialized(initialSupply: UFix64)
 
-    // PacksWithdrawn
+    // TokensWithdrawn
     //
     // The event that is emitted when Packs are withdrawn from a Vault
-    pub event PacksWithdrawn(amount: UInt256, from: Address?)
+    pub event TokensWithdrawn(amount: UFix64, from: Address?)
 
-    // PacksDeposited
+    // TokensDeposited
     //
     // The event that is emitted when Packs are deposited to a Vault
-    pub event PacksDeposited(amount: UInt256, to: Address?)
+    pub event TokensDeposited(amount: UFix64, to: Address?)
 
     // PacksMinted
     //
     // The event that is emitted when new Packs are minted
-    pub event PacksMinted(amount: UInt256)
+    pub event PacksMinted(amount: UFix64)
 
     // PacksBurned
     //
     // The event that is emitted when Packs are destroyed
-    pub event PacksBurned(amount: UInt256)
+    pub event PacksBurned(amount: UFix64)
 
     // PackMinterCreated
     //
     // The event that is emitted when a new PackMinter resource is created
-    pub event PackMinterCreated(allowedAmount: UInt256)
+    pub event PackMinterCreated(allowedAmount: UFix64)
 
     // PackOpenerCreated
     //
     // The event that is emitted when a new opener resource is created
-    pub event PackOpenerCreated(allowedAmount: UInt256)
+    pub event PackOpenerCreated(allowedAmount: UFix64)
 
     // Named paths
     //
@@ -82,14 +91,11 @@ pub contract TNFCGAlphaPacks: FungiblePack{
     pub let AdminStoragePath: StoragePath
     pub let PackOpenerPublicPath: PublicPath
 
-    // Total supply of Packs in existence
-    pub var totalSupply: UInt256
-
     // Vault
     //
     // Each user stores an instance of only the Vault in their storage
     // The functions in the Vault and governed by the pre and post conditions
-    // in FungiblePack when they are called.
+    // in FungibleToken when they are called.
     // The checks happen at runtime whenever a function is called.
     //
     // Resources can only be created in the context of the contract that they
@@ -97,13 +103,13 @@ pub contract TNFCGAlphaPacks: FungiblePack{
     // out of thin air. A special PackMinter resource needs to be defined to mint
     // new Packs.
     //
-    pub resource Vault: FungiblePack.Provider, FungiblePack.Receiver, FungiblePack.Balance {
+    pub resource Vault: FungibleToken.Provider, FungibleToken.Receiver, FungibleToken.Balance {
 
         // The total balance of this vault
-        pub var balance: UInt256
+        pub var balance: UFix64
 
         // initialize the balance at resource creation time
-        init(balance: UInt256) {
+        init(balance: UFix64) {
             self.balance = balance
         }
 
@@ -117,9 +123,9 @@ pub contract TNFCGAlphaPacks: FungiblePack{
         // created Vault to the context that called so it can be deposited
         // elsewhere.
         //
-        pub fun withdraw(amount: UInt256): @FungiblePack.Vault {
+        pub fun withdraw(amount: UFix64): @FungibleToken.Vault {
             self.balance = self.balance - amount
-            emit PacksWithdrawn(amount: amount, from: self.owner?.address)
+            emit TokensWithdrawn(amount: amount, from: self.owner?.address)
             return <-create Vault(balance: amount)
         }
 
@@ -132,17 +138,17 @@ pub contract TNFCGAlphaPacks: FungiblePack{
         // was a temporary holder of the Packs. The Vault's balance has
         // been consumed and therefore can be destroyed.
         //
-        pub fun deposit(from: @FungiblePack.Vault) {
-            let vault <- from as! @TNFCGAlphaPacks.Vault
+        pub fun deposit(from: @FungibleToken.Vault) {
+            let vault <- from as! @WnWAlphaPacks.Vault
             self.balance = self.balance + vault.balance
-            emit PacksDeposited(amount: vault.balance, to: self.owner?.address)
-            vault.balance = 0
+            emit TokensDeposited(amount: vault.balance, to: self.owner?.address)
+            vault.balance = 0.0
             destroy vault
         }
 
         destroy() {
-            TNFCGAlphaPacks.totalSupply = TNFCGAlphaPacks.totalSupply - self.balance
-            if(self.balance > 0) {
+            WnWAlphaPacks.totalSupply = WnWAlphaPacks.totalSupply - self.balance
+            if(self.balance > 0.0) {
                 emit PacksBurned(amount: self.balance)
             }
         }
@@ -156,23 +162,23 @@ pub contract TNFCGAlphaPacks: FungiblePack{
     // account to be able to receive deposits of this Pack type.
     //
     pub fun createEmptyVault(): @Vault {
-        return <-create Vault(balance: 0)
+        return <-create Vault(balance: 0.0)
     }
 
 
 
 
 
-    pub resource Administrator: FungiblePack.PackOpener{
+    pub resource SetAdministrator: TradingFungiblePack.PackOpener{
         // openPacks
         //
         // Function for destroying packs
         //
-        pub fun openPacks(packsToOpen: @FungiblePack.Vault, packOwner: Address): {Address: UInt256}{
+        pub fun openPacks(packsToOpen: @FungibleToken.Vault, packOwner: Address): {Address: UFix64}{
             pre {
-                packsToOpen.balance > 0: "Amount opened must be greater than zero"
+                packsToOpen.balance > 0.0: "Amount opened must be greater than zero"
             }
-            let amountOpenedPacks: UInt256 = packsToOpen.balance
+            let amountOpenedPacks: UFix64 = packsToOpen.balance
             destroy packsToOpen
             emit PacksBurned(amount: amountOpenedPacks)
             return {packOwner: amountOpenedPacks}
@@ -182,7 +188,7 @@ pub contract TNFCGAlphaPacks: FungiblePack{
         //
         // Function that creates and returns a new PackMinter resource
         //
-        pub fun createNewPackMinter(allowedAmount: UInt256): @PackMinter {
+        pub fun createNewPackMinter(allowedAmount: UFix64): @PackMinter {
             emit PackMinterCreated(allowedAmount: allowedAmount)
             return <-create PackMinter(allowedAmount: allowedAmount)
         }
@@ -195,25 +201,25 @@ pub contract TNFCGAlphaPacks: FungiblePack{
     pub resource PackMinter {
 
         // The amount of Packs that the PackMinter is allowed to mint
-        pub var allowedAmount: UInt256
+        pub var allowedAmount: UFix64
 
         // mintPacks
         //
         // Function that mints new Packs, adds them to the total supply,
         // and returns them to the calling context.
         //
-        pub fun mintPacks(amount: UInt256): @TNFCGAlphaPacks.Vault {
+        pub fun mintPacks(amount: UFix64): @WnWAlphaPacks.Vault {
             pre {
-                amount > 0: "Amount minted must be greater than zero"
+                amount > 0.0: "Amount minted must be greater than zero"
                 amount <= self.allowedAmount: "Amount minted must be less than the allowed amount"
             }
-            TNFCGAlphaPacks.totalSupply = TNFCGAlphaPacks.totalSupply + amount
+            WnWAlphaPacks.totalSupply = WnWAlphaPacks.totalSupply + amount
             self.allowedAmount = self.allowedAmount - amount
             emit PacksMinted(amount: amount)
             return <-create Vault(balance: amount)
         }
 
-        init(allowedAmount: UInt256) {
+        init(allowedAmount: UFix64) {
             self.allowedAmount = allowedAmount
         }
     }
@@ -221,25 +227,25 @@ pub contract TNFCGAlphaPacks: FungiblePack{
 
     init() {
         // path para guardar el recurso vault (se guarda en setup account)
-        self.VaultStoragePath = /storage/TNFCGAlphaPacksVault
+        self.VaultStoragePath = /storage/WnWAlphaPacksVault
         // path para guardar el recurso Admin (se guarda aqui en init)
-        self.AdminStoragePath = /storage/TNFCGAlphaPacksAdmin
+        self.AdminStoragePath = /storage/WnWAlphaPacksAdmin
         // paths para guardar las capabilities publicas (se guarda en setup)
-        self.ReceiverPublicPath = /public/TNFCGAlphaPacksReceiver
-        self.BalancePublicPath = /public/TNFCGAlphaPacksBalance
+        self.ReceiverPublicPath = /public/WnWAlphaPacksReceiver
+        self.BalancePublicPath = /public/WnWAlphaPacksBalance
         // path pa la capability del opener
-        self.PackOpenerPublicPath = /public/TNFCGAlphaPacksPackOpener
+        self.PackOpenerPublicPath = /public/WnWAlphaPacksPackOpener
         
         // Initialize contract state.
-        self.totalSupply = 0
+        self.totalSupply = 0.0
 
         // Create the one true Admin object and deposit it into the conttract account.
         // es peor esto que crear una variable con el recurso y luego
         // mover el recurso al almacenamiento????
-        self.account.save(<-create Administrator(), to: self.AdminStoragePath)
+        self.account.save(<-create SetAdministrator(), to: self.AdminStoragePath)
 
         // Emit an event that shows that the contract was initialized.
-        emit PacksInitialized(initialSupply: self.totalSupply)
+        emit TokensInitialized(initialSupply: self.totalSupply)
     }
 }
  

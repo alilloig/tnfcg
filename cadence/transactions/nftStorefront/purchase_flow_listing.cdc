@@ -1,24 +1,24 @@
 import FungibleToken from "../../contracts/FungibleToken.cdc"
 import NonFungibleToken from "../../contracts/NonFungibleToken.cdc"
 import FlowToken from "../../contracts/FlowToken.cdc"
-import TNFCGCards from "../../contracts/TNFCGCards.cdc"
+import WnW from "../../contracts/Witchcraft&Wizardry.cdc"
 import NFTStorefront from "../../contracts/NFTStorefront.cdc"
 
-pub fun getOrCreateCollection(account: AuthAccount): &TNFCGCards.Collection{NonFungibleToken.Receiver} {
-    if let collectionRef = account.borrow<&TNFCGCards.Collection>(from: TNFCGCards.PrintedCardsStoragePath) {
+pub fun getOrCreateCollection(account: AuthAccount): &WnW.Collection{NonFungibleToken.Receiver} {
+    if let collectionRef = account.borrow<&WnW.Collection>(from: WnW.PrintedCardsStoragePath) {
         return collectionRef
     }
 
     // create a new empty collection
-    let collection <- TNFCGCards.createEmptyCollection() as! @TNFCGCards.Collection
+    let collection <- WnW.createEmptyCollection() as! @WnW.Collection
 
-    let collectionRef = &collection as &TNFCGCards.Collection
+    let collectionRef = &collection as &WnW.Collection
     
     // save it to the account
-    account.save(<-collection, to: TNFCGCards.PrintedCardsStoragePath)
+    account.save(<-collection, to: WnW.PrintedCardsStoragePath)
 
     // create a public capability for the collection
-    account.link<&TNFCGCards.Collection{NonFungibleToken.CollectionPublic, TNFCGCards.TNFCGCardsCollectionPublic}>(TNFCGCards.PrintedCardsPublicPath, target: TNFCGCards.PrintedCardsStoragePath)
+    account.link<&WnW.Collection{NonFungibleToken.CollectionPublic, WnW.WnWCollectionPublic}>(WnW.PrintedCardsPublicPath, target: WnW.PrintedCardsStoragePath)
 
     return collectionRef
 }
@@ -26,7 +26,7 @@ pub fun getOrCreateCollection(account: AuthAccount): &TNFCGCards.Collection{NonF
 transaction(listingResourceID: UInt64, storefrontAddress: Address) {
 
     let paymentVault: @FungibleToken.Vault
-    let TNFCGCardsCollection: &TNFCGCards.Collection{NonFungibleToken.Receiver}
+    let WnWCollection: &WnW.Collection{NonFungibleToken.Receiver}
     let storefront: &NFTStorefront.Storefront{NFTStorefront.StorefrontPublic}
     let listing: &NFTStorefront.Listing{NFTStorefront.ListingPublic}
 
@@ -48,7 +48,7 @@ transaction(listingResourceID: UInt64, storefrontAddress: Address) {
         
         self.paymentVault <- mainFLOWVault.withdraw(amount: price)
 
-        self.TNFCGCardsCollection = getOrCreateCollection(account: account)
+        self.WnWCollection = getOrCreateCollection(account: account)
     }
 
     execute {
@@ -56,7 +56,7 @@ transaction(listingResourceID: UInt64, storefrontAddress: Address) {
             payment: <-self.paymentVault
         )
 
-        self.TNFCGCardsCollection.deposit(token: <-item)
+        self.WnWCollection.deposit(token: <-item)
 
         self.storefront.cleanup(listingResourceID: listingResourceID)
     }

@@ -1,5 +1,3 @@
-import FungibleToken from "./FungibleToken.cdc"
-
 /**
 
 ## The Flow Non-Fungible Token standard
@@ -46,7 +44,7 @@ Collection to complete the transfer.
 // The main NFT contract interface. Other NFT contracts will
 // import and implement this interface
 //
-pub contract interface NonFungibleToken{
+pub contract interface NonFungibleToken {
 
     // The total number of tokens of this type in existence
     pub var totalSupply: UInt64

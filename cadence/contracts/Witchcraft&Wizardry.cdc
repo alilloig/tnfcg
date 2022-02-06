@@ -1,37 +1,27 @@
 import NonFungibleToken from "./NonFungibleToken.cdc"
+import TradingNonFungibleCardGame from "./TradingNonFungibleCardGame.cdc"
+import MetadataViews from "./MetadataViews.cdc"
+//import NonFungibleToken from 0xf8d6e0586b0a20c7
+//import TradingNonFungibleCardGame from 0xf8d6e0586b0a20c7
+//import MetadataViews from 0xf8d6e0586b0a20c7
 
 /**
 
-## The Flow Trading Non-Fungible Card Game standard
+## The very first trading non fungible card game featuring true random on-chain packs.
 
-## `TradingNonFungibleCardGame` contract interface
+## `Witchcraft and Wizardry, Trading Non-Fungible Card Game` contract.
 
-The interface that all trading non-fungible card game sets contracts could conform to.
-If a user wants to deploy a new TnFCG set contract, their contract would need
-to implement the TradingNonFungibleTokenCardGame interface.
+## `Card` resource
 
-Their contract would have to follow all the rules and naming
-that the interface specifies.
-
-## `TnFCG` resource
-
-The core resource type that represents an TnFCG set in the smart contract.
+The core resource type that represents a TnFCG card in the smart contract.
 
 ## `Collection` Resource
 
-The resource that stores a user's TnFCG set card collection.
+The resource that stores a user's TnFCG card collection.
 It includes a few functions to allow the owner to easily
 move cards in and out of the collection.
 
-## `Vault` resource
-
-Each account that owns set packs would need to have an instance
-of the Vault resource stored in their account storage.
-
-The Vault resource has methods that the owner and other users can call.
-
-## `CardProvider` and `CardReceiver` resource interfaces nft
-
+## `CardProvider` and `CardReceiver` resource interfaces
 These interfaces declare functions with some pre and post conditions
 that require the Collection to follow certain naming and behavior standards.
 
@@ -48,39 +38,20 @@ To send a card to another user, a user would simply withdraw the card
 from their Collection, then call the deposit function on another user's
 Collection to complete the transfer.
 
-## `PacksProvider`, `PacksReceiver`, and `PacksBalance` resource interfaces
-
-These interfaces declare pre-conditions and post-conditions that restrict
-the execution of the functions in the Vault.
-
-They are separate because it gives the user the ability to share
-a reference to their Vault that only exposes the fields functions
-in one or more of the interfaces.
-
-It also gives users the ability to make custom resources that implement
-these interfaces to do various things with the packs.
-For example, a faucet can be implemented by conforming
-to the Provider interface.
-
-By using resources and interfaces, users of TnFCG contracts
-can send and receive packs peer-to-peer, without having to interact
-with a central ledger smart contract. To send packs to another user,
-a user would simply withdraw the packs from their Vault, then call
-the deposit function on another user's Vault to complete the transfer.
-
 */
 
 // The main TnFCG contract interface. Other TnFCG contracts will
 // import and implement this interface
 //
-pub contract TNFCGCards: NonFungibleToken {
+pub contract WnW: NonFungibleToken, TradingNonFungibleCardGame {
 
     // Events
     //
     pub event ContractInitialized()
     pub event Withdraw(id: UInt64, from: Address?)
     pub event Deposit(id: UInt64, to: Address?)
-    pub event Minted(id: UInt64, typeID: UInt64)
+    pub event CardMinted(id: UInt64)
+    pub event CardBurned(id: UInt64)
 
     // Named Paths
     //
@@ -90,7 +61,7 @@ pub contract TNFCGCards: NonFungibleToken {
     pub let AdminStoragePath: StoragePath
 
     // totalSupply
-    // The total number of TNFCGCards that have been minted
+    // The total number of WnW that have been minted
     //
     pub var totalSupply: UInt64
 
@@ -125,43 +96,59 @@ pub contract TNFCGCards: NonFungibleToken {
 
 
 
+
+
     // NFT
     // A Card as an NFT
     //
-    pub resource NFT: NonFungibleToken.INFT {
-        // The token's ID
-        pub let id: UInt64
-        // The token's type, e.g. 3 == Hat
-        pub let typeID: UInt64
-
-        // initializer
-        //
-        init(initID: UInt64, initTypeID: UInt64) {
-            self.id = initID
-            self.typeID = initTypeID
-        }
-    /**
+    pub resource NFT: NonFungibleToken.INFT, MetadataViews.Resolver {
         // The token's ID
         pub let id: UInt64
         // The token's card
-        pub let data: CardInfo
+        //pub let data: CardInfo
         // initializer
         //faltan comprobaciones de si esta vacio card templates rollo ?? panic
         init(initID: UInt64, initCardTemplateID: UInt8) {
             self.id = initID
-            self.data = self.cardTemplates[initCardTemplateID]
+            //self.data = WnW.cardTemplates[initCardTemplateID]
         }
-     */
+
+        pub fun imageCID(): String {
+            return "WnW.images[self.kind]![self.rarity]!"
+        }
+
+         pub fun getViews(): [Type] {
+            return [
+                Type<MetadataViews.Display>()
+            ]
+        }
+
+        pub fun resolveView(_ view: Type): AnyStruct? {
+            switch view {
+                case Type<MetadataViews.Display>():
+                    return MetadataViews.Display(
+                        name: "self.name()",
+                        description: "self.description()",
+                        thumbnail: MetadataViews.IPFSFile(
+                            cid: self.imageCID(), 
+                            path: "sm.png"
+                        )
+                    )
+            }
+
+            return nil
+        }       
+
     }
 
-    // This is the interface that users can cast their TNFCGCards Collection as
-    // to allow others to deposit TNFCGCards into their Collection. It also allows for reading
-    // the details of TNFCGCards in the Collection.
-    pub resource interface TNFCGCardsCollectionPublic {
+    // This is the interface that users can cast their WnW Collection as
+    // to allow others to deposit WnW into their Collection. It also allows for reading
+    // the details of WnW in the Collection.
+    pub resource interface WnWCollectionPublic {
         pub fun deposit(token: @NonFungibleToken.NFT)
         pub fun getIDs(): [UInt64]
         pub fun borrowNFT(id: UInt64): &NonFungibleToken.NFT
-        pub fun borrowTNFCGCard(id: UInt64): &TNFCGCards.NFT? {
+        pub fun borrowTNFCGCard(id: UInt64): &WnW.NFT? {
             // If the result isn't nil, the id of the returned reference
             // should be the same as the argument to the function
             post {
@@ -174,7 +161,7 @@ pub contract TNFCGCards: NonFungibleToken {
     // Collection
     // A collection of TNFCGCard NFTs owned by an account
     //
-    pub resource Collection: TNFCGCardsCollectionPublic, NonFungibleToken.Provider, NonFungibleToken.Receiver, NonFungibleToken.CollectionPublic {
+    pub resource Collection: WnWCollectionPublic, NonFungibleToken.Provider, NonFungibleToken.Receiver, NonFungibleToken.CollectionPublic {
         // dictionary of NFT conforming tokens
         // NFT is a resource type with an `UInt64` ID field
         //
@@ -196,7 +183,7 @@ pub contract TNFCGCards: NonFungibleToken {
         // and adds the ID to the id array
         //
         pub fun deposit(token: @NonFungibleToken.NFT) {
-            let token <- token as! @TNFCGCards.NFT
+            let token <- token as! @WnW.NFT
 
             let id: UInt64 = token.id
 
@@ -228,10 +215,10 @@ pub contract TNFCGCards: NonFungibleToken {
         // exposing all of its fields (including the typeID).
         // This is safe as there are no functions that can be called on the TNFCGCard.
         //
-        pub fun borrowTNFCGCard(id: UInt64): &TNFCGCards.NFT? {
+        pub fun borrowTNFCGCard(id: UInt64): &WnW.NFT? {
             if self.ownedNFTs[id] != nil {
                 let ref = &self.ownedNFTs[id] as auth &NonFungibleToken.NFT
-                return ref as! &TNFCGCards.NFT
+                return ref as! &WnW.NFT
             } else {
                 return nil
             }
@@ -265,58 +252,16 @@ pub contract TNFCGCards: NonFungibleToken {
         pub fun createNewMinter(allowedAmount: UFix64): @NFTMinter {
             return <-create NFTMinter()
         }
-
+        init(){
+            
+        }
         /** 
         pub fun createNewPackOpener(allowedAmount: UFix64): @PackOpener {
             //emit??
             return <- create PackOpener(allowedAmount: allowedAmount)
         }
         */
-
-        
-
-
-
-
     }
-
-
-    //PackOpener
-    // ESTE ES EL PACK OPENER DE PACKS; AQUI HAY QUE HACER EL DE CARDS
-    // que tiene que hacer? dar nfts aleatorios-ish
-    //
-    // ReResource object that token admin accounts can hold to receive packs and burn them
-    // Los UFix hay que cambiarlos a enteros, no se valen decimales
-    /** 
-    pub resource PackOpener {
-
-        pub var allowedAmount: UFix64
-        // openPacks
-        //
-        // Function that mints new tokens, adds them to the total supply,
-        // and returns them to the calling context.
-        //
-        pub fun openPacks(payment: @TNFCGPacks.Vault): @TNFCGCards.Vault {
-            pre {
-                amount <= self.allowedAmount: "Amount minted must be less than the allowed amount"
-            }
-            
-            self.allowedAmount = self.allowedAmount - amount
-            emit TokensBurned(amount: amount)
-            //como se queman los FT? pos en vez de ese return eso
-            //y como se usa esto pa que se minteen X? pues creo q simplemente Cards tiene una funcion que llama N veces a minter
-            return <-create Vault(balance: amount)
-        }
-        init(allowedAmount: UFix64) {
-            self.allowedAmount = allowedAmount
-        }
-
-    }
-    */
-
-    //PackPrinter
-    // Un recurso para que un admin mintee N cartas
-
 
     // NFTMinter
     // Resource that an admin or something similar would own to be
@@ -328,13 +273,13 @@ pub contract TNFCGCards: NonFungibleToken {
         // Mints a new NFT with a new ID
 		// and deposit it in the recipients collection using their collection reference
         //
-		pub fun mintNFT(recipient: &{NonFungibleToken.CollectionPublic}, typeID: UInt64) {
-            emit Minted(id: TNFCGCards.totalSupply, typeID: typeID)
+		pub fun mintNFT(recipient: &{NonFungibleToken.CollectionPublic}, typeID: UInt8) {
+            emit CardMinted(id: WnW.totalSupply)
 
 			// deposit it in the recipient's account using their reference
-			recipient.deposit(token: <-create TNFCGCards.NFT(initID: TNFCGCards.totalSupply, initTypeID: typeID))
+			recipient.deposit(token: <-create WnW.NFT(initID: WnW.totalSupply, initTypeID: typeID))
 
-            TNFCGCards.totalSupply = TNFCGCards.totalSupply + (1 as UInt64)
+            WnW.totalSupply = WnW.totalSupply + (1 as UInt64)
 		}
     /** 
 	    // mintNFT
@@ -354,20 +299,21 @@ pub contract TNFCGCards: NonFungibleToken {
             let value = dictionary[key]!
         }
     */
+
 	}
 
     // fetch
     // Get a reference to a TNFCGCard from an account's Collection, if available.
-    // If an account does not have a TNFCGCards.Collection, panic.
+    // If an account does not have a WnW.Collection, panic.
     // If it has a collection but does not contain the itemID, return nil.
     // If it has a collection and that collection contains the itemID, return a reference to that.
     //
-    pub fun fetch(_ from: Address, itemID: UInt64): &TNFCGCards.NFT? {
+    pub fun fetch(_ from: Address, itemID: UInt64): &WnW.NFT? {
         let collection = getAccount(from)
-            .getCapability(TNFCGCards.PrintedCardsPublicPath)!
-            .borrow<&TNFCGCards.Collection{TNFCGCards.TNFCGCardsCollectionPublic}>()
+            .getCapability(WnW.PrintedCardsPublicPath)!
+            .borrow<&WnW.Collection{WnW.WnWCollectionPublic}>()
             ?? panic("Couldn't get collection")
-        // We trust TNFCGCards.Collection.borowTNFCGCard to get the correct itemID
+        // We trust WnW.Collection.borowTNFCGCard to get the correct itemID
         // (it checks it before returning it).
         return collection.borrowTNFCGCard(id: itemID)
     }
@@ -379,7 +325,7 @@ pub contract TNFCGCards: NonFungibleToken {
         self.PrintedCardsStoragePath = /storage/PrintedCardsCollection
         self.PrintedCardsPublicPath = /public/PrintedCardsCollection
         self.MinterStoragePath = /storage/CardsMinter
-        self.AdminStoragePath = /storage/TNFCGCardsAdmin
+        self.AdminStoragePath = /storage/WnWAdmin
 
         // Initialize the total supply
         self.totalSupply = 0

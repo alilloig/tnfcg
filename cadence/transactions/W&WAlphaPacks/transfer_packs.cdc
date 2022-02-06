@@ -1,5 +1,9 @@
-import FungiblePack from 0xf8d6e0586b0a20c7//"../../contracts/FungiblePack.cdc"
-import TNFCGAlphaPacks from 0xf8d6e0586b0a20c7//"../../contracts/TNFCGAlphaPacks.cdc"
+import FungibleToken from "../../contracts/FungibleToken.cdc"
+import TradingFungiblePack from "../../contracts/TradingFungiblePack.cdc"
+import WnWAlphaPacks from "../../contracts/W&WAlphaPacks.cdc"
+//import FungibleToken from 0xf8d6e0586b0a20c7
+//import NonFungiblePack from 0xf8d6e0586b0a20c7
+//import WnWAlphaPacks from 0xf8d6e0586b0a20c7
 
 // This transaction is a template for a transaction that
 // could be used by anyone to send tokens to another account
@@ -8,15 +12,15 @@ import TNFCGAlphaPacks from 0xf8d6e0586b0a20c7//"../../contracts/TNFCGAlphaPacks
 // The withdraw amount and the account from getAccount
 // would be the parameters to the transaction
 
-transaction(amount: UInt256, to: Address) {
+transaction(amount: UFix64, to: Address) {
 
     // The Vault resource that holds the tokens that are being transferred
-    let sentVault: @FungiblePack.Vault
+    let sentVault: @FungibleToken.Vault
 
     prepare(signer: AuthAccount) {
 
         // Get a reference to the signer's stored vault
-        let vaultRef = signer.borrow<&TNFCGAlphaPacks.Vault>(from: TNFCGAlphaPacks.VaultStoragePath)
+        let vaultRef = signer.borrow<&WnWAlphaPacks.Vault>(from: WnWAlphaPacks.VaultStoragePath)
 			?? panic("Could not borrow reference to the owner's Vault!")
 
         // Withdraw tokens from the signer's stored vault
@@ -29,7 +33,7 @@ transaction(amount: UInt256, to: Address) {
         let recipient = getAccount(to)
 
         // Get a reference to the recipient's Receiver
-        let receiverRef = recipient.getCapability(TNFCGAlphaPacks.ReceiverPublicPath)!.borrow<&{FungiblePack.Receiver}>()
+        let receiverRef = recipient.getCapability(WnWAlphaPacks.ReceiverPublicPath)!.borrow<&{FungibleToken.Receiver}>()
 			?? panic("Could not borrow receiver reference to the recipient's Vault")
 
         // Deposit the withdrawn tokens in the recipient's receiver

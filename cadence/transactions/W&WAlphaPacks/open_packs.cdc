@@ -1,18 +1,21 @@
-//import FungiblePack from "../../contracts/FungiblePack.cdc"
-//import TNFCGAlphaPacks from "../../contracts/TNFCGAlphaPacks.cdc"
-import TNFCGAlphaPacks from 0xf8d6e0586b0a20c7
-import FungiblePack from 0xf8d6e0586b0a20c7
+import FungibleToken from "../../contracts/FungibleToken.cdc"
+import TradingFungiblePack from "../../contracts/TradingFungiblePack.cdc"
+import WnWAlphaPacks from "../../contracts/W&WAlphaPacks.cdc"
+//import FungibleToken from 0xf8d6e0586b0a20c7
+//import NonFungiblePack from 0xf8d6e0586b0a20c7
+//import WnWAlphaPacks from 0xf8d6e0586b0a20c7
 
-transaction(amount: UInt256, AdminAddress: Address) {
+
+transaction(amount: UFix64, AdminAddress: Address) {
         
     // The Vault resource that holds the tokens that are being transferred
-    let packsToOpenVault: @FungiblePack.Vault
+    let packsToOpenVault: @FungibleToken.Vault
     // The pack's owner account address
     let packsOwnerAccount: Address
 
     prepare(signer: AuthAccount){
         // Reference to the pack's owner vault
-        let packsOwnerVaultRef = signer.borrow<&TNFCGAlphaPacks.Vault>(from: TNFCGAlphaPacks.VaultStoragePath)
+        let packsOwnerVaultRef = signer.borrow<&FungibleToken.Vault>(from: WnWAlphaPacks.VaultStoragePath)
 			?? panic("Could not borrow reference to the owner's Vault!")
         // Withdraw packs from the signer's stored vault
         self.packsToOpenVault <- packsOwnerVaultRef.withdraw(amount: amount)
@@ -24,7 +27,7 @@ transaction(amount: UInt256, AdminAddress: Address) {
         // Get the packs admin account's public account object
         let packAdminAccount = getAccount(AdminAddress)
         // Get a reference to the recipient's PackOpener
-        let packOpenerRef = packAdminAccount.getCapability(TNFCGAlphaPacks.PackOpenerPublicPath)!.borrow<&{FungiblePack.PackOpener}>()
+        let packOpenerRef = packAdminAccount.getCapability(WnWAlphaPacks.PackOpenerPublicPath)!.borrow<&{TradingFungiblePack.PackOpener}>()
 		?? panic("Could not borrow PackOpener reference to the recipient's Vault")
         // Deposit the withdrawn tokens in the recipient's PackOpener
         packOpenerRef.openPacks(packsToOpen: <-self.packsToOpenVault, packOwner: self.packsOwnerAccount)
