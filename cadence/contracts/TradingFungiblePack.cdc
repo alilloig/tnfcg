@@ -1,4 +1,5 @@
 import FungibleToken from "./FungibleToken.cdc"
+import NonFungibleToken from "./NonFungibleToken.cdc"
 
 /**
 
@@ -56,9 +57,9 @@ pub contract interface TradingFungiblePack {
     /// send them to different places.
     ///
     pub resource interface PackOpener{
-        /// openPacks takes a Vault and destroys it returning the number of opened packs
+        /// openPacks takes a Vault and destroys it returning the collection containing the opened cards
         ///
-        pub fun openPacks(packsToOpen: @FungibleToken.Vault, packOwner: Address): {Address: UFix64}
+        pub fun openPacks(packsToOpen: @FungibleToken.Vault, packOwner: Address): @NonFungibleToken.Collection
     }  
 }   
  

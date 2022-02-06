@@ -1,8 +1,12 @@
 //import FungibleToken from 0xf8d6e0586b0a20c7
 //import TradingFungiblePack from 0xf8d6e0586b0a20c7
+//import NonFungibleToken from 0xf8d6e0586b0a20c7
+//import TradingNonFungibleCardGame from 0xf8d6e0586b0a20c7
 //import WnW from 0xf8d6e0586b0a20c7
 import FungibleToken from "./FungibleToken.cdc"
 import TradingFungiblePack from "./TradingFungiblePack.cdc"
+import NonFungibleToken from "./NonFungibleToken.cdc"
+import TradingNonFungibleCardGame from "./TradingNonFungibleCardGame.cdc"
 import WnW from "./Witchcraft&Wizardry.cdc"
 
 
@@ -174,14 +178,14 @@ pub contract WnWAlphaPacks: FungibleToken, TradingFungiblePack{
         //
         // Function for destroying packs
         //
-        pub fun openPacks(packsToOpen: @FungibleToken.Vault, packOwner: Address): {Address: UFix64}{
+        pub fun openPacks(packsToOpen: @FungibleToken.Vault, packOwner: Address): @NonFungibleToken.Collection{
             pre {
                 packsToOpen.balance > 0.0: "Amount opened must be greater than zero"
             }
             let amountOpenedPacks: UFix64 = packsToOpen.balance
             destroy packsToOpen
             emit PacksBurned(amount: amountOpenedPacks)
-            return {packOwner: amountOpenedPacks}
+            return <- WnW.createEmptyCollection()
         }
 
         // createNewPackMinter
