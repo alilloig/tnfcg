@@ -51,22 +51,31 @@ Collection to complete the transfer.
 //
 pub contract interface TradingNonFungibleCardGame {
     
-    // CardsMinted
+    // PacksFulfiled
     //
-    // The event that is emitted when new Packs are minted
-    pub event CardMinted(id: UInt64)
+    // The event that is emitted when Packs are fulfiled
+    pub event PacksFulfiled(amount: UFix64)
 
-    //No, no?
-    // PacksBurned
+    // PackFulfilerCreated
     //
-    // The event that is emitted when Packs are destroyed
-    pub event CardBurned(id: UInt64)
+    // The event that is emitted when a new PackFulfiler resource is created
+    pub event PackFulfilerCreated(allowedAmount: UFix64)
 
     pub struct SetInfo {
         pub let name: String
         pub let id: UInt64
     }
-    /// Pack fullfiller
+
+    pub struct CardInfo {
+        pub let cardID: UInt32
+        pub let setID: UInt32
+        pub let name: String
+        pub let rarity: UInt8
+        pub let rules: {String: String}
+        pub let metadata: {String: String}
+    }
+
+    /// Pack fulfiler
     ///
     /// The interface that enforces the requirements for opening Packs
     ///
@@ -77,7 +86,7 @@ pub contract interface TradingNonFungibleCardGame {
     ///
     pub resource interface PackFulfiler{
         /// openPacks takes a Vault and destroys it returning the number of opened packs
-        pub fun fulfilPacks(set: String, amount: UFix64): &{NonFungibleToken.Provider, NonFungibleToken.CollectionPublic}
+        pub fun fulfilPacks(setID: UInt64, amount: UFix64): &{NonFungibleToken.Provider, NonFungibleToken.CollectionPublic}
     }   
 
 

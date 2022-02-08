@@ -53,6 +53,8 @@ pub contract WnWAlphaPacks: FungibleToken, TradingFungiblePack{
     // Total supply of Packs in existence
     pub var totalSupply: UFix64
 
+    pub var setID: UInt64
+
     // TokensInitialized
     //
     // The event that is emitted when the contract is created
@@ -274,7 +276,7 @@ pub contract WnWAlphaPacks: FungibleToken, TradingFungiblePack{
             let openedPacks <- packsToOpen.withdraw(amount: packsToOpen.balance)
             WnWAlphaPacks.totalSupply = WnWAlphaPacks.totalSupply - openedPacks.balance
             self.unopenedAmount = self.unopenedAmount - openedPacks.balance
-            let openedCards = self.packFulfilerCapability.borrow()!.fulfilPacks(set: "alpha", amount: openedPacks.balance)
+            let openedCards = self.packFulfilerCapability.borrow()!.fulfilPacks(setID: WnWAlphaPacks.setID, amount: openedPacks.balance)
             let keys: [UInt64] = openedCards.getIDs()
             for key in keys {
                 packsOwnerCardCollection.deposit(token: <- openedCards.withdraw(withdrawID: key))
@@ -308,6 +310,8 @@ pub contract WnWAlphaPacks: FungibleToken, TradingFungiblePack{
         
         // Initialize contract state.
         self.totalSupply = 0.0
+
+        self.setID = 1 //sacarlo de WnW?
 
         // Create the one true Admin object and deposit it into the conttract account.
         // es peor esto que crear una variable con el recurso y luego

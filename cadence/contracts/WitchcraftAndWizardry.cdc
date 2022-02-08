@@ -259,7 +259,7 @@ pub contract WnW: NonFungibleToken, TradingNonFungibleCardGame {
         // Only method to get new WnW Cards
 		// and deposit it in the recipients collection using their collection reference
         //
-		pub fun fulfilPacks(set: String, amount: UFix64){
+		pub fun fulfilPacks(set: UInt64, amount: UFix64){
 			/*let openedCards: @NonFungibleToken.Collection
             // deposit it in the recipient's account using their reference
             
