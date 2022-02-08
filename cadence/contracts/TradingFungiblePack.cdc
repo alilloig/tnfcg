@@ -27,25 +27,44 @@ that the interface specifies.
 ///
 pub contract interface TradingFungiblePack {
     
-    // PacksMinted
-    //
-    // The event that is emitted when new Packs are minted
-    pub event PacksMinted(amount: UFix64)
-
-    // PacksBurned
+    // PacksSelled
     //
     // The event that is emitted when Packs are destroyed
-    pub event PacksBurned(amount: UFix64)
+    pub event PacksSelled(amount: UFix64)
+
+    // PacksOpened
+    //
+    // The event that is emitted when Packs are destroyed
+    pub event PacksOpened(amount: UFix64)
 
     // PackMinterCreated
     //
     // The event that is emitted when a new PackMinter resource is created
-    pub event PackMinterCreated(allowedAmount: UFix64)
+    pub event PackSellerCreated(allowedAmount: UFix64)
 
     // PackOpenerCreated
     //
     // The event that is emitted when a new opener resource is created
     pub event PackOpenerCreated(allowedAmount: UFix64)
+
+    /// Pack Seller
+    ///
+    /// The interface that enforces the requirements for opening Packs
+    ///
+    /// We do not include a condition that checks the balance because
+    /// we want to give users the ability to make custom receivers that
+    /// can do custom things with the Packs, like split them up and
+    /// send them to different places.
+    ///
+    pub resource interface PackSeller{
+        // The amount of Packs that the PackMinter is allowed to mint
+        pub var allowedAmount: UFix64
+        /// sellPacks takes a Vault with Flow currency and returns a Vault of TFP
+        pub fun sellPacks(
+            payment: &FungibleToken.Vault,
+            payerCollection: &{FungibleToken.Receiver},
+            amount: UFix64)
+    }
 
     /// Pack Opener
     ///
@@ -57,9 +76,14 @@ pub contract interface TradingFungiblePack {
     /// send them to different places.
     ///
     pub resource interface PackOpener{
+        // The amount of Packs that the PackMinter is allowed to mint
+        pub var allowedAmount: UFix64
         /// openPacks takes a Vault and destroys it returning the collection containing the opened cards
         ///
-        pub fun openPacks(packsToOpen: @FungibleToken.Vault, packOwner: Address): @NonFungibleToken.Collection
-    }  
+        pub fun openPacks(
+            packsToOpen: &FungibleToken.Vault,
+            packsOwnerCardCollection: &{NonFungibleToken.CollectionPublic})
+    }
+
 }   
  

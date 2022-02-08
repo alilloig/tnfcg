@@ -1,3 +1,8 @@
+import NonFungibleToken from "./NonFungibleToken.cdc"
+import FungibleToken from "./FungibleToken.cdc"
+//import NonFungibleToken from 0xf8d6e0586b0a20c7
+//import FungibleToken from 0xf8d6e0586b0a20c7
+
 /**
 
 ## The Flow Trading Non-Fungible Card standard
@@ -57,6 +62,10 @@ pub contract interface TradingNonFungibleCardGame {
     // The event that is emitted when Packs are destroyed
     pub event CardBurned(id: UInt64)
 
+    pub struct SetInfo {
+        pub let name: String
+        pub let id: UInt64
+    }
     /// Pack fullfiller
     ///
     /// The interface that enforces the requirements for opening Packs
@@ -66,10 +75,9 @@ pub contract interface TradingNonFungibleCardGame {
     /// can do custom things with the Packs, like split them up and
     /// send them to different places.
     ///
-    pub resource interface PackFullfiller{
+    pub resource interface PackFulfiler{
         /// openPacks takes a Vault and destroys it returning the number of opened packs
-        ////*packsToOpen: @FungibleToken.Vault,*/
-        pub fun fullfilPacks(packOwner: Address): {Address: UFix64}
+        pub fun fulfilPacks(set: String, amount: UFix64): &{NonFungibleToken.Provider, NonFungibleToken.CollectionPublic}
     }   
 
 
