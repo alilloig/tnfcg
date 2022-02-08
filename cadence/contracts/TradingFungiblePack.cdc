@@ -82,7 +82,7 @@ pub contract interface TradingFungiblePack {
         ///
         pub fun openPacks(
             packsToOpen: &FungibleToken.Vault,
-            packsOwnerCardCollection: &{NonFungibleToken.CollectionPublic})
+            packsOwnerCardCollectionPublic: &{NonFungibleToken.CollectionPublic})
     }
 
 }   
