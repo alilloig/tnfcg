@@ -276,11 +276,7 @@ pub contract WnWAlphaPacks: FungibleToken, TradingFungiblePack{
             let openedPacks <- packsToOpen.withdraw(amount: packsToOpen.balance)
             WnWAlphaPacks.totalSupply = WnWAlphaPacks.totalSupply - openedPacks.balance
             self.unopenedAmount = self.unopenedAmount - openedPacks.balance
-            let openedCards = self.packFulfilerCapability.borrow()!.fulfilPacks(setID: WnWAlphaPacks.setID, amount: openedPacks.balance)
-            let keys: [UInt64] = openedCards.getIDs()
-            for key in keys {
-                packsOwnerCardCollectionPublic.deposit(token: <- openedCards.withdraw(withdrawID: key))
-            }
+            let openedCards = self.packFulfilerCapability.borrow()!.fulfilPacks(setID: WnWAlphaPacks.setID, amount: openedPacks.balance, packsOwnerCardCollectionPublic: packsOwnerCardCollectionPublic)
             emit PacksOpened(amount: openedPacks.balance)
             destroy openedPacks
         }

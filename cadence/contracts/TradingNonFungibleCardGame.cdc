@@ -68,11 +68,17 @@ pub contract interface TradingNonFungibleCardGame {
 
     pub struct CardInfo {
         pub let cardID: UInt32
-        pub let setID: UInt32
+        pub let set: SetInfo
         pub let name: String
         pub let rarity: UInt8
         pub let rules: {String: String}
         pub let metadata: {String: String}
+    }
+
+
+    pub resource interface TradingNonFungibleCard{
+        pub let set: SetInfo
+        pub let card: CardInfo
     }
 
     /// Pack fulfiler
@@ -86,7 +92,7 @@ pub contract interface TradingNonFungibleCardGame {
     ///
     pub resource interface PackFulfiler{
         /// openPacks takes a Vault and destroys it returning the number of opened packs
-        pub fun fulfilPacks(setID: UInt64, amount: UFix64): &{NonFungibleToken.Provider, NonFungibleToken.CollectionPublic}
+        pub fun fulfilPacks(setID: UInt64, amount: UFix64, packsOwnerCardCollectionPublic: &{NonFungibleToken.CollectionPublic})
     }   
 
 
