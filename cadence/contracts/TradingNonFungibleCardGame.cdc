@@ -81,6 +81,22 @@ pub contract interface TradingNonFungibleCardGame {
         pub let card: CardInfo
     }
 
+
+    /// Set Starter
+    ///
+    /// The interface that enforces the requirements for starting a new set
+    ///
+    /// We do not include a condition that checks the balance because
+    /// we want to give users the ability to make custom receivers that
+    /// can do custom things with the Packs, like split them up and
+    /// send them to different places.
+    ///
+    pub resource interface SetInitializer{
+        /// openPacks takes a Vault and destroys it returning the number of opened packs
+        pub fun startSet(set: SetInfo, printedCardsCollectionPublic: &{NonFungibleToken.CollectionPublic})
+    }  
+
+
     /// Pack fulfiler
     ///
     /// The interface that enforces the requirements for opening Packs

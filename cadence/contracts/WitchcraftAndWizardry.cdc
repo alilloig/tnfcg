@@ -55,34 +55,30 @@ pub contract WnW: NonFungibleToken, TradingNonFungibleCardGame {
     pub event CardMinted(id: UInt64)
     pub event CardBurned(id: UInt64)
 
+    //mai events
+    pub event SetInitialized(set: TradingNonFungibleCardGame.SetInfo)
+    pub event PacksFulfiled(amount: UFix64)
+
     // Named Paths
     //
     pub let PrintedCardsStoragePath: StoragePath
     pub let PrintedCardsPublicPath: PublicPath
     pub let AdminStoragePath: StoragePath
+    pub let PrintedCardsPrivatePath: PrivatePath
 
     // totalSupply
     // The total number of WnW that have been minted
     //
     pub var totalSupply: UInt64
 
-    // onPrinting
-    // The printing status of the set. If false, no cards can be minted
-    //
-    pub var onPrinting: Bool
-    
-    // setCards
-    // Diccionario con clave la id de la carta y valor {rareza, CardInfo}
-    // Darle unas vueltitas para ver como hacerlo mejor a la hora de decidir cuando reimprimir
-    //MAL!!! ESTO VA A SER DEL SET!!!!
-    //pub var setCards: {UInt16: {UInt8: CardInfo}}
-
     pub struct SetInfo {
         pub let name: String
-        pub let id: UInt64       
+        pub let id: UInt64
+        pub bool printing: bool  
         init(name: String, id: UInt64){
             self.name = name
             self.id = id
+            self.printing = true
         }
     }
 
@@ -104,6 +100,12 @@ pub contract WnW: NonFungibleToken, TradingNonFungibleCardGame {
         }
     }
 
+    /*Que queda por definir? Una estructura de set y un diccionario de cartas*/
+    // setCards
+    // Diccionario con clave la id de la carta y valor {rareza, CardInfo}
+    // Darle unas vueltitas para ver como hacerlo mejor a la hora de decidir cuando reimprimir
+    //pub var setCards: {UInt16: {UInt8: CardInfo}}
+
 
 
 
@@ -117,15 +119,15 @@ pub contract WnW: NonFungibleToken, TradingNonFungibleCardGame {
         // The token's card
         pub let data: CardInfo
         // The card's set
-        pub let set: SetInfo
+        pub let setID: UInt64
         
         // initializer
         //faltan comprobaciones de si esta vacio card templates rollo ?? panic
-        init(initID: UInt64, initData: CardInfo, initSet: SetInfo) {
+        init(initID: UInt64, initData: CardInfo, initSetID: UInt64) {
             self.id = initID
             //estos arrays estan deliberadamente mal pensados por que pueden ser accedidos desde fuera
             self.data = initData
-            self.set = initSet
+            self.setID = initSetID
         }
 
         pub fun imageCID(): String {
@@ -152,6 +154,7 @@ pub contract WnW: NonFungibleToken, TradingNonFungibleCardGame {
         }       
 
     }
+    
     /*ESTO SOBRA??? SOLO ES PARA BORROW???? */
     // This is the interface that users can cast their WnW Collection as
     // to allow others to deposit WnW into their Collection. It also allows for reading
@@ -255,8 +258,35 @@ pub contract WnW: NonFungibleToken, TradingNonFungibleCardGame {
         return <- create Collection()
     }
 
-    pub resource Administrator: TradingNonFungibleCardGame.PackFulfiler {
+    pub resource Administrator{
 
+        // createNewPackSeller
+        //
+        // Function that creates and returns a new PackSeller resource
+        //
+        pub fun createNewPackSeller(packSellerFlowTokenCapability: Capability<&{FungibleToken.Receiver}>,allowedAmount: UFix64): @PackSeller {
+            emit PackSellerCreated(allowedAmount: allowedAmount)
+            return <- create PackSeller(packSellerFlowTokenCapability: packSellerFlowTokenCapability, allowedAmount: allowedAmount)
+        }
+        // createNewPackOpener
+        //
+        // Function that creates and returns a new PackMinter resource
+        //
+        pub fun createNewPackOpener(packFulfilerCapability: Capability<&{TradingNonFungibleCardGame.PackFulfiler}>, allowedAmount: UFix64): @PackOpener {
+            emit PackOpenerCreated(allowedAmount: allowedAmount)
+            return <- create PackOpener(packFulfilerCapability: packFulfilerCapability, allowedAmount: allowedAmount)
+        }
+
+
+    }
+
+    pub resource SetInitializer: TradingNonFungibleCardGame.SetInitializer{
+        pub fun startSet(set: SetInfo, printedCardsCollectionPublic: &{NonFungibleToken.CollectionPublic}){
+
+        }
+    }
+
+    pub resource PackFulfiler: TradingNonFungibleCardGame.PackFulfiler{
         // A capability allowing this resource to withdraw the NFT with the given ID from its collection.
         // This capability allows the resource to withdraw *any* NFT, so you should be careful when giving
         // such a capability to a resource and always check its code to make sure it will use it in the
@@ -274,16 +304,17 @@ pub contract WnW: NonFungibleToken, TradingNonFungibleCardGame {
             }
 
             //hay que crear una collection de cartas con las cartas aleatorias sacadas de las cartas impresas, capability a esas cartas impresas en init o set up admin account
+            
             let keys: [UInt8] = [1,2]
             for key in keys {
-                                                                                       /*esto es una fumada*//* uno de los nfts aleatoriamente escogidos, withdraw??*/
-                packsOwnerCardCollectionPublic.deposit(token: <- create WnW.NFT(initID: WnW.totalSupply, initCardTemplateID: key))
+                packsOwnerCardCollectionPublic.deposit(token: <- create WnW.NFT(initID: WnW.totalSupply, initData: CardInfo, initSet: setID))
             }
             /* 
             // deposit it in the recipient's account using their reference
             */
             //aqui mas bien que esto de arriba habria que llamar a la funcion que te devolviese tantas cartas*amount del set que sea
             //return la collection provider de nfts que salen de los packs
+            
         }
 
         init(printedCardsCollectionProviderCapability: Capability<&{NonFungibleToken.Provider, WnWCollectionPublic}>){
@@ -311,59 +342,27 @@ pub contract WnW: NonFungibleToken, TradingNonFungibleCardGame {
     // initializer
     //
 	init() {
-        // Set our named paths
-        self.PrintedCardsStoragePath = /storage/PrintedCardsCollection
-        self.PrintedCardsPublicPath = /public/PrintedCardsCollection
+        // Almacenamiento Cartas impresas
+        self.PrintedCardsStoragePath = /storage/WnWPrintedCardsCollection
+        // Almacenamiento recurso admin
         self.AdminStoragePath = /storage/WnWAdmin
+        // Capability pa ver cartas impresas
+        self.PrintedCardsPublicPath = /public/WnWPrintedCardsCollection
+        //Capability pa sacar cartas
+        self.PrintedCardsPrivatePath = /private/WnWPrintedCardsCollection
+
 
         // Initialize the total supply
         self.totalSupply = 0
-        // Initialize the on printing flag of the set
-        self.onPrinting = true
 
         // create a new empty collection for storing the printed cards
         let printedCards <- create Collection()
         // save it to the account
         self.account.save(<-printedCards, to: self.PrintedCardsStoragePath)
 
-        //sacar la capability a printedcardscollectionprovider y pasarla
-
-/* 
-        //Te quedas loco que esta es toda la autenticación
-        self.packsAdmin = signer.borrow<&WnWAlphaPacks.Administrator>(from: WnWAlphaPacks.AdminStoragePath)
-            ?? panic("Signer is not the packs admin")
-
-        if signer.borrow<&WnWAlphaPacks.Vault>(from: WnWAlphaPacks.VaultStoragePath) == nil {
-            // Create a new Pack Vault and put it in storage
-            signer.save(<-WnWAlphaPacks.createEmptyVault(), to: WnWAlphaPacks.VaultStoragePath)
-            // Create a public capability to the Vault that only exposes
-            // the deposit function through the Receiver interface
-            signer.link<&WnWAlphaPacks.Vault{FungibleToken.Receiver}>(
-                WnWAlphaPacks.ReceiverPublicPath,
-                target: WnWAlphaPacks.VaultStoragePath
-            )
-            // Create a public capability to the Vault that only exposes
-            // the balance field through the Balance interface
-            signer.link<&WnWAlphaPacks.Vault{FungibleToken.Balance}>(
-                WnWAlphaPacks.BalancePublicPath,
-                target: WnWAlphaPacks.VaultStoragePath
-            )
-        }
-        // Create a public capability to the Vault that only exposes
-        // the deposit function through the Receiver interface
-        signer.link<&WnWAlphaPacks.Administrator>(
-                WnWAlphaPacks.PackOpenerPublicPath, 
-                target: WnWAlphaPacks.AdminStoragePath)
-*/
-
-
         // Create the one true Admin object and deposit it into the conttract account.
-        let admin <- create Administrator(printedCardsCollectionProviderCapability: ================ AQUI HAY QUE SEGUIR ======================== )
+        let admin <- create Administrator()
         self.account.save(<-admin, to: self.AdminStoragePath)
-
-
-        //ojo aqui se haria tambien crear y guardar capabilities como en create listing x ej
-
 
         emit ContractInitialized()
 	}
