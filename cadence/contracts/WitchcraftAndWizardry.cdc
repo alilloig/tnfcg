@@ -74,7 +74,7 @@ pub contract WnW: NonFungibleToken, TradingNonFungibleCardGame {
     pub struct SetInfo {
         pub let name: String
         pub let id: UInt64
-        pub bool printing: bool  
+        pub let printing: Bool  
         init(name: String, id: UInt64){
             self.name = name
             self.id = id
