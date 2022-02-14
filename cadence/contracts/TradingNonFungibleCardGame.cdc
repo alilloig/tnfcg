@@ -78,7 +78,6 @@ pub contract interface TradingNonFungibleCardGame {
 
 
     pub resource interface TradingNonFungibleCard{
-        pub let set: {SetInfo}
         pub let card: {CardInfo}
     }
 

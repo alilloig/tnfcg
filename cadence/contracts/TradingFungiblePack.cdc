@@ -62,7 +62,7 @@ pub contract interface TradingFungiblePack {
         /// sellPacks takes a Vault with Flow currency and returns a Vault of TFP
         pub fun sellPacks(
             payment: &FungibleToken.Vault,
-            payerCollection: &{FungibleToken.Receiver},
+            packsPayerPackReceiver: &{FungibleToken.Receiver},
             amount: UFix64)
     }
 

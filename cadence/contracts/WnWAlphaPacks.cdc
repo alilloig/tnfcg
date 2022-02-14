@@ -53,7 +53,7 @@ pub contract WnWAlphaPacks: FungibleToken, TradingFungiblePack{
     // Total supply of Packs in existence
     pub var totalSupply: UFix64
 
-    pub var setID: UInt64
+    pub var setInfo: WnW.WnWSetInfo
 
     // TokensInitialized
     //
@@ -216,7 +216,7 @@ pub contract WnWAlphaPacks: FungibleToken, TradingFungiblePack{
         // Function that mints new Packs, adds them to the total supply,
         // and returns them to the calling context.
         //
-        pub fun sellPacks(payment: &FungibleToken.Vault, payerCollection: &{FungibleToken.Receiver}, amount: UFix64) {
+        pub fun sellPacks(payment: &FungibleToken.Vault, packsPayerPackReceiver: &{FungibleToken.Receiver}, amount: UFix64) {
             pre {
                 payment.isInstance(Type<@FlowToken.Vault>()): "Payment must be done in Flow tokens"
                 amount > 0.0: "Amount minted must be greater than zero"
@@ -231,7 +231,7 @@ pub contract WnWAlphaPacks: FungibleToken, TradingFungiblePack{
             WnWAlphaPacks.totalSupply = WnWAlphaPacks.totalSupply + amount
             self.allowedAmount = self.allowedAmount - amount
             emit PacksSelled(amount: amount)
-            payerCollection.deposit(from: <- create Vault(balance: amount))
+            packsPayerPackReceiver.deposit(from: <- create Vault(balance: amount))
         
         }
 
@@ -276,7 +276,7 @@ pub contract WnWAlphaPacks: FungibleToken, TradingFungiblePack{
             let openedPacks <- packsToOpen.withdraw(amount: packsToOpen.balance)
             WnWAlphaPacks.totalSupply = WnWAlphaPacks.totalSupply - openedPacks.balance
             self.unopenedAmount = self.unopenedAmount - openedPacks.balance
-            let openedCards = self.packFulfilerCapability.borrow()!.fulfilPacks(setID: WnWAlphaPacks.setID, amount: openedPacks.balance, packsOwnerCardCollectionPublic: packsOwnerCardCollectionPublic)
+            let openedCards = self.packFulfilerCapability.borrow()!.fulfilPacks(set: WnWAlphaPacks.setInfo, amount: openedPacks.balance, packsOwnerCardCollectionPublic: packsOwnerCardCollectionPublic)
             emit PacksOpened(amount: openedPacks.balance)
             destroy openedPacks
         }
@@ -291,7 +291,7 @@ pub contract WnWAlphaPacks: FungibleToken, TradingFungiblePack{
         }
     }
 
-    init() {
+    init(setInfo: WnW.WnWSetInfo) {
         
         // path para guardar el recurso vault (se guarda en setup account)
         self.VaultStoragePath = /storage/WnWAlphaPacksVault
@@ -307,7 +307,7 @@ pub contract WnWAlphaPacks: FungibleToken, TradingFungiblePack{
         // Initialize contract state.
         self.totalSupply = 0.0
 
-        self.setID = 1 //sacarlo de WnW?
+        self.setInfo = setInfo //sacarlo de WnW?
 
         // Create the one true Admin object and deposit it into the conttract account.
         // es peor esto que crear una variable con el recurso y luego

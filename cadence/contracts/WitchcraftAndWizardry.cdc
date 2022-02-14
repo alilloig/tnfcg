@@ -56,6 +56,8 @@ pub contract WnW: NonFungibleToken, TradingNonFungibleCardGame {
     pub event CardBurned(id: UInt64)
 
     //mai events
+    pub event SetInitializerCreated()
+    pub event PackFulfilerCreated(allowedAmount: UFix64)
     pub event SetInitialized(setName: String)
     pub event PacksFulfiled(amount: UFix64)
 
@@ -71,7 +73,7 @@ pub contract WnW: NonFungibleToken, TradingNonFungibleCardGame {
     //
     pub var totalSupply: UInt64
 
-    pub struct SetInfo: TradingNonFungibleCardGame.SetInfo {
+    pub struct WnWSetInfo: TradingNonFungibleCardGame.SetInfo {
         pub let name: String
         pub let id: UInt64
         pub let printing: Bool  
@@ -82,16 +84,16 @@ pub contract WnW: NonFungibleToken, TradingNonFungibleCardGame {
         }
     }
 
-    pub struct CardInfo: TradingNonFungibleCardGame.CardInfo {
+    pub struct WnWCardInfo: TradingNonFungibleCardGame.CardInfo {
         
         pub let cardID: UInt32
-        pub let set: SetInfo
+        pub let set: {TradingNonFungibleCardGame.SetInfo}
         pub let name: String
         pub let rarity: UInt8
         pub let rules: {String: String}
         pub let metadata: {String: String}
 
-        init(cardID: UInt32, set: SetInfo, name: String, rarity: UInt8, rules: {String: String}, metadata: {String: String}) {
+        init(cardID: UInt32, set: WnWSetInfo, name: String, rarity: UInt8, rules: {String: String}, metadata: {String: String}) {
             self.cardID = cardID
             self.set = set
             self.name = name
@@ -118,21 +120,34 @@ pub contract WnW: NonFungibleToken, TradingNonFungibleCardGame {
         // The token's ID
         pub let id: UInt64
         // The token's card
-        pub let card: CardInfo
-        // The card's set
-        pub let set: SetInfo
+        pub let card: {TradingNonFungibleCardGame.CardInfo}
         
         // initializer
         //faltan comprobaciones de si esta vacio card templates rollo ?? panic
-        init(initID: UInt64, initData: CardInfo, initSet: SetInfo) {
+        init(initID: UInt64, initData: WnWCardInfo) {
             self.id = initID
             //estos arrays estan deliberadamente mal pensados por que pueden ser accedidos desde fuera
             self.card = initData
-            self.set = initSetID
         }
 
-        pub fun imageCID(): String {
-            return "WnW.images[self.kind]![self.rarity]!"
+        pub fun name(): String {
+            return "TO DO"
+            /*KittyItems.rarityToString(self.rarity)
+                .concat(" ")
+                .concat(KittyItems.kindToString(self.kind))*/
+        }
+
+        pub fun description(): String {
+            return "TO DO"
+                /* .concat(KittyItems.rarityToString(self.rarity).toLower())
+                .concat(" ")
+                .concat(KittyItems.kindToString(self.kind).toLower())
+                .concat(" with serial number ")
+                .concat(self.id.toString())*/
+        }
+
+        pub fun imageURL(): String {
+            return "TO DO"//WnW.images[self.kind]![self.rarity]!
         }
 
          pub fun getViews(): [Type] {
@@ -145,9 +160,9 @@ pub contract WnW: NonFungibleToken, TradingNonFungibleCardGame {
             switch view {
                 case Type<MetadataViews.Display>():
                     return MetadataViews.Display(
-                        name: self.name,
-                        description: self.description,
-                        thumbnail: MetadataViews.HTTPFile(url: self.imageURL)
+                        name: self.name(),
+                        description: self.description(),
+                        thumbnail: MetadataViews.HTTPFile(url: self.imageURL())
                     )
             }
 
@@ -265,25 +280,33 @@ pub contract WnW: NonFungibleToken, TradingNonFungibleCardGame {
         //
         // Function that creates and returns a new PackSeller resource
         //
-        pub fun createNewSetInitializer(packSellerFlowTokenCapability: Capability<&{FungibleToken.Receiver}>,allowedAmount: UFix64): @PackSeller {
-            emit SetInitializerCreated(allowedAmount: allowedAmount)
-            return <- create PackSeller(packSellerFlowTokenCapability: packSellerFlowTokenCapability, allowedAmount: allowedAmount)
+        pub fun createNewSetInitializer(printedCardsCollectionCapability: Capability<&{WnWCollectionPublic}>): @SetInitializer {
+            emit SetInitializerCreated()
+            return <- create SetInitializer(printedCardsCollectionCapability: printedCardsCollectionCapability)
         }
         // createNewPackOpener
         //
         // Function that creates and returns a new PackMinter resource
         //
-        pub fun createNewPackFulfiler(packFulfilerCapability: Capability<&{TradingNonFungibleCardGame.PackFulfiler}>, printedCardsCollection: WnWCollectionPublic): @PackOpener {
+        pub fun createNewPackFulfiler(printedCardsCollectionProviderCapability: Capability<&{NonFungibleToken.Provider, WnWCollectionPublic}>, allowedAmount: UFix64): @PackFulfiler {
             emit PackFulfilerCreated(allowedAmount: allowedAmount)
-            return <- create PackFulfiler(printedCardsCollectionProviderCapability: packFulfilerCapability, WnWCollectionPublic: printedCardsCollection)
+            return <- create PackFulfiler(printedCardsCollectionProviderCapability: printedCardsCollectionProviderCapability, allowedAmount: allowedAmount)
         }
 
 
     }
 
     pub resource SetInitializer: TradingNonFungibleCardGame.SetInitializer{
-        pub fun startSet(set: SetInfo, printedCardsCollectionPublic: &{NonFungibleToken.CollectionPublic}){
+        
+        // A capability allowing this resource to deposit the NFTs created 
+        // 
+        access(contract) let printedCardsCollectionPublic: Capability<&{WnWCollectionPublic}>
+        
+        pub fun startSet(set: {TradingNonFungibleCardGame.SetInfo}, printedCardsCollectionPublic: &{NonFungibleToken.CollectionPublic}){
 
+        }
+        init(printedCardsCollectionCapability: Capability<&{WnWCollectionPublic}>){
+            self.printedCardsCollectionPublic = printedCardsCollectionCapability
         }
     }
 
@@ -294,12 +317,15 @@ pub contract WnW: NonFungibleToken, TradingNonFungibleCardGame {
         // way that it claims.
         access(contract) let printedCardsCollectionProviderCapability: Capability<&{NonFungibleToken.Provider, WnWCollectionPublic}>
 
+        //se puede tener una variable publica en un recurso pero no en un contrato verdad???
+        pub var allowedAmount: UFix64
+
         // fulfilPacks
         //
         // Only method to get new WnW Cards
 		// and deposit it in the recipients collection using their collection reference
         //
-		pub fun fulfilPacks(set: SetInfo, amount: UFix64, packsOwnerCardCollectionPublic: &{NonFungibleToken.CollectionPublic}){
+		pub fun fulfilPacks(set: {TradingNonFungibleCardGame.SetInfo}, amount: UFix64, packsOwnerCardCollectionPublic: &{NonFungibleToken.CollectionPublic}){
 			pre{
                 //habrá que comprobar
             }
@@ -308,7 +334,7 @@ pub contract WnW: NonFungibleToken, TradingNonFungibleCardGame {
             
             let keys: [UInt8] = [1,2]
             for key in keys {
-                packsOwnerCardCollectionPublic.deposit(token: <- create WnW.NFT(initID: WnW.totalSupply, initData: CardInfo, initSet: set))
+                //packsOwnerCardCollectionPublic.deposit(token: <- create WnW.NFT(initID: WnW.totalSupply, initData: WnWCardInfo, initSet: set))
             }
             /* 
             // deposit it in the recipient's account using their reference
@@ -318,8 +344,9 @@ pub contract WnW: NonFungibleToken, TradingNonFungibleCardGame {
             
         }
 
-        init(printedCardsCollectionProviderCapability: Capability<&{NonFungibleToken.Provider, WnWCollectionPublic: WnWCollectionPublic}>){
+        init(printedCardsCollectionProviderCapability: Capability<&{NonFungibleToken.Provider, WnWCollectionPublic}>, allowedAmount: UFix64){
             self.printedCardsCollectionProviderCapability = printedCardsCollectionProviderCapability
+            self.allowedAmount = allowedAmount
         }
     }
     
