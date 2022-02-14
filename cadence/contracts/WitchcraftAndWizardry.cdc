@@ -56,7 +56,7 @@ pub contract WnW: NonFungibleToken, TradingNonFungibleCardGame {
     pub event CardBurned(id: UInt64)
 
     //mai events
-    pub event SetInitialized(set: TradingNonFungibleCardGame.SetInfo)
+    pub event SetInitialized(setName: String)
     pub event PacksFulfiled(amount: UFix64)
 
     // Named Paths
@@ -71,7 +71,7 @@ pub contract WnW: NonFungibleToken, TradingNonFungibleCardGame {
     //
     pub var totalSupply: UInt64
 
-    pub struct SetInfo {
+    pub struct SetInfo: TradingNonFungibleCardGame.SetInfo {
         pub let name: String
         pub let id: UInt64
         pub let printing: Bool  
@@ -82,17 +82,18 @@ pub contract WnW: NonFungibleToken, TradingNonFungibleCardGame {
         }
     }
 
-    pub struct CardInfo {
+    pub struct CardInfo: TradingNonFungibleCardGame.CardInfo {
+        
         pub let cardID: UInt32
-        pub let setID: UInt32
+        pub let set: SetInfo
         pub let name: String
         pub let rarity: UInt8
         pub let rules: {String: String}
         pub let metadata: {String: String}
 
-        init(cardID: UInt32, setID: UInt32, name: String, rarity: UInt8, rules: {String: String}, metadata: {String: String}) {
+        init(cardID: UInt32, set: SetInfo, name: String, rarity: UInt8, rules: {String: String}, metadata: {String: String}) {
             self.cardID = cardID
-            self.setID = setID
+            self.set = set
             self.name = name
             self.rarity = rarity
             self.rules = rules
@@ -117,17 +118,17 @@ pub contract WnW: NonFungibleToken, TradingNonFungibleCardGame {
         // The token's ID
         pub let id: UInt64
         // The token's card
-        pub let data: CardInfo
+        pub let card: CardInfo
         // The card's set
-        pub let setID: UInt64
+        pub let set: SetInfo
         
         // initializer
         //faltan comprobaciones de si esta vacio card templates rollo ?? panic
-        init(initID: UInt64, initData: CardInfo, initSetID: UInt64) {
+        init(initID: UInt64, initData: CardInfo, initSet: SetInfo) {
             self.id = initID
             //estos arrays estan deliberadamente mal pensados por que pueden ser accedidos desde fuera
-            self.data = initData
-            self.setID = initSetID
+            self.card = initData
+            self.set = initSetID
         }
 
         pub fun imageCID(): String {
@@ -264,17 +265,17 @@ pub contract WnW: NonFungibleToken, TradingNonFungibleCardGame {
         //
         // Function that creates and returns a new PackSeller resource
         //
-        pub fun createNewPackSeller(packSellerFlowTokenCapability: Capability<&{FungibleToken.Receiver}>,allowedAmount: UFix64): @PackSeller {
-            emit PackSellerCreated(allowedAmount: allowedAmount)
+        pub fun createNewSetInitializer(packSellerFlowTokenCapability: Capability<&{FungibleToken.Receiver}>,allowedAmount: UFix64): @PackSeller {
+            emit SetInitializerCreated(allowedAmount: allowedAmount)
             return <- create PackSeller(packSellerFlowTokenCapability: packSellerFlowTokenCapability, allowedAmount: allowedAmount)
         }
         // createNewPackOpener
         //
         // Function that creates and returns a new PackMinter resource
         //
-        pub fun createNewPackOpener(packFulfilerCapability: Capability<&{TradingNonFungibleCardGame.PackFulfiler}>, allowedAmount: UFix64): @PackOpener {
-            emit PackOpenerCreated(allowedAmount: allowedAmount)
-            return <- create PackOpener(packFulfilerCapability: packFulfilerCapability, allowedAmount: allowedAmount)
+        pub fun createNewPackFulfiler(packFulfilerCapability: Capability<&{TradingNonFungibleCardGame.PackFulfiler}>, printedCardsCollection: WnWCollectionPublic): @PackOpener {
+            emit PackFulfilerCreated(allowedAmount: allowedAmount)
+            return <- create PackFulfiler(printedCardsCollectionProviderCapability: packFulfilerCapability, WnWCollectionPublic: printedCardsCollection)
         }
 
 
@@ -298,7 +299,7 @@ pub contract WnW: NonFungibleToken, TradingNonFungibleCardGame {
         // Only method to get new WnW Cards
 		// and deposit it in the recipients collection using their collection reference
         //
-		pub fun fulfilPacks(setID: UInt64, amount: UFix64, packsOwnerCardCollectionPublic: &{NonFungibleToken.CollectionPublic}){
+		pub fun fulfilPacks(set: SetInfo, amount: UFix64, packsOwnerCardCollectionPublic: &{NonFungibleToken.CollectionPublic}){
 			pre{
                 //habrá que comprobar
             }
@@ -307,7 +308,7 @@ pub contract WnW: NonFungibleToken, TradingNonFungibleCardGame {
             
             let keys: [UInt8] = [1,2]
             for key in keys {
-                packsOwnerCardCollectionPublic.deposit(token: <- create WnW.NFT(initID: WnW.totalSupply, initData: CardInfo, initSet: setID))
+                packsOwnerCardCollectionPublic.deposit(token: <- create WnW.NFT(initID: WnW.totalSupply, initData: CardInfo, initSet: set))
             }
             /* 
             // deposit it in the recipient's account using their reference
@@ -317,7 +318,7 @@ pub contract WnW: NonFungibleToken, TradingNonFungibleCardGame {
             
         }
 
-        init(printedCardsCollectionProviderCapability: Capability<&{NonFungibleToken.Provider, WnWCollectionPublic}>){
+        init(printedCardsCollectionProviderCapability: Capability<&{NonFungibleToken.Provider, WnWCollectionPublic: WnWCollectionPublic}>){
             self.printedCardsCollectionProviderCapability = printedCardsCollectionProviderCapability
         }
     }

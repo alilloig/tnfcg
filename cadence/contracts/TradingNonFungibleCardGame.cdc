@@ -61,14 +61,15 @@ pub contract interface TradingNonFungibleCardGame {
     // The event that is emitted when a new PackFulfiler resource is created
     pub event PackFulfilerCreated(allowedAmount: UFix64)
 
-    pub struct SetInfo {
+    pub struct interface SetInfo {
         pub let name: String
         pub let id: UInt64
+        pub let printing: Bool
     }
 
-    pub struct CardInfo {
+    pub struct interface CardInfo {
         pub let cardID: UInt32
-        pub let set: SetInfo
+        pub let set: {SetInfo}
         pub let name: String
         pub let rarity: UInt8
         pub let rules: {String: String}
@@ -77,8 +78,8 @@ pub contract interface TradingNonFungibleCardGame {
 
 
     pub resource interface TradingNonFungibleCard{
-        pub let set: SetInfo
-        pub let card: CardInfo
+        pub let set: {SetInfo}
+        pub let card: {CardInfo}
     }
 
 
@@ -93,7 +94,7 @@ pub contract interface TradingNonFungibleCardGame {
     ///
     pub resource interface SetInitializer{
         /// openPacks takes a Vault and destroys it returning the number of opened packs
-        pub fun startSet(set: SetInfo, printedCardsCollectionPublic: &{NonFungibleToken.CollectionPublic})
+        pub fun startSet(set: {SetInfo}, printedCardsCollectionPublic: &{NonFungibleToken.CollectionPublic})
     }  
 
 
@@ -108,7 +109,7 @@ pub contract interface TradingNonFungibleCardGame {
     ///
     pub resource interface PackFulfiler{
         /// openPacks takes a Vault and destroys it returning the number of opened packs
-        pub fun fulfilPacks(setID: UInt64, amount: UFix64, packsOwnerCardCollectionPublic: &{NonFungibleToken.CollectionPublic})
+        pub fun fulfilPacks(set: {SetInfo}, amount: UFix64, packsOwnerCardCollectionPublic: &{NonFungibleToken.CollectionPublic})
     }   
 
 
