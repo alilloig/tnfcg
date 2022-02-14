@@ -1,7 +1,9 @@
 import NonFungibleToken from "./NonFungibleToken.cdc"
 import FungibleToken from "./FungibleToken.cdc"
+import TradingFungiblePack from "./TradingFungiblePack.cdc"
 //import NonFungibleToken from 0xf8d6e0586b0a20c7
 //import FungibleToken from 0xf8d6e0586b0a20c7
+//import TradingFungiblePack from 0xf8d6e0586b0a20c7
 
 /**
 
@@ -65,6 +67,7 @@ pub contract interface TradingNonFungibleCardGame {
         pub let name: String
         pub let id: UInt64
         pub let printing: Bool
+        pub let rarities: {UInt8: String}
     }
 
     pub struct interface CardInfo {
@@ -86,25 +89,24 @@ pub contract interface TradingNonFungibleCardGame {
     ///
     /// The interface that enforces the requirements for starting a new set
     ///
-    /// We do not include a condition that checks the balance because
-    /// we want to give users the ability to make custom receivers that
-    /// can do custom things with the Packs, like split them up and
-    /// send them to different places.
-    ///
     pub resource interface SetInitializer{
         /// openPacks takes a Vault and destroys it returning the number of opened packs
         pub fun startSet(set: {SetInfo}, printedCardsCollectionPublic: &{NonFungibleToken.CollectionPublic})
-    }  
+    }
+
+    /// Set PrintRunner
+    ///
+    /// The interface that enforces the requirements for creating new copies of the cards in a set
+    ///
+    pub resource interface SetPrintRunner{
+        /// this should create a number of NFTs depending on the number of packs createds
+        pub fun printRun(set: {SetInfo}, printedCardsCollectionPublic: &{NonFungibleToken.CollectionPublic})
+    }
 
 
     /// Pack fulfiler
     ///
     /// The interface that enforces the requirements for opening Packs
-    ///
-    /// We do not include a condition that checks the balance because
-    /// we want to give users the ability to make custom receivers that
-    /// can do custom things with the Packs, like split them up and
-    /// send them to different places.
     ///
     pub resource interface PackFulfiler{
         /// openPacks takes a Vault and destroys it returning the number of opened packs

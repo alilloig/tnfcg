@@ -1,5 +1,7 @@
-import FungibleToken from "./FungibleToken.cdc"
 import NonFungibleToken from "./NonFungibleToken.cdc"
+import FungibleToken from "./FungibleToken.cdc"
+//import NonFungibleToken from 0xf8d6e0586b0a20c7
+//import FungibleToken from 0xf8d6e0586b0a20c7
 
 /**
 
@@ -47,6 +49,9 @@ pub contract interface TradingFungiblePack {
     // The event that is emitted when a new opener resource is created
     pub event PackOpenerCreated(allowedAmount: UFix64)
 
+    // Dictionary containing how many copies of each rarities comes with the pack
+    pub let rarityDistribution: {String: UInt8}
+    
     /// Pack Seller
     ///
     /// The interface that enforces the requirements for opening Packs

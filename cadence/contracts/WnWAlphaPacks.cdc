@@ -55,6 +55,8 @@ pub contract WnWAlphaPacks: FungibleToken, TradingFungiblePack{
 
     pub var setInfo: WnW.WnWSetInfo
 
+    pub let rarityDistribution: {String: UInt8}
+
     // TokensInitialized
     //
     // The event that is emitted when the contract is created
@@ -291,7 +293,7 @@ pub contract WnWAlphaPacks: FungibleToken, TradingFungiblePack{
         }
     }
 
-    init(setInfo: WnW.WnWSetInfo) {
+    init(setInfo: WnW.WnWSetInfo, rarityDistribution: {String: UInt8}) {
         
         // path para guardar el recurso vault (se guarda en setup account)
         self.VaultStoragePath = /storage/WnWAlphaPacksVault
@@ -308,6 +310,8 @@ pub contract WnWAlphaPacks: FungibleToken, TradingFungiblePack{
         self.totalSupply = 0.0
 
         self.setInfo = setInfo //sacarlo de WnW?
+
+        self.rarityDistribution = rarityDistribution
 
         // Create the one true Admin object and deposit it into the conttract account.
         // es peor esto que crear una variable con el recurso y luego

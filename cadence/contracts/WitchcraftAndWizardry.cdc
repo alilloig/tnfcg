@@ -1,11 +1,13 @@
 import NonFungibleToken from "./NonFungibleToken.cdc"
-import TradingNonFungibleCardGame from "./TradingNonFungibleCardGame.cdc"
 import MetadataViews from "./MetadataViews.cdc"
 import FungibleToken from "./FungibleToken.cdc"
+import TradingNonFungibleCardGame from "./TradingNonFungibleCardGame.cdc"
+import TradingFungiblePack from "./TradingFungiblePack.cdc"
 //import NonFungibleToken from 0xf8d6e0586b0a20c7
 //import TradingNonFungibleCardGame from 0xf8d6e0586b0a20c7
 //import MetadataViews from 0xf8d6e0586b0a20c7
 //import FungibleToken from 0xf8d6e0586b0a20c7
+//import TradingFungiblePack from 0xf8d6e0586b0a20c7
 
 /**
 
@@ -76,11 +78,14 @@ pub contract WnW: NonFungibleToken, TradingNonFungibleCardGame {
     pub struct WnWSetInfo: TradingNonFungibleCardGame.SetInfo {
         pub let name: String
         pub let id: UInt64
-        pub let printing: Bool  
-        init(name: String, id: UInt64){
+        pub let printing: Bool
+        pub let rarities: {UInt8: String}
+
+        init(name: String, id: UInt64, rarities: {UInt8: String}){
             self.name = name
             self.id = id
             self.printing = true
+            self.rarities = rarities
         }
     }
 
@@ -299,16 +304,32 @@ pub contract WnW: NonFungibleToken, TradingNonFungibleCardGame {
     pub resource SetInitializer: TradingNonFungibleCardGame.SetInitializer{
         
         // A capability allowing this resource to deposit the NFTs created 
-        // 
+        // a lo mejó aqui habia que hacer la creación de las capabilities
         access(contract) let printedCardsCollectionPublic: Capability<&{WnWCollectionPublic}>
         
         pub fun startSet(set: {TradingNonFungibleCardGame.SetInfo}, printedCardsCollectionPublic: &{NonFungibleToken.CollectionPublic}){
+
+        }
+
+        init(printedCardsCollectionCapability: Capability<&{WnWCollectionPublic}>){
+            self.printedCardsCollectionPublic = printedCardsCollectionCapability
+        }
+    }
+
+    pub resource SetPrintRunner: TradingNonFungibleCardGame.SetPrintRunner{
+        
+        // A capability allowing this resource to deposit the NFTs created 
+        // 
+        access(contract) let printedCardsCollectionPublic: Capability<&{WnWCollectionPublic}>
+        
+        pub fun printRun(set: {TradingNonFungibleCardGame.SetInfo}, printedCardsCollectionPublic: &{NonFungibleToken.CollectionPublic}){
 
         }
         init(printedCardsCollectionCapability: Capability<&{WnWCollectionPublic}>){
             self.printedCardsCollectionPublic = printedCardsCollectionCapability
         }
     }
+
 
     pub resource PackFulfiler: TradingNonFungibleCardGame.PackFulfiler{
         // A capability allowing this resource to withdraw the NFT with the given ID from its collection.
