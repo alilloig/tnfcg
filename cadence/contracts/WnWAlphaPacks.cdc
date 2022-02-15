@@ -95,9 +95,6 @@ pub contract WnWAlphaPacks: FungibleToken, TradingFungiblePack{
 
     // Named paths
     //
-    pub let VaultStoragePath: StoragePath
-    //este podria ser privado si solo queremos que se ingresen flows ahi desde 
-    pub let ReceiverPublicPath: PublicPath
     pub let AdminStoragePath: StoragePath
     pub let PackSellerPublicPath: PublicPath
     pub let PackOpenerPublicPath: PublicPath
@@ -384,10 +381,6 @@ pub contract WnWAlphaPacks: FungibleToken, TradingFungiblePack{
         self.setInfo = setInfo
         self.rarityDistribution = rarityDistribution
 
-        // path para guardar el recurso vault donde recibir los sobres a abrir
-        self.VaultStoragePath = /storage/WnWAlphaPacksVault
-        // path para guardar las capabilitie publica (podria ser privada?) del recibidor de packs para abrirlos
-        self.ReceiverPublicPath = /public/WnWAlphaPacksReceiver
         // path para guardar el recurso Admin (se guarda aqui en init)
         self.AdminStoragePath = /storage/WnWAlphaPacksAdmin
         // path para la capability del pack seller
@@ -395,10 +388,6 @@ pub contract WnWAlphaPacks: FungibleToken, TradingFungiblePack{
         // path pa la capability del opener
         self.PackOpenerPublicPath = /public/WnWAlphaPacksOpener
 
-        self.account.save(<-WnWAlphaPacks.createEmptyVault(), to: self.VaultStoragePath)
-        // Create a public capability to the Vault that only exposes
-        // the deposit function through the Receiver interface
-        self.account.link<&WnWAlphaPacks.Vault{FungibleToken.Receiver}>(self.ReceiverPublicPath, target: self.VaultStoragePath)
 
         // Create the one true Admin object and deposit it into the conttract account.
         // este recurso es el que puede vender y abrir packs
