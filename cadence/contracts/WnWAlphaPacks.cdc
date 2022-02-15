@@ -397,6 +397,19 @@ pub contract WnWAlphaPacks: FungibleToken, TradingFungiblePack{
         self.account.save(<-create Administrator(packSellerFlowTokenCapability: self.account.getCapability<&{FungibleToken.Receiver}>(/public/flowTokenReceiver), 
                 packFulfilerCapability: self.account.getCapability<&{TradingNonFungibleCardGame.PackFulfiler}>(WnW.PackFulfilerPublicPath)), to: self.AdminStoragePath)
 
+        
+        // Expose a public capability allowing users to get packs in exchange for flow tokens
+        self.account.link<&WnWAlphaPacks.Administrator{TradingFungiblePack.PackSeller}>(
+            self.PackSellerPublicPath,
+            target: self.AdminStoragePath
+        )
+
+        // Expose a public capability allowing users to open packs, sending it to the account and receiving WnW cards
+        self.account.link<&WnWAlphaPacks.Administrator{TradingFungiblePack.PackOpener}>(
+            self.PackOpenerPublicPath,
+            target: self.AdminStoragePath
+        )
+
         // Emit an event that shows that the contract was initialized.
         emit TokensInitialized(initialSupply: self.totalSupply)
     
