@@ -71,7 +71,7 @@ pub contract WnW: NonFungibleToken, TradingNonFungibleCardGame {
     pub let PrintedCardsPublicPath: PublicPath
     pub let PrintedCardsPrivatePath: PrivatePath
     pub let AdminStoragePath: StoragePath
-    pub let PackFulfilerPublicPath: PublicPath
+    pub let PackFulfilerPrivatePath: PrivatePath
 
 
 
@@ -225,6 +225,7 @@ pub contract WnW: NonFungibleToken, TradingNonFungibleCardGame {
         // and adds the ID to the id array
         //
         pub fun deposit(token: @NonFungibleToken.NFT) {
+            // comprobación de tipo???
             let token <- token as! @WnW.NFT
 
             let id: UInt64 = token.id
@@ -285,6 +286,47 @@ pub contract WnW: NonFungibleToken, TradingNonFungibleCardGame {
         return <- create Collection()
     }
 
+    pub resource Administrator: TradingNonFungibleCardGame.SetInitializer, TradingNonFungibleCardGame.SetPrintRunner, TradingNonFungibleCardGame.PackFulfiler{
+        // A capability allowing this resource to withdraw the NFT with the given ID from its collection.
+        // This capability allows the resource to withdraw *any* NFT, so you should be careful when giving
+        // such a capability to a resource and always check its code to make sure it will use it in the
+        // way that it claims.
+        access(contract) let printedCardsCollectionProviderCapability: Capability<&{NonFungibleToken.Provider, WnWCollectionPublic}>
+
+        //se puede tener una variable publica en un recurso pero no en un contrato verdad???
+        //pub var allowedAmount: UFix64
+
+        // fulfilPacks
+        //
+        // Only method to get new WnW Cards
+		// and deposit it in the recipients collection using their collection reference
+        //
+		pub fun fulfilPacks(set: {TradingNonFungibleCardGame.SetInfo}, amount: UFix64, packsOwnerCardCollectionPublic: &{NonFungibleToken.CollectionPublic}){
+			pre{
+                //habrá que comprobar
+            }
+
+            //hay que crear una collection de cartas con las cartas aleatorias sacadas de las cartas impresas, capability a esas cartas impresas en init o set up admin account
+            
+            //let keys: [UInt8] = [1,2]
+            //for key in keys {
+                //packsOwnerCardCollectionPublic.deposit(token: <- create WnW.NFT(initID: WnW.totalSupply, initData: WnWCardInfo, initSet: set))
+            //}
+            /* 
+            // deposit it in the recipient's account using their reference
+            */
+            //aqui mas bien que esto de arriba habria que llamar a la funcion que te devolviese tantas cartas*amount del set que sea
+            //return la collection provider de nfts que salen de los packs
+            
+        }
+
+        init(printedCardsCollectionProviderCapability: Capability<&{NonFungibleToken.Provider, WnWCollectionPublic}>){
+            self.printedCardsCollectionProviderCapability = printedCardsCollectionProviderCapability
+        }
+    }
+
+
+/* 
     pub resource Administrator{
 
         // createNewPackSeller
@@ -376,6 +418,9 @@ pub contract WnW: NonFungibleToken, TradingNonFungibleCardGame {
             self.allowedAmount = allowedAmount
         }
     }
+
+
+    */
     
 
     // fetch
@@ -404,26 +449,33 @@ pub contract WnW: NonFungibleToken, TradingNonFungibleCardGame {
         //
         // Almacenamiento Cartas impresas
         self.PrintedCardsStoragePath = /storage/WnWPrintedCardsCollection
-        // Almacenamiento recurso admin
-        self.AdminStoragePath = /storage/WnWAdmin
         // Capability pa ver cartas impresas
         self.PrintedCardsPublicPath = /public/WnWPrintedCardsCollection
         //Capability pa sacar cartas
         self.PrintedCardsPrivatePath = /private/WnWPrintedCardsCollection
+
+        // Almacenamiento recurso admin
+        self.AdminStoragePath = /storage/WnWAdmin
         // Capability para fulfilear packs
-        self.PackFulfilerPublicPath = /public/WnWPackFulfiler
+        self.PackFulfilerPrivatePath = /private/WnWPackFulfiler
 
         // Initialize the total supply
         self.totalSupply = 0
 
-        // create a new empty collection for storing the printed cards
-        let printedCards <- create Collection()
-        // save it to the account
-        self.account.save(<-printedCards, to: self.PrintedCardsStoragePath)
-
+        self.account.save(<- self.createEmptyCollection(), to: self.PrintedCardsStoragePath)
+        // create a public capability for the collection
+        self.account.link<&WnW.Collection{NonFungibleToken.CollectionPublic, WnWCollectionPublic}>(self.PrintedCardsPublicPath, target: self.PrintedCardsStoragePath)
+        // create a private capability for extracting the cards from the printed collection
+        self.account.link<&WnW.Collection{NonFungibleToken.Provider}>(self.PrintedCardsPrivatePath, target: self.PrintedCardsStoragePath)
         // Create the one true Admin object and deposit it into the conttract account.
-        let admin <- create Administrator()
-        self.account.save(<-admin, to: self.AdminStoragePath)
+        self.account.save(<- create Administrator(
+                printedCardsCollectionProviderCapability: self.account.getCapability<&{NonFungibleToken.Provider, WnWCollectionPublic}>(self.PrintedCardsPrivatePath)), 
+                to: self.AdminStoragePath)
+        // expose a private capability to the pack fulfiler
+        self.account.link<&WnW.Administrator{TradingNonFungibleCardGame.PackFulfiler}>(
+            self.PackFulfilerPrivatePath,
+            target: self.AdminStoragePath)
+        
 
         emit ContractInitialized()
 	}

@@ -84,6 +84,10 @@ pub contract interface TradingNonFungibleCardGame {
         pub let card: {CardInfo}
     }
 
+    pub resource interface Set{
+
+    }
+
 
     /// Set Starter
     ///
@@ -91,7 +95,7 @@ pub contract interface TradingNonFungibleCardGame {
     ///
     pub resource interface SetInitializer{
         /// openPacks takes a Vault and destroys it returning the number of opened packs
-        pub fun startSet(set: {SetInfo}, printedCardsCollectionPublic: &{NonFungibleToken.CollectionPublic})
+        //pub fun startSet(set: {SetInfo}, printedCardsCollectionPublic: &{NonFungibleToken.CollectionPublic})
     }
 
     /// Set PrintRunner
@@ -100,7 +104,7 @@ pub contract interface TradingNonFungibleCardGame {
     ///
     pub resource interface SetPrintRunner{
         /// this should create a number of NFTs depending on the number of packs createds
-        pub fun printRun(set: {SetInfo}, printedCardsCollectionPublic: &{NonFungibleToken.CollectionPublic})
+        //pub fun printRun(set: {SetInfo}, printedCardsCollectionPublic: &{NonFungibleToken.CollectionPublic})
     }
 
 

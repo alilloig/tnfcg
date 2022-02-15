@@ -255,7 +255,7 @@ pub contract WnWAlphaPacks: FungibleToken, TradingFungiblePack{
             // checks that there is a flow token receiver on the account
             self.account.getCapability<&FlowToken.Vault{FungibleToken.Receiver}>(/public/flowTokenReceiver).check<>(): "Account cannot receive flow tokens"
             // si cambiamos WnW para usar self.account habrá q cambiar packfulfiler por Administrator
-            self.account.getCapability<&WnW.PackFulfiler{TradingNonFungibleCardGame.PackFulfiler}>(WnW.PackFulfilerPublicPath).check<>(): "Account cannot fulfil WnW packs"
+            self.account.getCapability<&{TradingNonFungibleCardGame.PackFulfiler}>(WnW.PackFulfilerPrivatePath).check<>(): "Account cannot fulfil WnW packs"
         }
         
         // Initialize contract state.
@@ -278,7 +278,7 @@ pub contract WnWAlphaPacks: FungibleToken, TradingFungiblePack{
         // y la capability para fulfil sobres de WnW para enviar las NFCards
         //
         self.account.save(<-create Administrator(packSellerFlowTokenCapability: self.account.getCapability<&{FungibleToken.Receiver}>(/public/flowTokenReceiver), 
-                packFulfilerCapability: self.account.getCapability<&{TradingNonFungibleCardGame.PackFulfiler}>(WnW.PackFulfilerPublicPath)), to: self.AdminStoragePath)
+                packFulfilerCapability: self.account.getCapability<&{TradingNonFungibleCardGame.PackFulfiler}>(WnW.PackFulfilerPrivatePath)), to: self.AdminStoragePath)
 
         
         // Expose a public capability allowing users to get packs in exchange for flow tokens
