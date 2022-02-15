@@ -3,11 +3,13 @@ import MetadataViews from "./MetadataViews.cdc"
 import FungibleToken from "./FungibleToken.cdc"
 import TradingNonFungibleCardGame from "./TradingNonFungibleCardGame.cdc"
 import TradingFungiblePack from "./TradingFungiblePack.cdc"
+import FlowToken from "./FlowToken.cdc"
 //import NonFungibleToken from 0xf8d6e0586b0a20c7
 //import TradingNonFungibleCardGame from 0xf8d6e0586b0a20c7
 //import MetadataViews from 0xf8d6e0586b0a20c7
 //import FungibleToken from 0xf8d6e0586b0a20c7
 //import TradingFungiblePack from 0xf8d6e0586b0a20c7
+//import FlowToken from 0xf8d6e0586b0a20c7
 
 /**
 
@@ -67,8 +69,12 @@ pub contract WnW: NonFungibleToken, TradingNonFungibleCardGame {
     //
     pub let PrintedCardsStoragePath: StoragePath
     pub let PrintedCardsPublicPath: PublicPath
-    pub let AdminStoragePath: StoragePath
     pub let PrintedCardsPrivatePath: PrivatePath
+    pub let AdminStoragePath: StoragePath
+    pub let PackFulfilerPublicPath: PublicPath
+
+
+
 
     // totalSupply
     // The total number of WnW that have been minted
@@ -391,6 +397,11 @@ pub contract WnW: NonFungibleToken, TradingNonFungibleCardGame {
     // initializer
     //
 	init() {
+        pre{
+            // checks that there is a flow token receiver on the account
+            self.account.getCapability<&FlowToken.Vault{FungibleToken.Receiver}>(/public/flowTokenReceiver).check<>()
+        }
+        //
         // Almacenamiento Cartas impresas
         self.PrintedCardsStoragePath = /storage/WnWPrintedCardsCollection
         // Almacenamiento recurso admin
@@ -399,7 +410,8 @@ pub contract WnW: NonFungibleToken, TradingNonFungibleCardGame {
         self.PrintedCardsPublicPath = /public/WnWPrintedCardsCollection
         //Capability pa sacar cartas
         self.PrintedCardsPrivatePath = /private/WnWPrintedCardsCollection
-
+        // Capability para fulfilear packs
+        self.PackFulfilerPublicPath = /public/WnWPackFulfiler
 
         // Initialize the total supply
         self.totalSupply = 0

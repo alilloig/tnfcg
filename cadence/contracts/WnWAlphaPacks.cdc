@@ -1,15 +1,15 @@
-//import FungibleToken from 0xf8d6e0586b0a20c7
-//import TradingFungiblePack from 0xf8d6e0586b0a20c7
-//import NonFungibleToken from 0xf8d6e0586b0a20c7
-//import TradingNonFungibleCardGame from 0xf8d6e0586b0a20c7
-//import WnW from 0xf8d6e0586b0a20c7
 import FungibleToken from "./FungibleToken.cdc"
 import TradingFungiblePack from "./TradingFungiblePack.cdc"
 import NonFungibleToken from "./NonFungibleToken.cdc"
 import TradingNonFungibleCardGame from "./TradingNonFungibleCardGame.cdc"
 import WnW from "./WitchcraftAndWizardry.cdc"
 import FlowToken from "./FlowToken.cdc"
-
+//import FungibleToken from 0xf8d6e0586b0a20c7
+//import TradingFungiblePack from 0xf8d6e0586b0a20c7
+//import NonFungibleToken from 0xf8d6e0586b0a20c7
+//import TradingNonFungibleCardGame from 0xf8d6e0586b0a20c7
+//import WnW from 0xf8d6e0586b0a20c7
+//import FlowToken from 0xf8d6e0586b0a20c7
 
 /**
 
@@ -55,6 +55,7 @@ pub contract WnWAlphaPacks: FungibleToken, TradingFungiblePack{
 
     pub var setInfo: WnW.WnWSetInfo
 
+    //hacer una struct rarity en WnW???? en TNFCG???
     pub let rarityDistribution: {String: UInt8}
 
     // TokensInitialized
@@ -95,10 +96,10 @@ pub contract WnWAlphaPacks: FungibleToken, TradingFungiblePack{
     // Named paths
     //
     pub let VaultStoragePath: StoragePath
+    //este podria ser privado si solo queremos que se ingresen flows ahi desde 
     pub let ReceiverPublicPath: PublicPath
-    pub let BalancePublicPath: PublicPath
     pub let AdminStoragePath: StoragePath
-    pub let WnWAdminStoragePath: StoragePath
+    pub let PackSellerPublicPath: PublicPath
     pub let PackOpenerPublicPath: PublicPath
 
     // Vault
@@ -178,7 +179,82 @@ pub contract WnWAlphaPacks: FungibleToken, TradingFungiblePack{
 
 
 
+    pub resource Administrator: TradingFungiblePack.PackSeller, TradingFungiblePack.PackOpener{
+    
+        // A capability allowing this resource to withdraw the NFT with the given ID from its collection.
+        // This capability allows the resource to withdraw *any* NFT, so you should be careful when giving
+        // such a capability to a resource and always check its code to make sure it will use it in the
+        // way that it claims.
+        access(contract) let packSellerFlowTokenCapability: Capability<&{FungibleToken.Receiver}>
 
+        // A capability allowing this resource to withdraw the NFT with the given ID from its collection.
+        // This capability allows the resource to withdraw *any* NFT, so you should be careful when giving
+        // such a capability to a resource and always check its code to make sure it will use it in the
+        // way that it claims.
+        access(contract) let packFulfilerCapability: Capability<&{TradingNonFungibleCardGame.PackFulfiler}>
+
+        // The amount of Packs that the PackMinter is allowed to mint
+        pub var allowedSellingAmount: UFix64
+
+        // The amount of Packs that the PackOpener is allowed to open
+        pub var allowedOpeningAmount: UFix64
+        
+
+        // mintPacks
+        //
+        // Function that mints new Packs, adds them to the total supply,
+        // and returns them to the calling context.
+        //
+        pub fun sellPacks(payment: &FungibleToken.Vault, packsPayerPackReceiver: &{FungibleToken.Receiver}, amount: UFix64) {
+            pre {
+                payment.isInstance(Type<@FlowToken.Vault>()): "Payment must be done in Flow tokens"
+                amount <= self.allowedSellingAmount: "Amount minted must be less than the allowed amount of printed packs remaining"
+                //amount debe ser inferior al precio del sobre + amount
+            }
+            /*FALTA CALCULAR EL PRECIO A COBRAR!!! AMOUNT * PRECIO DE SOBRE!!! 
+                empieza el movidote de definir el set incluyendo precio del sobre
+            */
+            self.packSellerFlowTokenCapability.borrow()!.deposit(from: <- payment.withdraw(amount: 1.0))
+            WnWAlphaPacks.totalSupply = WnWAlphaPacks.totalSupply + amount
+            self.allowedSellingAmount = self.allowedSellingAmount - amount
+            self.allowedOpeningAmount = self.allowedOpeningAmount + amount
+            emit PacksSelled(amount: amount)
+            packsPayerPackReceiver.deposit(from: <- create Vault(balance: amount))
+        }
+
+        // openPacks
+        //
+        // Function for destroying packs
+        //
+        pub fun openPacks(packsToOpen: &FungibleToken.Vault, packsOwnerCardCollectionPublic: &{NonFungibleToken.CollectionPublic}){
+            pre {
+                packsToOpen.isInstance(Type<@WnWAlphaPacks.Vault>()): "Tokens must be WnW Alpha edition packs"
+                packsOwnerCardCollectionPublic.isInstance(Type<@WnW.Collection>()): "Reciving collection must belong to WnW"
+                packsToOpen.balance <= self.allowedOpeningAmount: "Amount opened must be less than the remaining amount of unopened packs"
+            }
+            let openedPacks <- packsToOpen.withdraw(amount: packsToOpen.balance)
+            WnWAlphaPacks.totalSupply = WnWAlphaPacks.totalSupply - openedPacks.balance
+            self.allowedOpeningAmount = self.allowedOpeningAmount - openedPacks.balance
+            let openedCards = self.packFulfilerCapability.borrow()!.fulfilPacks(set: WnWAlphaPacks.setInfo, amount: openedPacks.balance, packsOwnerCardCollectionPublic: packsOwnerCardCollectionPublic)
+            emit PacksOpened(amount: openedPacks.balance)
+            destroy openedPacks
+        }
+
+        init (packSellerFlowTokenCapability: Capability<&{FungibleToken.Receiver}>, 
+                packFulfilerCapability: Capability<&{TradingNonFungibleCardGame.PackFulfiler}>) {
+            
+            self.packSellerFlowTokenCapability = packSellerFlowTokenCapability
+            self.packFulfilerCapability = packFulfilerCapability
+            self.allowedSellingAmount = 0.0
+            self.allowedOpeningAmount = 0.0
+        
+        }
+    
+    }
+
+
+
+/*
     pub resource Administrator{
 
         // createNewPackSeller
@@ -292,31 +368,45 @@ pub contract WnWAlphaPacks: FungibleToken, TradingFungiblePack{
         
         }
     }
+*/
 
     init(setInfo: WnW.WnWSetInfo, rarityDistribution: {String: UInt8}) {
-        
-        // path para guardar el recurso vault (se guarda en setup account)
-        self.VaultStoragePath = /storage/WnWAlphaPacksVault
-        // path para guardar el recurso Admin (se guarda aqui en init)
-        self.AdminStoragePath = /storage/WnWAlphaPacksAdmin
-        self.WnWAdminStoragePath = /storage/WnWAdmin
-        // paths para guardar las capabilities publicas (se guarda en setup)
-        self.ReceiverPublicPath = /public/WnWAlphaPacksReceiver
-        self.BalancePublicPath = /public/WnWAlphaPacksBalance
-        // path pa la capability del opener
-        self.PackOpenerPublicPath = /public/WnWAlphaPacksPackOpener
+        pre{
+            // checks that there is a flow token receiver on the account
+            self.account.getCapability<&FlowToken.Vault{FungibleToken.Receiver}>(/public/flowTokenReceiver).check<>(): "Account cannot receive flow tokens"
+            // si cambiamos WnW para usar self.account habrá q cambiar packfulfiler por Administrator
+            self.account.getCapability<&WnW.PackFulfiler{TradingNonFungibleCardGame.PackFulfiler}>(WnW.PackFulfilerPublicPath).check<>(): "Account cannot fulfil WnW packs"
+        }
         
         // Initialize contract state.
+        //
         self.totalSupply = 0.0
-
-        self.setInfo = setInfo //sacarlo de WnW?
-
+        self.setInfo = setInfo
         self.rarityDistribution = rarityDistribution
 
+        // path para guardar el recurso vault donde recibir los sobres a abrir
+        self.VaultStoragePath = /storage/WnWAlphaPacksVault
+        // path para guardar las capabilitie publica (podria ser privada?) del recibidor de packs para abrirlos
+        self.ReceiverPublicPath = /public/WnWAlphaPacksReceiver
+        // path para guardar el recurso Admin (se guarda aqui en init)
+        self.AdminStoragePath = /storage/WnWAlphaPacksAdmin
+        // path para la capability del pack seller
+        self.PackSellerPublicPath = /public/WnWAlphaPacksSeller
+        // path pa la capability del opener
+        self.PackOpenerPublicPath = /public/WnWAlphaPacksOpener
+
+        self.account.save(<-WnWAlphaPacks.createEmptyVault(), to: self.VaultStoragePath)
+        // Create a public capability to the Vault that only exposes
+        // the deposit function through the Receiver interface
+        self.account.link<&WnWAlphaPacks.Vault{FungibleToken.Receiver}>(self.ReceiverPublicPath, target: self.VaultStoragePath)
+
         // Create the one true Admin object and deposit it into the conttract account.
-        // es peor esto que crear una variable con el recurso y luego
-        // mover el recurso al almacenamiento????
-        self.account.save(<-create Administrator(), to: self.AdminStoragePath)
+        // este recurso es el que puede vender y abrir packs
+        // recibe y guarda la capability para recibir tokens de flow (para recibir los pagos de la venta de sobres)
+        // y la capability para fulfil sobres de WnW para enviar las NFCards
+        //
+        self.account.save(<-create Administrator(packSellerFlowTokenCapability: self.account.getCapability<&{FungibleToken.Receiver}>(/public/flowTokenReceiver), 
+                packFulfilerCapability: self.account.getCapability<&{TradingNonFungibleCardGame.PackFulfiler}>(WnW.PackFulfilerPublicPath)), to: self.AdminStoragePath)
 
         // Emit an event that shows that the contract was initialized.
         emit TokensInitialized(initialSupply: self.totalSupply)
