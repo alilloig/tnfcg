@@ -63,12 +63,17 @@ pub contract interface TradingFungiblePack {
     ///
     pub resource interface PackSeller{
         // The amount of Packs that the PackMinter is allowed to mint
-        pub var allowedAmount: UFix64
+        pub var allowedSellingAmount: UFix64
         /// sellPacks takes a Vault with Flow currency and returns a Vault of TFP
         pub fun sellPacks(
             payment: &FungibleToken.Vault,
             packsPayerPackReceiver: &{FungibleToken.Receiver},
-            amount: UFix64)
+            amount: UFix64){
+                pre{
+                    amount > 0.0: "Amount selled must be greater than zero"
+                    amount % 10.0 == 0.0: "You cannot buy fractions of packs"
+                }
+            }
     }
 
     /// Pack Opener
@@ -82,12 +87,17 @@ pub contract interface TradingFungiblePack {
     ///
     pub resource interface PackOpener{
         // The amount of Packs that the PackMinter is allowed to mint
-        pub var allowedAmount: UFix64
+        pub var allowedOpeningAmount: UFix64
         /// openPacks takes a Vault and destroys it returning the collection containing the opened cards
         ///
         pub fun openPacks(
             packsToOpen: &FungibleToken.Vault,
-            packsOwnerCardCollectionPublic: &{NonFungibleToken.CollectionPublic})
+            packsOwnerCardCollectionPublic: &{NonFungibleToken.CollectionPublic}){
+                pre{
+                    packsToOpen.balance > 0.0: "Amount opened must be greater than zero"
+                    packsToOpen.balance % 10.0 == 0.0: "You cannot open fractions of packs"
+                }
+            }
     }
 
 }   
