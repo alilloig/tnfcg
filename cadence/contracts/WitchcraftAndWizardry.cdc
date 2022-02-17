@@ -71,6 +71,7 @@ pub contract WnW: NonFungibleToken, TradingNonFungibleCardGame {
     pub let PrintedCardsPublicPath: PublicPath
     pub let PrintedCardsPrivatePath: PrivatePath
     pub let AdminStoragePath: StoragePath
+    pub let PackFulfilerStoragePath: StoragePath
     pub let PackFulfilerPrivatePath: PrivatePath
 
 
@@ -402,6 +403,7 @@ pub contract WnW: NonFungibleToken, TradingNonFungibleCardGame {
 ******
 ******/
 
+    /*
     pub resource Administrator: TradingNonFungibleCardGame.PackFulfiler{
         // A capability allowing this resource to withdraw the NFT with the given ID from its collection.
         // This capability allows the resource to withdraw *any* NFT, so you should be careful when giving
@@ -440,13 +442,13 @@ pub contract WnW: NonFungibleToken, TradingNonFungibleCardGame {
             self.printedCardsCollectionProviderCapability = printedCardsCollectionProviderCapability
         }
     }
+    */
 
-/* 
     pub resource Administrator{
 
         // createNewPackFulfiler
         //
-        // Function that creates and returns a new PackMinter resource
+        // Function that creates and returns a new PackFulfiler resource
         //
         pub fun createNewPackFulfiler(printedCardsCollectionProviderCapability: Capability<&{NonFungibleToken.Provider, WnWCollectionPublic}>, allowedAmount: UFix64): @PackFulfiler {
             emit PackFulfilerCreated(allowedAmount: allowedAmount)
@@ -501,7 +503,7 @@ pub contract WnW: NonFungibleToken, TradingNonFungibleCardGame {
         // Only method to get new WnW Cards
 		// and deposit it in the recipients collection using their collection reference
         //
-		pub fun fulfilPacks(set: {TradingNonFungibleCardGame.SetInfo}, amount: UFix64, packsOwnerCardCollectionPublic: &{NonFungibleToken.CollectionPublic}){
+		pub fun fulfilPacks(setID: UInt8, amount: UFix64, packsOwnerCardCollectionPublic: &{NonFungibleToken.CollectionPublic}){
 			pre{
                 //habrá que comprobar
             }
@@ -525,9 +527,6 @@ pub contract WnW: NonFungibleToken, TradingNonFungibleCardGame {
             self.allowedAmount = allowedAmount
         }
     }
-
-
-    */
     
 
     // -----------------------------------------------------------------------
@@ -622,6 +621,8 @@ pub contract WnW: NonFungibleToken, TradingNonFungibleCardGame {
 
         // Almacenamiento recurso admin
         self.AdminStoragePath = /storage/WnWAdmin
+        // Almacenamiento pack fulfiler
+        self.PackFulfilerStoragePath = /storage/WnWPackFulfiler
         // Capability para fulfilear packs
         self.PackFulfilerPrivatePath = /private/WnWPackFulfiler
 
@@ -632,20 +633,9 @@ pub contract WnW: NonFungibleToken, TradingNonFungibleCardGame {
          **   que en vez de que Admin implemente las interfaces las implementen
          **   recursos como estaba antes (está comentado)
          **/  
-        self.account.save(<- WnW.createEmptyCollection(), to: self.PrintedCardsStoragePath)
-        // create a public capability for the collection
-        self.account.link<&WnW.Collection{NonFungibleToken.CollectionPublic, WnWCollectionPublic}>(self.PrintedCardsPublicPath, target: self.PrintedCardsStoragePath)
-        // create a private capability for extracting the cards from the printed collection
-        self.account.link<&WnW.Collection{NonFungibleToken.Provider}>(self.PrintedCardsPrivatePath, target: self.PrintedCardsStoragePath)
+
         // Create the one true Admin object and deposit it into the conttract account.
-        self.account.save(<- create Administrator(
-                printedCardsCollectionProviderCapability: self.account.getCapability<&{NonFungibleToken.Provider, WnWCollectionPublic}>(self.PrintedCardsPrivatePath)), 
-                to: self.AdminStoragePath)
-        // expose a private capability to the pack fulfiler
-        self.account.link<&WnW.Administrator{TradingNonFungibleCardGame.PackFulfiler}>(
-            self.PackFulfilerPrivatePath,
-            target: self.AdminStoragePath)
-        
+        self.account.save(<- create Administrator(), to: self.AdminStoragePath)
 
         emit ContractInitialized()
 	}
