@@ -29,7 +29,7 @@ transaction {
         }
 
         //if the account doesn't already have a packfulfiler
-        if signer.borrow<&{TradingNonFungibleCardGame.PackFulfiler}>(from: WnW.PackFulfilerStoragePath) == nil{
+        if signer.borrow<&WnW.PackFulfiler{TradingNonFungibleCardGame.PackFulfiler}>(from: WnW.PackFulfilerStoragePath) == nil{
             signer.save(
                 <- self.wnwAdmin.createNewPackFulfiler(
                         printedCardsCollectionProviderCapability: signer.getCapability<&{NonFungibleToken.Provider, WnW.WnWCollectionPublic}>(WnW.PrintedCardsPrivatePath), allowedAmount: 100.0), 
