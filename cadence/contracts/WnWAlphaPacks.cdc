@@ -138,6 +138,10 @@ pub contract WnWAlphaPacks: FungibleToken, TradingFungiblePack{
         // elsewhere.
         //
         pub fun withdraw(amount: UFix64): @FungibleToken.Vault {
+            pre{
+                //do we really want this??
+                amount % 1.0 == 0.0: "You cannot withdraw fractions of packs"
+            }
             self.balance = self.balance - amount
             emit TokensWithdrawn(amount: amount, from: self.owner?.address)
             return <-create Vault(balance: amount)
@@ -153,6 +157,10 @@ pub contract WnWAlphaPacks: FungibleToken, TradingFungiblePack{
         // been consumed and therefore can be destroyed.
         //
         pub fun deposit(from: @FungibleToken.Vault) {
+            pre{
+                //do we really want this??
+                from.balance % 1.0 == 0.0: "You cannot deposit fractions of packs"
+            }
             let vault <- from as! @WnWAlphaPacks.Vault
             self.balance = self.balance + vault.balance
             emit TokensDeposited(amount: vault.balance, to: self.owner?.address)
