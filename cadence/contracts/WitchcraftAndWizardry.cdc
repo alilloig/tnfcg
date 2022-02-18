@@ -172,7 +172,7 @@ pub contract WnW: NonFungibleToken, TradingNonFungibleCardGame {
         pub let id: UInt64
         
         // The token's card
-        pub let data: WnWTNFCData
+        pub let data: {TradingNonFungibleCardGame.TNFCData}
         
         // initializer
         init(initID: UInt64, cardID: UInt32, setID: UInt32, rarity: UInt8, collectorNumber: UInt32){
@@ -402,47 +402,6 @@ pub contract WnW: NonFungibleToken, TradingNonFungibleCardGame {
 ******
 ******
 ******/
-
-    /*
-    pub resource Administrator: TradingNonFungibleCardGame.PackFulfiler{
-        // A capability allowing this resource to withdraw the NFT with the given ID from its collection.
-        // This capability allows the resource to withdraw *any* NFT, so you should be careful when giving
-        // such a capability to a resource and always check its code to make sure it will use it in the
-        // way that it claims.
-        access(contract) let printedCardsCollectionProviderCapability: Capability<&{NonFungibleToken.Provider, WnWCollectionPublic}>
-
-        //se puede tener una variable publica en un recurso pero no en un contrato verdad???
-        //pub var allowedAmount: UFix64
-
-        // fulfilPacks
-        //
-        // Only method to get new WnW Cards
-		// and deposit it in the recipients collection using their collection reference
-        //
-		pub fun fulfilPacks(setID: UInt8, amount: UFix64, packsOwnerCardCollectionPublic: &{NonFungibleToken.CollectionPublic}){
-			pre{
-                //habrá que comprobar
-            }
-
-            //hay que crear una collection de cartas con las cartas aleatorias sacadas de las cartas impresas, capability a esas cartas impresas en init o set up admin account
-            
-            //let keys: [UInt8] = [1,2]
-            //for key in keys {
-                //packsOwnerCardCollectionPublic.deposit(token: <- create WnW.NFT(initID: WnW.totalSupply, initData: WnWCardInfo, initSet: set))
-            //}
-            /* 
-            // deposit it in the recipient's account using their reference
-            */
-            //aqui mas bien que esto de arriba habria que llamar a la funcion que te devolviese tantas cartas*amount del set que sea
-            //return la collection provider de nfts que salen de los packs
-            
-        }
-
-        init(printedCardsCollectionProviderCapability: Capability<&{NonFungibleToken.Provider, WnWCollectionPublic}>){
-            self.printedCardsCollectionProviderCapability = printedCardsCollectionProviderCapability
-        }
-    }
-    */
 
     pub resource Administrator{
 
