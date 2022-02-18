@@ -70,7 +70,7 @@ pub contract interface TradingNonFungibleCardGame {
     // Emitted when a new Card is added to a Set
     pub event CardAddedToSet(setID: UInt32, CardID: UInt32)
     // Emitted when a Set is locked, meaning Cards cannot be added
-    pub event SetLocked(setID: UInt32)
+    pub event SetPrintingStoped(setID: UInt32)
     // Emitted when a Card is minted from a Set
     pub event TNFCMinted(tnfcID: UInt64, CardID: UInt32, setID: UInt32, serialNumber: UInt32)
 
@@ -319,7 +319,9 @@ pub contract interface TradingNonFungibleCardGame {
         pub fun getTNFCMintedIDsByRarity(): {UInt8: [UInt64]}
     }
 
-
+    pub resource interface CardCreator{
+        pub fun createNewCard(metadata: {String: String})
+    }
 
 
 /* 
@@ -342,6 +344,8 @@ pub contract interface TradingNonFungibleCardGame {
     }
 */
 
+
+
     /// Pack fulfiler
     ///
     /// The interface that enforces the requirements for opening Packs
@@ -350,5 +354,7 @@ pub contract interface TradingNonFungibleCardGame {
         /// openPacks takes a Vault and destroys it returning the number of opened packs
         pub fun fulfilPacks(setID: UInt8, amount: UFix64, packsOwnerCardCollectionPublic: &{NonFungibleToken.CollectionPublic})
     }
+
+
     
 }
