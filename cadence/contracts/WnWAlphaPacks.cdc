@@ -60,30 +60,20 @@ pub contract WnWAlphaPacks: FungibleToken, TradingFungiblePack{
 
     pub struct WnWAlphaPacksInfo: TradingFungiblePack.PackInfo{
         pub let setID: UInt32
-        pub let setRarities: {UInt8: TradingFungiblePack.Rarity}
-        pub let packRarities: {UInt8: TradingFungiblePack.Rarity}
+        //pub let setRarities: {UInt8: String}
+        //pub let setRarityDistribution: {UInt8: UFix64}
+        pub let packRarities: {UInt8: String}
+        pub let packRarityDistribution: {UInt8: UFix64}
         pub let packRarityProbability: {UInt8: UFix64}
-        init(setID: UInt32, packRarities: {UInt8: Rarity}){
+        init(setID: UInt32, packRarities: {UInt8: String}, packRarityDistribution: {UInt8: UFix64}){
             self.setID = setID
-            self.setRarities = WnW.getSetRarities(setID: setID)!
             self.packRarities = packRarities
+            self.packRarityDistribution = packRarityDistribution
             self.packRarityProbability =  {}
             for rarityID in packRarities.keys{
                 self.packRarityProbability[rarityID] = 
-                    packRarities[rarityID]!.distribution / self.setRarities[rarityID]!.distribution
+                    self.packRarityDistribution[rarityID]! / 3.0//WnW.getSetRarityDistribution(setID: setID, rarityID: rarityID)
             }
-
-        }
-    }
-
-    pub struct Rarity{
-        pub let rarityID: UInt8
-        pub let name: String
-        pub let distribution: UFix64
-        init(rarityID: UInt8, name: String, distribution: UFix64){
-            self.rarityID = rarityID
-            self.name = name
-            self.distribution = distribution
         }
     }
 
@@ -312,7 +302,7 @@ pub contract WnWAlphaPacks: FungibleToken, TradingFungiblePack{
     }
 
 
-    init(setID: UInt32, packRarities: {UInt8: Rarity}) {
+    init(setID: UInt32, packRarities: {UInt8: String}, packRarityDistribution: {UInt8: UFix64}) {
         pre{
             // checks that there is a flow token receiver on the account
             self.account.getCapability<&FlowToken.Vault{FungibleToken.Receiver}>(/public/flowTokenReceiver).check<>(): "Account cannot receive flow tokens"
@@ -324,7 +314,7 @@ pub contract WnWAlphaPacks: FungibleToken, TradingFungiblePack{
         //
         self.totalSupply = 0.0
         self.setID = setID
-        self.TFPackInfo = WnWAlphaPacksInfo(setID: setID, packRarities:  packRarities)
+        self.TFPackInfo = WnWAlphaPacksInfo(setID: setID, packRarities: packRarities, packRarityDistribution: packRarityDistribution)
 
 
         self.VaultStoragePath = /storage/WnWAlphaPacksVault
