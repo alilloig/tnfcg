@@ -56,17 +56,12 @@ pub contract interface TradingFungiblePack {
 
     pub struct interface PackInfo {
         pub let setID: UInt32
-        pub let setRarities: {UInt8: Rarity}
-        pub let packRarities: {UInt8: Rarity}
+        pub let setRarities: {UInt8: String}
+        pub let setRarityDistribution: {UInt8: UFix64}
+        pub let packRarities: {UInt8: String}
+        pub let packRarityDistribution: {UInt: UFix64}
         pub let packRarityProbability: {UInt8: UFix64}
     }
-        
-    pub struct Rarity{
-        pub let rarityID: UInt8
-        pub let name: String
-        pub let distribution: UFix64
-    }
-    
     
     /// Pack Seller
     ///
