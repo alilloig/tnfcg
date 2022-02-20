@@ -105,6 +105,8 @@ pub contract interface TradingNonFungibleCardGame {
     // have been minted to date. Also used as global moment IDs for minting.
     pub var totalSupply: UInt64
 
+
+
     // -----------------------------------------------------------------------
     // TopShot contract-level Composite Type definitions
     // -----------------------------------------------------------------------
@@ -123,6 +125,7 @@ pub contract interface TradingNonFungibleCardGame {
     // its metadata. The Cards are publicly accessible, so anyone can
     // read the metadata associated with a specific Card ID
     //
+
     pub struct interface Card {
 
         // The unique ID for the Card
@@ -143,7 +146,7 @@ pub contract interface TradingNonFungibleCardGame {
         pub let setID: UInt32
 
         // The id of the card within the set
-        pub let rarity: UInt8
+        pub let rarityID: UInt8
 
         // The place in the edition that this Moment was minted
         // Otherwise know as the serial number
@@ -194,6 +197,7 @@ pub contract interface TradingNonFungibleCardGame {
         // imprimir mas sobres del set o no
         access(contract) var printing: Bool
 
+        // Toda esta chapa es vieja de antes de definir la Rarity en pack
         // De aquí no pasa definir las rarities, entiendo que desde aqui 
         // queda definido el concepto, y hay que ver como afecta eso a cards
         // que pasa de ser un feliz array a un diccionario con clave la rareza
@@ -201,7 +205,7 @@ pub contract interface TradingNonFungibleCardGame {
         // {1: "Common", 2: "Uncommon", 3: "Rare"}
         // los sobres referenciarian a esta rareza tambien, tendrán que tener un
         // diccionario de 
-        pub let rarities: {UInt8: String}
+        access(contract) var setRarities: {UInt8: TradingFungiblePack.Rarity}
 
         // Array of plays that are a part of this set.
         // When a card is added to the set, its ID gets appended here.
@@ -217,7 +221,7 @@ pub contract interface TradingNonFungibleCardGame {
 
         // Mapping (no estamos tan mal!!) de los IDs de las cartas minteadas
         // para hacer el sorteito y saber que id extraer de todas las impresas
-        access(contract) var tnfcMintedIDsByRarity: {UInt8: [UInt64]}
+        access(contract) var mintedTNFCsIDsByRarity: {UInt8: [UInt64]}
 
 
         // addPlay adds a play to the set
@@ -299,16 +303,16 @@ pub contract interface TradingNonFungibleCardGame {
         // Hay que hacer comentarios para a bunch of getters
         // asi bonicos
         //
-        pub fun getTNFCMintedIDsByRarity(): {UInt8: [UInt64]}
+        pub fun getmintedTNFCsIDsByRarity(): {UInt8: [UInt64]}
     }
 
     pub struct interface SetData{
         pub let setID: UInt32
         pub let name: String
-        pub let rarities: {UInt8: String}
-        //access(contract) let cardsByRarity: {UInt8: [UInt32]}
-        //access(contract) let printing: Bool
-        //access(contract) let numerMintedPerCard: {UInt32: UInt32}
+        pub let rarities: {UInt8: TradingFungiblePack.Rarity}
+        access(contract) let cardsByRarity: {UInt8: [UInt32]}
+        access(contract) let printing: Bool
+        access(contract) let numerMintedPerCard: {UInt32: UInt32}
     }
 
     pub resource interface CardCreator{
@@ -345,7 +349,7 @@ pub contract interface TradingNonFungibleCardGame {
     ///
     pub resource interface PackFulfiler{
         /// openPacks takes a Vault and destroys it returning the number of opened packs
-        pub fun fulfilPacks(setID: UInt8, amount: UFix64, packsOwnerCardCollectionPublic: &{NonFungibleToken.CollectionPublic})
+        pub fun fulfilPacks(setID: UInt32, amount: UFix64, packsOwnerCardCollectionPublic: &{NonFungibleToken.CollectionPublic})
     }
 
 
