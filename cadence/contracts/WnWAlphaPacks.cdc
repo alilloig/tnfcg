@@ -54,10 +54,38 @@ pub contract WnWAlphaPacks: FungibleToken, TradingFungiblePack{
     pub var totalSupply: UFix64
 
     // Id from the set the packs belongs to
-    pub let setID: UInt8
+    pub let setID: UInt32
 
-    //hacer una struct rarity en WnW???? en TNFCG???
-    pub let rarityDistribution: {String: UInt8}
+    pub let TFPackInfo: {TradingFungiblePack.PackInfo}
+
+    pub struct WnWAlphaPacksInfo: TradingFungiblePack.PackInfo{
+        pub let setID: UInt32
+        pub let setRarities: {UInt8: TradingFungiblePack.Rarity}
+        pub let packRarities: {UInt8: TradingFungiblePack.Rarity}
+        pub let packRarityProbability: {UInt8: UFix64}
+        init(setID: UInt32, packRarities: {UInt8: Rarity}){
+            self.setID = setID
+            self.setRarities = WnW.getSetRarities(setID: setID)!
+            self.packRarities = packRarities
+            self.packRarityProbability =  {}
+            for rarityID in packRarities.keys{
+                self.packRarityProbability[rarityID] = 
+                    packRarities[rarityID]!.distribution / self.setRarities[rarityID]!.distribution
+            }
+
+        }
+    }
+
+    pub struct Rarity{
+        pub let rarityID: UInt8
+        pub let name: String
+        pub let distribution: UFix64
+        init(rarityID: UInt8, name: String, distribution: UFix64){
+            self.rarityID = rarityID
+            self.name = name
+            self.distribution = distribution
+        }
+    }
 
     // TokensInitialized
     //
@@ -284,7 +312,7 @@ pub contract WnWAlphaPacks: FungibleToken, TradingFungiblePack{
     }
 
 
-    init(setID: UInt8, rarityDistribution: {String: UInt8}) {
+    init(setID: UInt32, packRarities: {UInt8: Rarity}) {
         pre{
             // checks that there is a flow token receiver on the account
             self.account.getCapability<&FlowToken.Vault{FungibleToken.Receiver}>(/public/flowTokenReceiver).check<>(): "Account cannot receive flow tokens"
@@ -296,7 +324,7 @@ pub contract WnWAlphaPacks: FungibleToken, TradingFungiblePack{
         //
         self.totalSupply = 0.0
         self.setID = setID
-        self.rarityDistribution = rarityDistribution
+        self.TFPackInfo = WnWAlphaPacksInfo(setID: setID, packRarities:  packRarities)
 
 
         self.VaultStoragePath = /storage/WnWAlphaPacksVault
