@@ -85,10 +85,9 @@ pub contract interface TradingNonFungibleCardGame {
     pub event TNFCDestroyed(id: UInt64)
 
     // -----------------------------------------------------------------------
-    // TopShot contract-level fields.
+    // TNFCG contract-level fields.
     // These contain actual values that are stored in the smart contract.
     // -----------------------------------------------------------------------
-
 
     // The ID that is used to create Cards. 
     // Every time a Card is created, CardID is assigned 
@@ -108,7 +107,7 @@ pub contract interface TradingNonFungibleCardGame {
 
 
     // -----------------------------------------------------------------------
-    // TopShot contract-level Composite Type definitions
+    // Trading Non Fungible Card Game interface contract-level Composite Type definitions
     // -----------------------------------------------------------------------
     // These are just *definitions* for Types that this contract
     // and other accounts can use. These definitions do not contain
@@ -131,8 +130,8 @@ pub contract interface TradingNonFungibleCardGame {
         //pub let setRarities: {UInt8: String}
         //pub let setRarityDistribution: {UInt8: UFix64}
         pub let packRarities: {UInt8: String}
-        pub let packRarityDistribution: {UInt8: UFix64}
-        pub let packRarityProbability: {UInt8: UFix64}
+        pub let packRaritiesDistribution: {UInt8: UFix64}
+        pub let packRaritiesProbability: {UInt8: UFix64}
     }
 
     pub struct interface Card {
@@ -163,8 +162,6 @@ pub contract interface TradingNonFungibleCardGame {
 
     }
 
-
-
     pub resource interface TradingNonFungibleCard{
         pub let data: {TNFCData}
     }
@@ -186,7 +183,6 @@ pub contract interface TradingNonFungibleCardGame {
     //
     // If retireAll() and lock() are called back-to-back, 
     // the Set is closed off forever and nothing more can be done with it.
-    
     pub resource interface Set{
         
         // Unique ID for the set
@@ -220,13 +216,11 @@ pub contract interface TradingNonFungibleCardGame {
         // {1: "Common", 2: "Uncommon", 3: "Rare"}
         // los sobres referenciarian a esta rareza tambien, tendrán que tener un
         // diccionario de 
-        access(contract) let setRarities: {UInt8: String}
+        access(contract) let rarities: {UInt8: String}
 
-        access(contract) var setRarityDistribution: {UInt8: UFix64}
+        access(contract) var raritiesDistribution: {UInt8: UFix64}
 
         //  INFORMACION DE LOS PACKS QUE SE VENDEN DE UN SET
-        //
-        //
         //
         access(contract) var packsInfo: {UInt8: TNFCGPackInfo}
 
@@ -245,25 +239,25 @@ pub contract interface TradingNonFungibleCardGame {
         // para hacer el sorteito y saber que id extraer de todas las impresas
         access(contract) var mintedTNFCsIDsByRarity: {UInt8: [UInt64]}
 
-
-        // addPlay adds a play to the set
+        /* 
+        // addCard adds a card to the set
         //
-        // Parameters: playID: The ID of the Play that is being added
+        // Parameters: cardID: The ID of the Card that is being added
         //
         // Pre-Conditions:
-        // The Play needs to be an existing play
+        // The Card needs to be an existing card
         // The Set needs to be not locked
-        // The Play can't have already been added to the Set
+        // The Card can't have already been added to the Set
         //
         pub fun addCard(cardID: UInt32, ratiry: UInt8) {
             pre {
-                !self.readyToPrint: "Cannot add the play to the Set after the set has started to be printed."
-                self.numberMintedPerCard[cardID] == nil: "The play has already beed added to the set."
+                !self.readyToPrint: "Cannot add the card to the Set after the set has started to be printed."
+                self.numberMintedPerCard[cardID] == nil: "The card has already beed added to the set."
             }
             post {
                 self.numberMintedPerCard[cardID] == 0: "The card has not been added."
             }
-        }
+        }*/
 
         // stopPrinting() locks the Set so that no more cards can be printed
         //
@@ -280,23 +274,24 @@ pub contract interface TradingNonFungibleCardGame {
             }
         }
 
-        // mintMoment mints a new Moment and returns the newly minted Moment
+        /* 
+        // mintTNFC mints a new TNFC and returns the newly minted TNFC
         // 
-        // Parameters: playID: The ID of the Play that the Moment references
+        // Parameters: cardID: The ID of the Card that the TNFC references
         //
         // Pre-Conditions:
-        // The Play must exist in the Set and be allowed to mint new TNFCs
+        // The Card must exist in the Set and be allowed to mint new TNFCs
         //
         // Returns: The NFT that was minted
         // 
-        pub fun mintMoment(playID: UInt32): @NonFungibleToken.NFT {
+        pub fun mintTNFC(cardID: UInt32): @NonFungibleToken.NFT {
             pre {
                 self.readyToPrint
                 self.printingInProgress
             }
         }
 
-        // batchMintMoment mints an arbitrary quantity of TNFCs 
+        // batchMintTNFC mints an arbitrary quantity of TNFCs 
         // and returns them as a Collection
         //
         // Parameters: playID: the ID of the Play that the TNFCs are minted for
@@ -304,32 +299,13 @@ pub contract interface TradingNonFungibleCardGame {
         //
         // Returns: Collection object that contains all the TNFCs that were minted
         //
-        pub fun batchMintMoment(playID: UInt32, quantity: UInt64): @NonFungibleToken.Collection{
+        pub fun batchMintTNFC(playID: UInt32, quantity: UInt64): @NonFungibleToken.Collection{
             pre {
                 self.readyToPrint
                 self.printingInProgress
             }
         }
-
-        // Hay que hacer comentarios para a bunch of getters
-        // asi bonicos
-        //
-        pub fun getCards(): [UInt32]
-
-        // Hay que hacer comentarios para a bunch of getters
-        // asi bonicos
-        //
-        pub fun isPrinting(): Bool
-
-        // Hay que hacer comentarios para a bunch of getters
-        // asi bonicos
-        //
-        pub fun getNumMintedPerCard(): {UInt32: UInt32}
-
-        // Hay que hacer comentarios para a bunch of getters
-        // asi bonicos
-        //
-        pub fun getmintedTNFCsIDsByRarity(): {UInt8: [UInt64]}
+        */
     }
 
     pub struct interface SetData{
@@ -337,17 +313,32 @@ pub contract interface TradingNonFungibleCardGame {
         pub let name: String
         pub let readyToPrint: Bool
         pub let printingInProgress: Bool
-        access(contract) let setRarities: {UInt8: String}
-        access(contract) let rarityDistribution: {UInt8: UFix64}
+        access(contract) let rarities: {UInt8: String}
+        access(contract) let raritiesDistribution: {UInt8: UFix64}
         access(contract) let cardsByRarity: {UInt8: [UInt32]}
-        access(contract) let numerMintedPerCard: {UInt32: UInt32}
+        access(contract) let numberMintedPerCard: {UInt32: UInt32}
     }
 
+    // -----------------------------------------------------------------------
+    // TradingNonFungibleCardGame contract admin resources
+    // -----------------------------------------------------------------------
+    /// Pack fulfiler
+    ///
+    /// The interface that enforces the requirements for opening Packs
+    ///
     pub resource interface CardCreator{
         pub fun createNewCard(metadata: {String: String}): UInt32
         pub fun batchCreateNewCards(metadatas: [{String: String}]): [UInt32]
     }
 
+    /// Pack fulfiler
+    ///
+    /// The interface that enforces the requirements for opening Packs
+    ///
+    pub resource interface PackFulfiler{
+        /// openPacks takes a Vault and destroys it returning the number of opened packs
+        pub fun fulfilPacks(setID: UInt32, amount: UFix64, packsOwnerCardCollectionPublic: &{NonFungibleToken.CollectionPublic})
+    }
 
 /* 
     /// Set Starter
@@ -368,18 +359,4 @@ pub contract interface TradingNonFungibleCardGame {
         //pub fun printRun(set: {SetInfo}, printedCardsCollectionPublic: &{NonFungibleToken.CollectionPublic})
     }
 */
-
-
-
-    /// Pack fulfiler
-    ///
-    /// The interface that enforces the requirements for opening Packs
-    ///
-    pub resource interface PackFulfiler{
-        /// openPacks takes a Vault and destroys it returning the number of opened packs
-        pub fun fulfilPacks(setID: UInt32, amount: UFix64, packsOwnerCardCollectionPublic: &{NonFungibleToken.CollectionPublic})
-    }
-
-
-    
 }
