@@ -49,8 +49,24 @@ pub contract interface TradingFungiblePack {
     // The event that is emitted when a new opener resource is created
     pub event PackOpenerCreated(allowedAmount: UFix64)
 
-    // Dictionary containing how many copies of each rarities comes with the pack
-    pub let rarityDistribution: {String: UInt8}
+    // Id from the set the packs belongs to
+    pub let setID: UInt32
+
+    pub let TFPackInfo: {PackInfo}
+
+    pub struct interface PackInfo {
+        pub let setID: UInt32
+        pub let setRarities: {UInt8: Rarity}
+        pub let packRarities: {UInt8: Rarity}
+        pub let packRarityProbability: {UInt8: UFix64}
+    }
+        
+    pub struct Rarity{
+        pub let rarityID: UInt8
+        pub let name: String
+        pub let distribution: UFix64
+    }
+    
     
     /// Pack Seller
     ///
