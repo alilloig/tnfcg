@@ -59,8 +59,8 @@ pub contract interface TradingFungiblePack {
         //pub let setRarities: {UInt8: String}
         //pub let setRarityDistribution: {UInt8: UFix64}
         pub let packRarities: {UInt8: String}
-        pub let packRarityDistribution: {UInt8: UFix64}
-        pub let packRarityProbability: {UInt8: UFix64}
+        pub let packRaritiesDistribution: {UInt8: UFix64}
+        pub let packRaritiesProbability: {UInt8: UFix64}
     }
 
     /// Pack Seller
