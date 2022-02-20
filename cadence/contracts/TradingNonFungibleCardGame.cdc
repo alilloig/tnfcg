@@ -90,14 +90,6 @@ pub contract interface TradingNonFungibleCardGame {
     // -----------------------------------------------------------------------
 
 
-
-    // Variable size dictionary of Card structs
-    access(contract) var cardDatas: {UInt32: {Card}}
-
-    // Variable size dictionary of Set resources
-    access(contract) var sets: @{UInt32: {Set}}
-
-
     // The ID that is used to create Cards. 
     // Every time a Card is created, CardID is assigned 
     // to the new Card's ID and then is incremented by 1.
@@ -310,17 +302,18 @@ pub contract interface TradingNonFungibleCardGame {
         pub fun getTNFCMintedIDsByRarity(): {UInt8: [UInt64]}
     }
 
-    pub resource interface SetPublic{
-        pub fun getSetID(): UInt32
-        pub fun getName(): String
-        pub fun getCards(): [UInt32] 
-        pub fun isPrinting(): Bool
-        pub fun getNumberMintedPerCard(): {UInt32: UInt32}
-        pub fun getTNFCMintedIDsByRarity(): {UInt8: [UInt64]}
+    pub struct interface SetData{
+        pub let setID: UInt32
+        pub let name: String
+        pub let rarities: {UInt8: String}
+        //access(contract) let cardsByRarity: {UInt8: [UInt32]}
+        //access(contract) let printing: Bool
+        //access(contract) let numerMintedPerCard: {UInt32: UInt32}
     }
 
     pub resource interface CardCreator{
-        pub fun createNewCard(metadata: {String: String})
+        pub fun createNewCard(metadata: {String: String}): UInt32
+        pub fun batchCreateNewCards(metadatas: [{String: String}]): [UInt32]
     }
 
 

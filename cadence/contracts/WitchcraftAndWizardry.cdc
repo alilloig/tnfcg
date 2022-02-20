@@ -51,19 +51,36 @@ Collection to complete the transfer.
 //
 pub contract WnW: NonFungibleToken, TradingNonFungibleCardGame {
 
-    // Events
-    //
-    pub event ContractInitialized()
-    pub event Withdraw(id: UInt64, from: Address?)
-    pub event Deposit(id: UInt64, to: Address?)
-    pub event CardMinted(id: UInt64)
-    pub event CardBurned(id: UInt64)
+    // -----------------------------------------------------------------------
+    // TradingNonFungibleCardGame contract interface Events
+    // -----------------------------------------------------------------------
 
-    //mai events
-    pub event SetInitializerCreated()
-    pub event PackFulfilerCreated(allowedAmount: UFix64)
-    pub event SetInitialized(setName: String)
-    pub event PacksFulfiled(amount: UFix64)
+    // Emitted when a TNFCG contract is created
+    pub event ContractInitialized()
+
+    // Emitted when a new CardInfo struct is created
+    pub event CardCreated(id: UInt32, metadata: {String:String})
+
+    // Events for Set-Related actions
+    //
+    // Emitted when a new Set is created
+    pub event SetCreated(setID: UInt32)
+    // Emitted when a new Card is added to a Set
+    pub event CardAddedToSet(setID: UInt32, CardID: UInt32)
+    // Emitted when a Set is locked, meaning Cards cannot be added
+    pub event SetPrintingStoped(setID: UInt32)
+    // Emitted when a Card is minted from a Set
+    pub event TNFCMinted(tnfcID: UInt64, CardID: UInt32, setID: UInt32, serialNumber: UInt32)
+
+    // Events for Collection-related actions
+    //
+    // Emitted when a tnfc is withdrawn from a Collection
+    pub event Withdraw(id: UInt64, from: Address?)
+    // Emitted when a tnfc is deposited into a Collection
+    pub event Deposit(id: UInt64, to: Address?)
+
+    // Emitted when a Card is destroyed
+    pub event TNFCDestroyed(id: UInt64)
 
     // Named Paths
     //
@@ -101,8 +118,8 @@ pub contract WnW: NonFungibleToken, TradingNonFungibleCardGame {
         pub let cardID: UInt32
         pub let metadata: {String: String}
 
-        init(cardID: UInt32, metadata: {String: String}) {
-            self.cardID = cardID
+        init(metadata: {String: String}) {
+            self.cardID = WnW.nextCardID
             self.metadata = metadata
         }
     }
@@ -141,7 +158,7 @@ pub contract WnW: NonFungibleToken, TradingNonFungibleCardGame {
         pub let collectorNumber: UInt32
         pub let cardID: UInt32
         pub let setID: UInt32
-        pub let numTNFCsInEdition: UInt32?
+        pub let numTNFCsInSet: UInt32?
         // añadir coste, color, tipo, reglas, fuerza, resistencia... aqui se definiria el game design
         // con lo que hay queda definido nada más el coleccionable, y sin arte ojo
 
@@ -152,7 +169,7 @@ pub contract WnW: NonFungibleToken, TradingNonFungibleCardGame {
             collectorNumber: UInt32,
             cardID: UInt32,
             setID: UInt32,
-            numTNFCsInEdition: UInt32?
+            numTNFCsInSet: UInt32?
         ) {
             self.name = name
             self.setName = setName
@@ -160,7 +177,7 @@ pub contract WnW: NonFungibleToken, TradingNonFungibleCardGame {
             self.collectorNumber = collectorNumber
             self.cardID = cardID
             self.setID = setID
-            self.numTNFCsInEdition = numTNFCsInEdition
+            self.numTNFCsInSet = numTNFCsInSet
         }
     }
 
@@ -216,17 +233,36 @@ pub contract WnW: NonFungibleToken, TradingNonFungibleCardGame {
                     return WnWTNFCMetadataView(
                         name: WnW.getCardMetaDataByField(cardID: self.data.cardID, field: "name"),
                         setName: WnW.getSetName(setID: self.data.setID),
-                        rarity: WnW.getCardMetaDataByField(cardID: self.data.cardID, field: "FirstName"),
+                        rarity: WnW.getCardMetaDataByField(cardID: self.data.cardID, field: "rarity"),
                         collectorNumber: self.data.collectorNumber,
                         cardID: self.data.cardID,
                         setID: self.data.setID,
-                        numTNFCsInEdition: WnW.getNumTNFCsInEdition(setID: self.data.setID, cardID: self.data.cardID)
+                        numTNFCsInSet: WnW.getNumTNFCsInSet(setID: self.data.setID, cardID: self.data.cardID)
                     )
             }
 
             return nil
         }       
 
+    }
+
+    pub struct WnWSetData: TradingNonFungibleCardGame.SetData{
+        pub let setID: UInt32
+        pub let name: String
+        pub let rarities: {UInt8: String}
+        access(contract) let cardsByRarity: {UInt8: [UInt32]}
+        access(contract) let printing: Bool
+        access(contract) let numerMintedPerCard: {UInt32: UInt32}
+        init(setID: UInt32){
+            let set = &WnW.sets[setID] as &WnWSet
+            self.setID = setID
+            self.name = set.name
+            self.rarities = set.rarities
+            self.cardsByRarity = set.cardsByRarity
+            self.printing = set.printing
+            self.numerMintedPerCard = set.numberMintedPerCard
+
+        }
     }
 
 
@@ -285,7 +321,6 @@ pub contract WnW: NonFungibleToken, TradingNonFungibleCardGame {
             self.numberMintedPerCard = {}
             self.tnfcMintedIDsByRarity = {}
         }
-
     }
     
     /*ESTO SOBRA??? SOLO ES PARA BORROW???? */
@@ -344,6 +379,22 @@ pub contract WnW: NonFungibleToken, TradingNonFungibleCardGame {
 
             destroy oldToken
         }
+        
+        // batchDeposit takes a Collection object as an argument
+        // and deposits each contained NFT into this Collection
+        pub fun batchDeposit(tokens: @NonFungibleToken.Collection) {
+
+            // Get an array of the IDs to be deposited
+            let keys = tokens.getIDs()
+
+            // Iterate through the keys in the collection and deposit each one
+            for key in keys {
+                self.deposit(token: <-tokens.withdraw(withdrawID: key))
+            }
+
+            // Destroy the empty Collection
+            destroy tokens
+        }
 
         // getIDs
         // Returns an array of the IDs that are in the collection
@@ -372,6 +423,12 @@ pub contract WnW: NonFungibleToken, TradingNonFungibleCardGame {
             } else {
                 return nil
             }
+        }
+
+        pub fun borrowViewResolver(id: UInt64): &AnyResource{MetadataViews.Resolver} {
+            let nft = &self.ownedNFTs[id] as auth &NonFungibleToken.NFT
+            let WnWNFT = nft as! &WnW.NFT
+            return WnWNFT as &AnyResource{MetadataViews.Resolver}
         }
 
         // destructor
@@ -410,10 +467,17 @@ pub contract WnW: NonFungibleToken, TradingNonFungibleCardGame {
         // Function that creates and returns a new PackFulfiler resource
         //
         pub fun createNewPackFulfiler(printedCardsCollectionProviderCapability: Capability<&{NonFungibleToken.Provider, WnWCollectionPublic}>, allowedAmount: UFix64): @PackFulfiler {
-            emit PackFulfilerCreated(allowedAmount: allowedAmount)
+            //emit PackFulfilerCreated(allowedAmount: allowedAmount)
             return <- create PackFulfiler(printedCardsCollectionProviderCapability: printedCardsCollectionProviderCapability, allowedAmount: allowedAmount)
         }
 
+        // createNewCardCreator
+        // Function that creates and returns a new CardCreator resource
+        //
+        pub fun createNewPackCreator(): @CardCreator{
+            //emit PackCreatorCreated()
+            return <- create CardCreator()
+        }
     }
     
     /* 
@@ -446,6 +510,38 @@ pub contract WnW: NonFungibleToken, TradingNonFungibleCardGame {
         }
     }
     */
+
+    pub resource CardCreator: TradingNonFungibleCardGame.CardCreator{
+        
+        pub fun createNewCard(metadata: {String: String}): UInt32{
+            var newCard = WnWCard(metadata: metadata)
+            let newID = newCard.cardID
+
+            WnW.nextCardID = WnW.nextCardID + (1 as UInt32)
+
+            emit CardCreated(id: newID, metadata: metadata)
+
+            WnW.cardDatas[newID] = newCard
+
+            return newID
+            
+        }
+
+        pub fun batchCreateNewCards(metadatas: [{String: String}]): [UInt32]{
+            var newCardsIDs: [UInt32] = []
+
+            for metadata in metadatas{
+                var newCard = WnWCard(metadata: metadata)
+                let newID = newCard.cardID
+                WnW.nextCardID = WnW.nextCardID + (1 as UInt32)
+                emit CardCreated(id: newID, metadata: metadata)
+                WnW.cardDatas[newID] = newCard
+                newCardsIDs.append(newID)
+            }
+            return newCardsIDs
+        }
+
+    }
 
     pub resource PackFulfiler: TradingNonFungibleCardGame.PackFulfiler{
         // A capability allowing this resource to withdraw the NFT with the given ID from its collection.
@@ -508,6 +604,24 @@ pub contract WnW: NonFungibleToken, TradingNonFungibleCardGame {
         return collection.borrowTNFCGCard(id: itemID)
     }
 
+
+
+    // getSetName returns the name that the specified Set
+    //            is associated with.
+    // 
+    // Parameters: setID: The id of the Set that is being searched
+    //
+    // Returns: The name of the Set
+    pub fun getSetName(setID: UInt32): String? {
+        // Don't force a revert if the setID is invalid
+        return WnW.sets[setID]?.name
+    }
+
+    pub fun getNumberMintedPerCard(setID: UInt32): {UInt32: UInt32}? {
+        let numberMintedPerCard = WnW.sets[setID]?.numberMintedPerCard
+        return numberMintedPerCard
+    }
+
     // getCardMetaDataByField returns the metadata associated with a 
     //                        specific field of the metadata
     //                        Ex: field: "Team" will return something
@@ -526,22 +640,7 @@ pub contract WnW: NonFungibleToken, TradingNonFungibleCardGame {
         }
     }
 
-    // getSetName returns the name that the specified Set
-    //            is associated with.
-    // 
-    // Parameters: setID: The id of the Set that is being searched
-    //
-    // Returns: The name of the Set
-    pub fun getSetName(setID: UInt32): String? {
-        // Don't force a revert if the setID is invalid
-        return WnW.sets[setID]?.name
-    }
-
-    pub fun getNumberMintedPerCard(setID: UInt32): {UInt32: UInt32}? {
-        return WnW.sets[setID]?.numberMintedPerCard
-    }
-
-    // getNumTNFCsInEdition return the number of TNFC that have been 
+    // getNumTNFCsInSet return the number of TNFC that have been 
     //                        minted from a certain edition.
     //
     // Parameters: setID: The id of the Set that is being searched
@@ -549,7 +648,7 @@ pub contract WnW: NonFungibleToken, TradingNonFungibleCardGame {
     //
     // Returns: The total number of TNFCs 
     //          that have been minted from an edition
-    pub fun getNumTNFCsInEdition(setID: UInt32, cardID: UInt32): UInt32? {
+    pub fun getNumTNFCsInSet(setID: UInt32, cardID: UInt32): UInt32? {
         if let numberMintedPerCard = self.getNumberMintedPerCard(setID: setID){
 
             // Read the numMintedPerCard
@@ -585,8 +684,13 @@ pub contract WnW: NonFungibleToken, TradingNonFungibleCardGame {
         // Capability para fulfilear packs
         self.PackFulfilerPrivatePath = /private/WnWPackFulfiler
 
+        self.nextCardID = 1
+        self.nextSetID = 1
         // Initialize the total supply
         self.totalSupply = 0
+
+        self.cardDatas = {}
+        self.sets <- {}
 
         /**   SETUP ADMIN ACCOUNT EMBERDÁ, pa llevarlo a una tx hay que cambiar
          **   que en vez de que Admin implemente las interfaces las implementen
