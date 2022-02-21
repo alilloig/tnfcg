@@ -234,7 +234,7 @@ pub contract interface TradingNonFungibleCardGame {
         //  INFORMACION DE LOS PACKS QUE SE VENDEN DE UN SET
         //
         pub var nextPackID: UInt8
-        access(contract) var packsInfo: {UInt8: TNFCGPackInfo}
+        access(contract) var packsInfo: {UInt8: {PackInfo}}
 
         // Array of card that are a part of this set.
         // When a card is added to the set, its ID gets appended here.

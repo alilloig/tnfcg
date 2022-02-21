@@ -299,7 +299,7 @@ pub contract WnW: NonFungibleToken, TradingNonFungibleCardGame {
         //  INFORMACION DE LOS PACKS QUE SE VENDEN DE UN SET
         //
         pub var nextPackID: UInt8
-        access(contract) var packsInfo: {UInt8: TradingNonFungibleCardGame.TNFCGPackInfo}
+        access(contract) var packsInfo: {UInt8: {TradingNonFungibleCardGame.PackInfo}}
 
         // Array of plays that are a part of this set.
         // When a card is added to the set, its ID gets appended here.
@@ -346,6 +346,8 @@ pub contract WnW: NonFungibleToken, TradingNonFungibleCardGame {
         //
         pub fun addPackInfo(setID: UInt32, packInfo: {TradingNonFungibleCardGame.PackInfo}){
             self.packsInfo[self.nextPackID] = packInfo
+            // Increment the packID so that it isnt't used again
+            self.nextPackID = self.nextPackID + 1
         }
 
         // addCard adds a card to the set
@@ -649,15 +651,14 @@ pub contract WnW: NonFungibleToken, TradingNonFungibleCardGame {
             var newPack = TNFCGPackInfo(setID: setID, packRarities: packRarities, packRaritiesDistribution: packRaritiesDistribution)
             // va a haber que borrow una referencia a WnW.sets[setID] y ahi llamar a cosas
 
-            let nft = &self.ownedNFTs[id] as auth &NonFungibleToken.NFT
+            let set = &WnW.sets[setID] as auth &WnW.WnWSet
 
-            WnW.sets[setID]!.addPackInfo(setID: setID, packInfo: newPack)
+            set.addPackInfo(setID: setID, packInfo: newPack)
 
-            // Increment the packID so that it isnt't used again
-            WnW.sets[setID]!.nextPackID = WnW.sets[setID]!.nextPackID + UInt32(1)
+            
 
 
-            WnW.sets[setID]!.packsInfo[0] = TNFCGPackInfo(setID: setID, packRarities: packRarities, packRaritiesDistribution: packRaritiesDistribution)
+
         }
         pub fun addCard(setID: UInt32, rarity: UInt8){
 
