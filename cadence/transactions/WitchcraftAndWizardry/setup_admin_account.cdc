@@ -22,8 +22,10 @@ transaction {
             // save it to the account
             signer.save(<- WnW.createEmptyCollection(), to: WnW.PrintedCardsStoragePath)
 
+            //hay que crear un receiver privado y una collection espesial solo para ver
             // create a public capability for the collection
             signer.link<&WnW.Collection{NonFungibleToken.CollectionPublic, WnW.WnWCollectionPublic}>(WnW.PrintedCardsPublicPath, target: WnW.PrintedCardsStoragePath)
+            
             // create a private capability for extracting the cards from the printed collection
             signer.link<&WnW.Collection{NonFungibleToken.Provider}>(WnW.PrintedCardsPrivatePath, target: WnW.PrintedCardsStoragePath)
         }

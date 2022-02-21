@@ -169,6 +169,18 @@ pub contract interface TradingNonFungibleCardGame {
         pub let data: {TNFCData}
     }
 
+    // This interfaces allows to expose a Collection's NFTs data
+    // without allowing anyone to deposit any NFTs
+    pub resource interface TNFCGCollection {
+        pub fun getIDs(): [UInt64]
+        pub fun borrowNFT(id: UInt64): &NonFungibleToken.NFT?{
+            post {
+                (result == nil) || (result?.id == id):
+                    "Cannot borrow TNFCGCard reference: The ID of the returned reference is incorrect"
+            }
+        }
+    }
+
     // A Set is a grouping of Cards that have occured in the real world
     // that make up a related group of collectibles, like sets of baseball
     // or Magic cards. A Card can exist in multiple different sets.
@@ -221,6 +233,7 @@ pub contract interface TradingNonFungibleCardGame {
 
         //  INFORMACION DE LOS PACKS QUE SE VENDEN DE UN SET
         //
+        pub var nextPackID: UInt8
         access(contract) var packsInfo: {UInt8: TNFCGPackInfo}
 
         // Array of card that are a part of this set.
@@ -255,7 +268,7 @@ pub contract interface TradingNonFungibleCardGame {
         // The Set needs to be not locked
         // The Card can't have already been added to the Set
         //
-        pub fun addPackInfo(setID: UInt32, packRarities: {UInt8: String}, packRaritiesDistribution: {UInt8: UInt}){
+        pub fun addPackInfo(setID: UInt32, packInfo: {TradingNonFungibleCardGame.PackInfo}){
             pre{
                 !self.printingInProgress: "No more packs can be added when the set is beeing printed"
                 //check que el set existe como poco
@@ -411,7 +424,7 @@ pub contract interface TradingNonFungibleCardGame {
     ///
     pub resource interface PrintRunner{
         /// this should create a number of NFTs depending on the number of packs createds
-        //pub fun printRun(set: {SetInfo}, printedCardsCollectionPublic: &{NonFungibleToken.CollectionPublic})
+        pub fun printRun(setID: UInt32, printedCardsCollectionPrivateReceiver: &{NonFungibleToken.Receiver})
     }
 
     /// Pack fulfiler
