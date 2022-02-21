@@ -56,24 +56,26 @@ pub contract WnWAlphaPacks: FungibleToken, TradingFungiblePack{
     // Id from the set the packs belongs to
     pub let setID: UInt32
 
-    pub let TFPackInfo: {TradingFungiblePack.PackInfo}
+    pub let TFPackInfo: {TradingNonFungibleCardGame.PackInfo}
 
-    pub struct WnWAlphaPacksInfo: TradingFungiblePack.PackInfo{
+    pub struct WnWAlphaPacksInfo: TradingNonFungibleCardGame.PackInfo{
         pub let setID: UInt32
-        //pub let setRarities: {UInt8: String}
-        //pub let setRarityDistribution: {UInt8: UFix64}
         pub let packRarities: {UInt8: String}
-        pub let packRarityDistribution: {UInt8: UFix64}
-        pub let packRarityProbability: {UInt8: UFix64}
-        init(setID: UInt32, packRarities: {UInt8: String}, packRarityDistribution: {UInt8: UFix64}){
+        pub let packRaritiesDistribution: {UInt8: UInt}
+        pub let packPrintingSize: UInt
+        init(setID: UInt32, packRarities: {UInt8: String}, packRarityDistribution: {UInt8: UInt}){
             self.setID = setID
             self.packRarities = packRarities
-            self.packRarityDistribution = packRarityDistribution
-            self.packRarityProbability =  {}
+            self.packRaritiesDistribution = packRarityDistribution
+            var size = self.packRaritiesDistribution[self.packRarities.keys[0]]!
             for rarityID in packRarities.keys{
-                self.packRarityProbability[rarityID] = 
-                    self.packRarityDistribution[rarityID]! / 3.0//WnW.getSetRarityDistribution(setID: setID, rarityID: rarityID)
+                //self.packRarityProbability[rarityID] = 
+                    //self.packRarityDistribution[rarityID] / 3.0//WnW.getSetRarityDistribution(setID: setID, rarityID: rarityID)
+                if (self.packRaritiesDistribution[rarityID]! < size){
+                    size = self.packRaritiesDistribution[rarityID]!
+                }
             }
+            self.packPrintingSize = size
         }
     }
 
@@ -302,7 +304,7 @@ pub contract WnWAlphaPacks: FungibleToken, TradingFungiblePack{
     }
 
 
-    init(setID: UInt32, packRarities: {UInt8: String}, packRarityDistribution: {UInt8: UFix64}) {
+    init(setID: UInt32, packRarities: {UInt8: String}, packRarityDistribution: {UInt8: UInt}) {
         pre{
             // checks that there is a flow token receiver on the account
             self.account.getCapability<&FlowToken.Vault{FungibleToken.Receiver}>(/public/flowTokenReceiver).check<>(): "Account cannot receive flow tokens"

@@ -1,7 +1,9 @@
 import NonFungibleToken from "./NonFungibleToken.cdc"
 import FungibleToken from "./FungibleToken.cdc"
+import TradingNonFungibleCardGame from "./TradingNonFungibleCardGame.cdc"
 //import NonFungibleToken from 0xf8d6e0586b0a20c7
 //import FungibleToken from 0xf8d6e0586b0a20c7
+//import TradingNonFungibleCardGame from 0xf8d6e0586b0a20c7
 
 /**
 
@@ -52,16 +54,9 @@ pub contract interface TradingFungiblePack {
     // Id from the set the packs belongs to
     pub let setID: UInt32
 
-    pub let TFPackInfo: {PackInfo}
+    pub let TFPackInfo: {TradingNonFungibleCardGame.PackInfo}
 
-    pub struct interface PackInfo {
-        pub let setID: UInt32
-        //pub let setRarities: {UInt8: String}
-        //pub let setRarityDistribution: {UInt8: UFix64}
-        pub let packRarities: {UInt8: String}
-        pub let packRaritiesDistribution: {UInt8: UFix64}
-        pub let packRaritiesProbability: {UInt8: UFix64}
-    }
+
 
     /// Pack Seller
     ///
