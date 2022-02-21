@@ -368,7 +368,7 @@ pub contract interface TradingNonFungibleCardGame {
         */
     }
 
-    pub struct interface SetData{
+    pub struct interface QuerySetData{
         pub let setID: UInt32
         pub let name: String
         pub let printingInProgress: Bool
@@ -397,7 +397,7 @@ pub contract interface TradingNonFungibleCardGame {
     /// adding cards and packs to it, and handle its printing status
     ///
     pub resource interface SetManager{
-        pub fun createSet(name: String, rarities: {UInt8: String}, printedCardsCollectionPublic: &{NonFungibleToken.CollectionPublic}): UInt32
+        pub fun createSet(name: String, rarities: {UInt8: String}): UInt32
         pub fun addPackInfo(setID: UInt32, packRarities: {UInt8: String}, packRaritiesDistribution: {UInt8: UInt})
         pub fun addCard(setID: UInt32, rarity: UInt8)
         pub fun batchAddCardsByRarity(setIDs: [UInt32], rarity: UInt8)
@@ -409,7 +409,7 @@ pub contract interface TradingNonFungibleCardGame {
     ///
     /// The interface that enforces the requirements for creating new copies of the cards in a set
     ///
-    pub resource interface SetPrintRunner{
+    pub resource interface PrintRunner{
         /// this should create a number of NFTs depending on the number of packs createds
         //pub fun printRun(set: {SetInfo}, printedCardsCollectionPublic: &{NonFungibleToken.CollectionPublic})
     }
