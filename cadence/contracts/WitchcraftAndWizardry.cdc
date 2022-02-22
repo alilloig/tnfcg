@@ -748,11 +748,11 @@ pub contract WnW: NonFungibleToken, TradingNonFungibleCardGame {
             let set = &WnW.sets[setID] as &WnWSet
             let openedTNFCsIDs = set.fulfilPacks(setID: setID, packID: packID, amount: amount)
 
-            let printedCardsReceiverRef = self.printedCardsCollectionPrivateProvider.borrow()!
+            let printedCardsProviderRef = self.printedCardsCollectionPrivateProvider.borrow()!
 
             for tnfcID in openedTNFCsIDs{
                 packsOwnerCardCollectionPublic.deposit(
-                    token: <-printedCardsReceiverRef.withdraw(withdrawID: tnfcID))
+                    token: <-printedCardsProviderRef.withdraw(withdrawID: tnfcID))
             }   
         }
 
