@@ -349,7 +349,7 @@ pub contract interface TradingNonFungibleCardGame {
         //
         // Post-Conditions:
         //
-        pub fun fulfilPacks(setID: UInt32, packID: UInt8, amount: UFix64): [UInt64]
+        pub fun fulfilPacks(packID: UInt8, amount: UFix64): [UInt64]
 
         // stopPrinting() locks the Set so that no more cards can be printed
         //

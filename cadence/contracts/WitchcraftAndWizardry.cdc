@@ -416,11 +416,40 @@ pub contract WnW: NonFungibleToken, TradingNonFungibleCardGame {
             self.printingInProgress = false
         }
 
-        pub fun fulfilPacks(setID: UInt32, packID: UInt8, amount: UFix64): [UInt64]{
+        pub fun fulfilPacks(packID: UInt8, amount: UFix64): [UInt64]{
             // aqui va la manteca aleatoria no?
             // amount x packrarity de randoms de cardsPrintedByRarity
             //
-            return []
+            var openedTNFCsIDs: [UInt64] = []
+            var openedTNFCID: UInt64 = 0
+            var randomTNFCID: UInt64 = 0
+            var rarityDistribution: UInt = 0
+            var rarityOpenedAmount: UInt = 0
+            var rartityTransferedAmount: UInt = 0
+            var flag: UInt = 0
+            var packInfo = self.packsInfo[packID]!
+
+            for rarity in packInfo.packRarities.keys{
+                rarityDistribution = packInfo.packRaritiesDistribution[rarity]!
+                rarityOpenedAmount = rarityDistribution *  UInt(amount)
+                //JODEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEER UInt(amount)!!! y muchas cosas mas!!!!!
+                //Poner tipos de datos como sean mas chanantes y apañar casteos
+                // while no necesita UInt vale lo que sea
+                while (rartityTransferedAmount < rarityOpenedAmount){
+                    //BOOOOOOM GOES DA DINAMITE!!!!!!!!
+                    randomTNFCID = (unsafeRandom() % UInt64(self.mintedTNFCsIDsByRarity[rarity]!.length)) - 1 
+                    //trabajar el random!! random / cantidad de cartas de esa rarity
+                    openedTNFCID = self.mintedTNFCsIDsByRarity[rarity]![randomTNFCID]
+                    openedTNFCsIDs.append(openedTNFCID)
+                    rartityTransferedAmount = rartityTransferedAmount + 1
+
+                }
+
+            }
+            //queda pendiente unificar el uso de TNFC en vez de card, todo lo referente a NFT TNFC, card es una struct
+            // printedTNFCs storages y cosas....
+
+            return openedTNFCsIDs
         }
     }
 
@@ -746,7 +775,7 @@ pub contract WnW: NonFungibleToken, TradingNonFungibleCardGame {
 		pub fun fulfilPacks(setID: UInt32, packID: UInt8, amount: UFix64, packsOwnerCardCollectionPublic: &{NonFungibleToken.CollectionPublic}){
 
             let set = &WnW.sets[setID] as &WnWSet
-            let openedTNFCsIDs = set.fulfilPacks(setID: setID, packID: packID, amount: amount)
+            let openedTNFCsIDs = set.fulfilPacks(packID: packID, amount: amount)
 
             let printedCardsProviderRef = self.printedCardsCollectionPrivateProvider.borrow()!
 
