@@ -295,7 +295,7 @@ pub contract interface TradingNonFungibleCardGame {
             }
         }
 
-        // batchAddCardsByRarity adds a card to the set
+        // addCardsByRarity adds a card to the set
         //
         // Parameters: [cardID]: The IDs of the Cards that are being added
         //              rarity: The id of the cards' set rarity appearance
@@ -311,6 +311,12 @@ pub contract interface TradingNonFungibleCardGame {
             }
         }
         
+        // startPrinting() locks the Set so that no more cards can be printed
+        //
+        // Pre-Conditions:
+        // The Set should be currently not beeing printed
+        // Post-Conditions:
+        // The Set printing should have been started
         pub fun startPrinting(){
             pre {
                 !self.printingInProgress: "The set is already beeing printed"
@@ -322,8 +328,6 @@ pub contract interface TradingNonFungibleCardGame {
                 self.raritiesDistribution.length == self.rarities.length: "The set's rarity distribution must be setted"
             }
         }
-
-
 
         pub fun printTNFCs(){
             pre{

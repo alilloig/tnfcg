@@ -393,8 +393,10 @@ pub contract WnW: NonFungibleToken, TradingNonFungibleCardGame {
 
         }
         
+        // startPrinting() locks the Set so that no more cards can be printed
+        //
         pub fun startPrinting(){
-
+            self.printingInProgress = true
         }
 
         pub fun printTNFCs(){
@@ -403,10 +405,6 @@ pub contract WnW: NonFungibleToken, TradingNonFungibleCardGame {
 
         // stopPrinting() locks the Set so that no more cards can be printed
         //
-        // Pre-Conditions:
-        // The Set should be currently beeing printed
-        // Post-Conditions:
-        // The Set printing should have been stopped
         pub fun stopPrinting(){
             self.printingInProgress = false
         }
