@@ -124,6 +124,7 @@ pub contract interface TradingNonFungibleCardGame {
     //
 
     pub struct interface PackInfo {
+        pub let packID: UInt8
         pub let setID: UInt32
         pub let packRarities: {UInt8: String}
         pub let packRaritiesDistribution: {UInt8: UInt}
@@ -131,6 +132,7 @@ pub contract interface TradingNonFungibleCardGame {
     }
 
     pub struct TNFCGPackInfo: PackInfo{
+        pub let packID: UInt8
         pub let setID: UInt32
         pub let packRarities: {UInt8: String}
         pub let packRaritiesDistribution: {UInt8: UInt}
@@ -341,6 +343,14 @@ pub contract interface TradingNonFungibleCardGame {
             }
         }
 
+        // fulfilPacks() THA RANDOM BITCH!!!!!!!!!!!!!!
+        //
+        // Pre-Conditions:
+        //
+        // Post-Conditions:
+        //
+        pub fun fulfilPacks(setID: UInt32, packID: UInt8, amount: UFix64): [UInt64]
+
         // stopPrinting() locks the Set so that no more cards can be printed
         //
         // Pre-Conditions:
@@ -442,6 +452,6 @@ pub contract interface TradingNonFungibleCardGame {
     ///
     pub resource interface SetPackFulfiler{
         /// openPacks takes a Vault and destroys it returning the number of opened packs
-        pub fun fulfilPacks(setID: UInt32, amount: UFix64)
+        pub fun fulfilPacks(setID: UInt32, packID: UInt8, amount: UFix64, packsOwnerCardCollectionPublic: &{NonFungibleToken.CollectionPublic})
     }
 }

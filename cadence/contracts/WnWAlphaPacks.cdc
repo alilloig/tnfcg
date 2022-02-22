@@ -56,14 +56,19 @@ pub contract WnWAlphaPacks: FungibleToken, TradingFungiblePack{
     // Id from the set the packs belongs to
     pub let setID: UInt32
 
+    // Id of the pack in the set
+    pub let packID: UInt8
+
     pub let TFPackInfo: {TradingNonFungibleCardGame.PackInfo}
 
     pub struct WnWAlphaPacksInfo: TradingNonFungibleCardGame.PackInfo{
+        pub let packID: UInt8
         pub let setID: UInt32
         pub let packRarities: {UInt8: String}
         pub let packRaritiesDistribution: {UInt8: UInt}
         pub let packPrintingSize: UInt
-        init(setID: UInt32, packRarities: {UInt8: String}, packRarityDistribution: {UInt8: UInt}){
+        init(packID: UInt8, setID: UInt32, packRarities: {UInt8: String}, packRarityDistribution: {UInt8: UInt}){
+            self.packID = packID
             self.setID = setID
             self.packRarities = packRarities
             self.packRaritiesDistribution = packRarityDistribution
@@ -291,7 +296,7 @@ pub contract WnWAlphaPacks: FungibleToken, TradingFungiblePack{
             let openedPacks <- packsToOpen.withdraw(amount: packsToOpen.balance)
             WnWAlphaPacks.totalSupply = WnWAlphaPacks.totalSupply - openedPacks.balance
             self.allowedAmount = self.allowedAmount - openedPacks.balance
-            self.packFulfilerCapability.borrow()!.fulfilPacks(setID: WnWAlphaPacks.setID, amount: openedPacks.balance, packsOwnerCardCollectionPublic: packsOwnerCardCollectionPublic)
+            self.packFulfilerCapability.borrow()!.fulfilPacks(setID: WnWAlphaPacks.setID, packID: WnWAlphaPacks.packID, amount: openedPacks.balance, packsOwnerCardCollectionPublic: packsOwnerCardCollectionPublic)
             emit PacksOpened(amount: openedPacks.balance)
             destroy openedPacks
         }
@@ -304,7 +309,7 @@ pub contract WnWAlphaPacks: FungibleToken, TradingFungiblePack{
     }
 
 
-    init(setID: UInt32, packRarities: {UInt8: String}, packRarityDistribution: {UInt8: UInt}) {
+    init(packID: UInt8, setID: UInt32, packRarities: {UInt8: String}, packRarityDistribution: {UInt8: UInt}) {
         pre{
             // checks that there is a flow token receiver on the account
             self.account.getCapability<&FlowToken.Vault{FungibleToken.Receiver}>(/public/flowTokenReceiver).check<>(): "Account cannot receive flow tokens"
@@ -316,7 +321,8 @@ pub contract WnWAlphaPacks: FungibleToken, TradingFungiblePack{
         //
         self.totalSupply = 0.0
         self.setID = setID
-        self.TFPackInfo = WnWAlphaPacksInfo(setID: setID, packRarities: packRarities, packRarityDistribution: packRarityDistribution)
+        self.packID = packID
+        self.TFPackInfo = WnWAlphaPacksInfo(packID: packID, setID: setID, packRarities: packRarities, packRarityDistribution: packRarityDistribution)
 
 
         self.VaultStoragePath = /storage/WnWAlphaPacksVault
