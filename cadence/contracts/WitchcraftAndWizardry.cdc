@@ -403,6 +403,10 @@ pub contract WnW: NonFungibleToken, TradingNonFungibleCardGame {
         
         }
 
+        pub fun printRun(): @NonFungibleToken.Collection{
+        
+        }
+
         // stopPrinting() locks the Set so that no more cards can be printed
         //
         pub fun stopPrinting(){
@@ -707,8 +711,16 @@ pub contract WnW: NonFungibleToken, TradingNonFungibleCardGame {
         // 
         access(contract) let printedCardsCollectionPrivateReceiver: Capability<&{NonFungibleToken.Receiver}>
         
-        pub fun printRun(setID: UInt32, printedCardsCollectionPrivateReceiver: &{NonFungibleToken.Receiver}){
-
+        pub fun printRun(setID: UInt32){
+            
+            let set = &WnW.sets[setID] as &WnWSet
+            let printedCards <- set.printRun()
+            let printedCardsIDs = printedCards.getIDs()
+            let printedCardsReceiverRef = self.printedCardsCollectionPrivateReceiver.borrow()!
+            for tnfcID in printedCardsIDs{
+                printedCardsReceiverRef.deposit(token: <-printedCards.withdraw(withdrawID: tnfcID))
+            }
+            destroy printedCards
         }
 
         init(printedCardsCollectionPrivateReceiver: Capability<&{NonFungibleToken.Receiver}>){
@@ -731,7 +743,7 @@ pub contract WnW: NonFungibleToken, TradingNonFungibleCardGame {
         // Only method to get new WnW Cards
 		// and deposit it in the recipients collection using their collection reference
         //
-		pub fun fulfilPacks(setID: UInt32, amount: UFix64, packsOwnerCardCollectionPublic: &{NonFungibleToken.CollectionPublic}){
+		pub fun fulfilPacks(setID: UInt32, amount: UFix64){
 			pre{
                 //habrá que comprobar
             }

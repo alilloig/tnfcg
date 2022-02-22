@@ -333,7 +333,12 @@ pub contract interface TradingNonFungibleCardGame {
             pre{
                 self.printingInProgress: "The printing must be in progress"
             }
+        }
 
+        pub fun printRun(): @NonFungibleToken.Collection{
+            pre{
+                self.printingInProgress: "The printing must be in progress"
+            }
         }
 
         // stopPrinting() locks the Set so that no more cards can be printed
@@ -428,7 +433,7 @@ pub contract interface TradingNonFungibleCardGame {
     ///
     pub resource interface SetPrintRunner{
         /// this should create a number of NFTs depending on the number of packs createds
-        pub fun printRun(setID: UInt32, printedCardsCollectionPrivateReceiver: &{NonFungibleToken.Receiver})
+        pub fun printRun(setID: UInt32)
     }
 
     /// Pack fulfiler
@@ -437,6 +442,6 @@ pub contract interface TradingNonFungibleCardGame {
     ///
     pub resource interface SetPackFulfiler{
         /// openPacks takes a Vault and destroys it returning the number of opened packs
-        pub fun fulfilPacks(setID: UInt32, amount: UFix64, packsOwnerCardCollectionPublic: &{NonFungibleToken.CollectionPublic})
+        pub fun fulfilPacks(setID: UInt32, amount: UFix64)
     }
 }
