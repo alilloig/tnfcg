@@ -66,11 +66,11 @@ pub contract WnW: NonFungibleToken, TradingNonFungibleCardGame {
     // Emitted when a new Set is created
     pub event SetCreated(setID: UInt32)
     // Emitted when a new Card is added to a Set
-    pub event CardAddedToSet(setID: UInt32, CardID: UInt32)
+    pub event CardAddedToSet(setID: UInt32, cardID: UInt32)
     // Emitted when a Set is locked, meaning Cards cannot be added
     pub event SetPrintingStoped(setID: UInt32)
     // Emitted when a Card is minted from a Set
-    pub event TNFCMinted(tnfcID: UInt64, CardID: UInt32, setID: UInt32, serialNumber: UInt32)
+    pub event TNFCMinted(tnfcID: UInt64, cardID: UInt32, setID: UInt32, serialNumber: UInt32)
 
     // Events for Collection-related actions
     //
@@ -344,7 +344,7 @@ pub contract WnW: NonFungibleToken, TradingNonFungibleCardGame {
         // ¿?¿?¿?¿? vaya repaso de comentarios guapo que hay que hacer
         // 
         //
-        pub fun addPackInfo(setID: UInt32, packInfo: {TradingNonFungibleCardGame.PackInfo}){
+        pub fun addPackInfo(packInfo: {TradingNonFungibleCardGame.PackInfo}){
             self.packsInfo[self.nextPackID] = packInfo
             // Increment the packID so that it isnt't used again
             self.nextPackID = self.nextPackID + 1
@@ -360,11 +360,23 @@ pub contract WnW: NonFungibleToken, TradingNonFungibleCardGame {
         // The Set needs to be not locked
         // The Card can't have already been added to the Set
         //
-        pub fun addCard(cardID: UInt32, ratiry: UInt8) {
+        pub fun addCard(cardID: UInt32, rarity: UInt8) {
+            pre {
+                WnW.cardDatas[cardID] != nil: "Cannot add the Card to Set: Card doesn't exist."
+                !self.printingInProgress: "Cannot add the card to the Set after the set has been locked."
+                self.numberMintedPerCard[cardID] == nil: "The card has already beed added to the set."
+            }
 
+            // Add the Card to the arrays dictionary of Cards/Rarity
+            self.cardsByRarity[rarity]!.append(cardID)
+
+            // Initialize the Moment count to zero
+            self.numberMintedPerCard[cardID] = 0
+
+            emit CardAddedToSet(setID: self.setID, cardID: cardID)
         }
 
-        // batchAddCardsByRarity adds a card to the set
+        // addCardsByRarity adds a card to the set
         //
         // Parameters: [cardID]: The IDs of the Cards that are being added
         //              rarity: The id of the cards' set rarity appearance
@@ -374,7 +386,10 @@ pub contract WnW: NonFungibleToken, TradingNonFungibleCardGame {
         // The Set needs to be not locked
         // The Card can't have already been added to the Set
         //
-        pub fun batchAddCardsByRarity(cardIDs: [UInt32], rarity: UInt8) {
+        pub fun addCardsByRarity(cardIDs: [UInt32], rarity: UInt8) {
+            for card in cardIDs {
+                self.addCard(cardID: card, rarity: rarity)
+            }
 
         }
         
@@ -581,18 +596,79 @@ pub contract WnW: NonFungibleToken, TradingNonFungibleCardGame {
         // createNewPrintRunner
         // Function that creates and returns a new PrintRunner resource
         //
-        pub fun createNewPrintRunner(printedCardsCollectionPrivateReceiver: Capability<&{NonFungibleToken.Receiver}>): @PrintRunner{
-            return <- create PrintRunner(printedCardsCollectionPrivateReceiver: printedCardsCollectionPrivateReceiver)
+        pub fun createNewPrintRunner(printedCardsCollectionPrivateReceiver: Capability<&{NonFungibleToken.Receiver}>): @SetPrintRunner{
+            return <- create SetPrintRunner(printedCardsCollectionPrivateReceiver: printedCardsCollectionPrivateReceiver)
         }
 
         // createNewPackFulfiler
         // Function that creates and returns a new PackFulfiler resource
         //
-        pub fun createNewPackFulfiler(printedCardsCollectionProviderCapability: Capability<&{NonFungibleToken.Provider, TradingNonFungibleCardGame.TNFCGCollection}>, allowedAmount: UFix64): @PackFulfiler {
+        pub fun createNewPackFulfiler(printedCardsCollectionProviderCapability: Capability<&{NonFungibleToken.Provider, TradingNonFungibleCardGame.TNFCGCollection}>, allowedAmount: UFix64): @SetPackFulfiler {
             //emit PackFulfilerCreated(allowedAmount: allowedAmount)
-            return <- create PackFulfiler(printedCardsCollectionProviderCapability: printedCardsCollectionProviderCapability, allowedAmount: allowedAmount)
+            return <- create SetPackFulfiler(printedCardsCollectionProviderCapability: printedCardsCollectionProviderCapability, allowedAmount: allowedAmount)
         }
 
+
+    }
+
+
+
+    pub resource SetManager: TradingNonFungibleCardGame.SetManager{
+
+        pub fun createSet(name: String, rarities: {UInt8: String}): UInt32{
+            // Create the new Set
+            var newSet <- create WnWSet(name: name, rarities: rarities)
+
+            // Increment the setID so that it isn't used again
+            WnW.nextSetID = WnW.nextSetID + UInt32(1)
+
+            let newID = newSet.setID
+
+            emit SetCreated(setID: newSet.setID)
+
+            // Store it in the sets mapping field
+            WnW.sets[newID] <-! newSet
+
+            return newID
+        }
+
+        pub fun addPackInfo(setID: UInt32, packRarities: {UInt8: String}, packRaritiesDistribution: {UInt8: UInt}){
+            // Create the new Pack
+            var newPack = TNFCGPackInfo(setID: setID, packRarities: packRarities, packRaritiesDistribution: packRaritiesDistribution)
+            // va a haber que borrow una referencia a WnW.sets[setID] y ahi llamar a cosas
+
+            let set = &WnW.sets[setID] as &WnWSet
+
+            set.addPackInfo(packInfo: newPack)
+        }
+
+        pub fun addCard(setID: UInt32, cardID: UInt32, rarity: UInt8){
+            
+            let set = &WnW.sets[setID] as &WnWSet
+
+            set.addCard(cardID: cardID, rarity: rarity)
+        }
+
+        pub fun addCardsByRarity(setID: UInt32, cardIDs: [UInt32], rarity: UInt8){
+            
+            let set = &WnW.sets[setID] as &WnWSet
+
+            set.addCardsByRarity(cardIDs: cardIDs, rarity: rarity)
+        }
+
+        pub fun startPrinting(setID: UInt32){
+            
+            let set = &WnW.sets[setID] as &WnWSet
+
+            set.startPrinting()
+        }
+
+        pub fun stopPrinting(setID: UInt32){
+            
+            let set = &WnW.sets[setID] as &WnWSet
+
+            set.stopPrinting()
+        }
 
     }
 
@@ -628,54 +704,7 @@ pub contract WnW: NonFungibleToken, TradingNonFungibleCardGame {
 
     }
 
-    pub resource SetManager: TradingNonFungibleCardGame.SetManager{
-
-        pub fun createSet(name: String, rarities: {UInt8: String}): UInt32{
-            // Create the new Set
-            var newSet <- create WnWSet(name: name, rarities: rarities)
-
-            // Increment the setID so that it isn't used again
-            WnW.nextSetID = WnW.nextSetID + UInt32(1)
-
-            let newID = newSet.setID
-
-            emit SetCreated(setID: newSet.setID)
-
-            // Store it in the sets mapping field
-            WnW.sets[newID] <-! newSet
-
-            return newID
-        }
-        pub fun addPackInfo(setID: UInt32, packRarities: {UInt8: String}, packRaritiesDistribution: {UInt8: UInt}){
-            // Create the new Pack
-            var newPack = TNFCGPackInfo(setID: setID, packRarities: packRarities, packRaritiesDistribution: packRaritiesDistribution)
-            // va a haber que borrow una referencia a WnW.sets[setID] y ahi llamar a cosas
-
-            let set = &WnW.sets[setID] as auth &WnW.WnWSet
-
-            set.addPackInfo(setID: setID, packInfo: newPack)
-
-            
-
-
-
-        }
-        pub fun addCard(setID: UInt32, rarity: UInt8){
-
-        }
-        pub fun batchAddCardsByRarity(setIDs: [UInt32], rarity: UInt8){
-
-        }
-        pub fun startPrinting(setID: UInt32){
-
-        }
-        pub fun stopPrinting(setID: UInt32){
-
-        }
-
-    }
-
-    pub resource PrintRunner: TradingNonFungibleCardGame.PrintRunner{
+    pub resource SetPrintRunner: TradingNonFungibleCardGame.SetPrintRunner{
         // A capability allowing this resource to deposit the NFTs created 
         // 
         access(contract) let printedCardsCollectionPrivateReceiver: Capability<&{NonFungibleToken.Receiver}>
@@ -689,7 +718,7 @@ pub contract WnW: NonFungibleToken, TradingNonFungibleCardGame {
         }
     }
 
-    pub resource PackFulfiler: TradingNonFungibleCardGame.PackFulfiler{
+    pub resource SetPackFulfiler: TradingNonFungibleCardGame.SetPackFulfiler{
         // A capability allowing this resource to withdraw the NFT with the given ID from its collection.
         // This capability allows the resource to withdraw *any* NFT, so you should be careful when giving
         // such a capability to a resource and always check its code to make sure it will use it in the

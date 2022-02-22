@@ -222,7 +222,7 @@ pub contract WnWAlphaPacks: FungibleToken, TradingFungiblePack{
         //
         // Function that creates and returns a new PackOpener resource
         //
-        pub fun createNewPackOpener(packFulfilerCapability: Capability<&{TradingNonFungibleCardGame.PackFulfiler}>): @PackOpener {
+        pub fun createNewPackOpener(packFulfilerCapability: Capability<&{TradingNonFungibleCardGame.SetPackFulfiler}>): @PackOpener {
             emit PackOpenerCreated(allowedAmount: 0.0)
             return <- create PackOpener(packFulfilerCapability: packFulfilerCapability)
         }
@@ -273,7 +273,7 @@ pub contract WnWAlphaPacks: FungibleToken, TradingFungiblePack{
         // This capability allows the resource to withdraw *any* NFT, so you should be careful when giving
         // such a capability to a resource and always check its code to make sure it will use it in the
         // way that it claims.
-        access(contract) let packFulfilerCapability: Capability<&{TradingNonFungibleCardGame.PackFulfiler}>
+        access(contract) let packFulfilerCapability: Capability<&{TradingNonFungibleCardGame.SetPackFulfiler}>
 
         // The amount of Packs that the PackOpener is allowed to open
         pub var allowedAmount: UFix64
@@ -296,7 +296,7 @@ pub contract WnWAlphaPacks: FungibleToken, TradingFungiblePack{
             destroy openedPacks
         }
 
-        init (packFulfilerCapability: Capability<&{TradingNonFungibleCardGame.PackFulfiler}>) {
+        init (packFulfilerCapability: Capability<&{TradingNonFungibleCardGame.SetPackFulfiler}>) {
             self.packFulfilerCapability = packFulfilerCapability
             self.allowedAmount = 0.0
         
@@ -309,7 +309,7 @@ pub contract WnWAlphaPacks: FungibleToken, TradingFungiblePack{
             // checks that there is a flow token receiver on the account
             self.account.getCapability<&FlowToken.Vault{FungibleToken.Receiver}>(/public/flowTokenReceiver).check<>(): "Account cannot receive flow tokens"
             // si cambiamos WnW para usar self.account habrá q cambiar packfulfiler por Administrator
-            self.account.getCapability<&{TradingNonFungibleCardGame.PackFulfiler}>(WnW.PackFulfilerPrivatePath).check<>(): "Account cannot fulfil WnW packs"
+            self.account.getCapability<&{TradingNonFungibleCardGame.SetPackFulfiler}>(WnW.PackFulfilerPrivatePath).check<>(): "Account cannot fulfil WnW packs"
         }
         
         // Initialize contract state.
