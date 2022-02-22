@@ -430,7 +430,7 @@ pub contract interface TradingNonFungibleCardGame {
     ///
     pub resource interface SetManager{
         pub fun createSet(name: String, rarities: {UInt8: String}): UInt32
-        pub fun addPackInfo(setID: UInt32, packRarities: {UInt8: String}, packRaritiesDistribution: {UInt8: UInt})
+        pub fun createPackInfo(setID: UInt32, packRarities: {UInt8: String}, packRaritiesDistribution: {UInt8: UInt})
         pub fun addCard(setID: UInt32, cardID: UInt32, rarity: UInt8)
         pub fun addCardsByRarity(setID: UInt32, cardIDs: [UInt32], rarity: UInt8)
         pub fun startPrinting(setID: UInt32)

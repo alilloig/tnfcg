@@ -751,42 +751,9 @@ pub contract WnW: NonFungibleToken, TradingNonFungibleCardGame {
             let printedCardsReceiverRef = self.printedCardsCollectionPrivateProvider.borrow()!
 
             for tnfcID in openedTNFCsIDs{
-                printedCardsReceiverRef.deposit(token: <-printedCards.withdraw(withdrawID: tnfcID))
-            }
-            destroy printedCards
-
-            let printedCardsReceiverRef = self.printedCardsCollectionPrivateReceiver.borrow()!
-            for tnfcID in printedCardsIDs{
-                printedCardsReceiverRef.deposit(token: <-printedCards.withdraw(withdrawID: tnfcID))
-            }
-            destroy printedCards
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            //hay que crear una collection de cartas con las cartas aleatorias sacadas de las cartas impresas, capability a esas cartas impresas en init o set up admin account
-            
-            let keys: [UInt8] = [1,2]
-            for key in keys {
-                //packsOwnerCardCollectionPublic.deposit(token: <- create WnW.NFT(initID: WnW.totalSupply, initData: WnWCardInfo, initSet: set))
-            }
-            /* 
-            // deposit it in the recipient's account using their reference
-            */
-            //aqui mas bien que esto de arriba habria que llamar a la funcion que te devolviese tantas cartas*amount del set que sea
-            //return la collection provider de nfts que salen de los packs
-            
+                packsOwnerCardCollectionPublic.deposit(
+                    token: <-printedCardsReceiverRef.withdraw(withdrawID: tnfcID))
+            }   
         }
 
         init(printedCardsCollectionPrivateProvider: Capability<&{NonFungibleToken.Provider, TradingNonFungibleCardGame.TNFCGCollection}>, allowedAmount: UFix64){
