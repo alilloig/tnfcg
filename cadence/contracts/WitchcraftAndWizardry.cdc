@@ -4,6 +4,8 @@ import FungibleToken from "./FungibleToken.cdc"
 import TradingNonFungibleCardGame from "./TradingNonFungibleCardGame.cdc"
 import TradingFungiblePack from "./TradingFungiblePack.cdc"
 import FlowToken from "./FlowToken.cdc"
+import DF from "./DiccionarioFacherito.cdc"
+
 //import NonFungibleToken from 0xf8d6e0586b0a20c7
 //import TradingNonFungibleCardGame from 0xf8d6e0586b0a20c7
 //import MetadataViews from 0xf8d6e0586b0a20c7
@@ -110,29 +112,6 @@ pub contract WnW: NonFungibleToken, TradingNonFungibleCardGame {
     pub let PackFulfilerStoragePath: StoragePath
     pub let PackFulfilerPrivatePath: PrivatePath
 
-    pub struct TNFCGPackInfo: TradingNonFungibleCardGame.PackInfo{
-        pub let packID: UInt8
-        pub let setID: UInt32
-        pub let packRarities: {UInt8: String}
-        pub let packRaritiesDistribution: {UInt8: UInt}
-        pub let packPrintingSize: UInt
-
-        init(packID: UInt8, setID: UInt32, packRarities: {UInt8: String}, packRaritiesDistribution: {UInt8: UInt}){
-            self.packID = packID
-            self.setID = setID
-            self.packRarities = packRarities
-            self.packRaritiesDistribution = packRaritiesDistribution
-            var size = self.packRaritiesDistribution[self.packRarities.keys[0]]!
-            for rarityID in packRarities.keys{
-                //self.packRaritiesProbability[rarityID] = 
-                    //self.packRaritiesDistribution[rarityID]! / WnW.getSetRarityDistribution(setID: setID, rarityID: rarityID)!
-                if (self.packRaritiesDistribution[rarityID]! < size){
-                    size = self.packRaritiesDistribution[rarityID]!
-                }
-            }
-            self.packPrintingSize = size
-        }
-    }
 
     pub struct WnWCard: TradingNonFungibleCardGame.Card {
         pub let cardID: UInt32
@@ -226,7 +205,7 @@ pub contract WnW: NonFungibleToken, TradingNonFungibleCardGame {
         }
 
         pub fun description(): String {
-            let setName: String = WnW.getSetName(setID: self.data.setID) ?? ""
+            let setName: String = WnW.getSetName(self.data.setID) ?? ""
             let collectorNumber: String = self.data.collectorNumber.toString()
             return "A set "
                 .concat(setName)
@@ -252,7 +231,7 @@ pub contract WnW: NonFungibleToken, TradingNonFungibleCardGame {
                 case Type<WnWTNFCMetadataView>():
                     return WnWTNFCMetadataView(
                         name: WnW.getCardMetaDataByField(cardID: self.data.cardID, field: "name"),
-                        setName: WnW.getSetName(setID: self.data.setID),
+                        setName: WnW.getSetName(self.data.setID),
                         rarity: WnW.getCardMetaDataByField(cardID: self.data.cardID, field: "rarity"),
                         collectorNumber: self.data.collectorNumber,
                         cardID: self.data.cardID,
@@ -302,7 +281,7 @@ pub contract WnW: NonFungibleToken, TradingNonFungibleCardGame {
         //
         pub var nextPackID: UInt8
 
-        access(contract) var packsInfo: {UInt8: {TradingNonFungibleCardGame.PackInfo}}
+        access(contract) var packsInfo: {UInt8: {TradingFungiblePack.PackInfo}}
 
         // Array of plays that are a part of this set.
         // When a card is added to the set, its ID gets appended here.
@@ -347,7 +326,7 @@ pub contract WnW: NonFungibleToken, TradingNonFungibleCardGame {
         // ¿?¿?¿?¿? vaya repaso de comentarios guapo que hay que hacer
         // 
         //
-        pub fun addPackInfo(packInfo: {TradingNonFungibleCardGame.PackInfo}){
+        pub fun addPackInfo(packInfo: {TradingFungiblePack.PackInfo}){
             self.packsInfo[self.nextPackID] = packInfo
             // Increment the packID so that it isnt't used again
             self.nextPackID = self.nextPackID + 1
@@ -406,7 +385,9 @@ pub contract WnW: NonFungibleToken, TradingNonFungibleCardGame {
         
         }
 
-        pub fun printRun(): @NonFungibleToken.Collection{
+        pub fun printRun(packID: UInt8): @NonFungibleToken.Collection{
+
+            self.packsInfo
             return <- WnW.createEmptyCollection()
         }
 
@@ -422,24 +403,24 @@ pub contract WnW: NonFungibleToken, TradingNonFungibleCardGame {
             //
             var openedTNFCsIDs: [UInt64] = []
             var openedTNFCID: UInt64 = 0
-            var randomTNFCID: UInt64 = 0
+            var randomTNFCIndex: UInt64 = 0
             var rarityDistribution: UInt = 0
             var rarityOpenedAmount: UInt = 0
             var rartityTransferedAmount: UInt = 0
             var flag: UInt = 0
             var packInfo = self.packsInfo[packID]!
 
-            for rarity in packInfo.packRarities.keys{
+            for rarity in packInfo.packRaritiesDistribution.keys{
                 rarityDistribution = packInfo.packRaritiesDistribution[rarity]!
                 rarityOpenedAmount = rarityDistribution *  UInt(amount)
                 //JODEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEER UInt(amount)!!! y muchas cosas mas!!!!!
                 //Poner tipos de datos como sean mas chanantes y apañar casteos
                 // while no necesita UInt vale lo que sea
+                
                 while (rartityTransferedAmount < rarityOpenedAmount){
-                    //BOOOOOOM GOES DA DINAMITE!!!!!!!!
-                    randomTNFCID = (unsafeRandom() % UInt64(self.mintedTNFCsIDsByRarity[rarity]!.length)) - 1 
-                    //trabajar el random!! random / cantidad de cartas de esa rarity
-                    openedTNFCID = self.mintedTNFCsIDsByRarity[rarity]![randomTNFCID]
+                    // Habrá que explicar lo guapo que está esto no?
+                    randomTNFCIndex = self.generateRandomTNFCIndex(tnfcAmount: self.mintedTNFCsIDsByRarity[rarity]!.length)
+                    openedTNFCID = self.mintedTNFCsIDsByRarity[rarity]![randomTNFCIndex]
                     openedTNFCsIDs.append(openedTNFCID)
                     rartityTransferedAmount = rartityTransferedAmount + 1
 
@@ -451,6 +432,15 @@ pub contract WnW: NonFungibleToken, TradingNonFungibleCardGame {
 
             return openedTNFCsIDs
         }
+
+        access(self) fun generateRandomTNFCIndex(tnfcAmount: Int): UInt64{
+            let random = unsafeRandom()
+            let acotatedRandom = random % UInt64(tnfcAmount)
+            return acotatedRandom - 1
+        }
+
+
+
     }
 
     pub struct WnWQuerySetData: TradingNonFungibleCardGame.QuerySetData{
@@ -664,13 +654,11 @@ pub contract WnW: NonFungibleToken, TradingNonFungibleCardGame {
             return newID
         }
 
-        pub fun createPackInfo(setID: UInt32, packRarities: {UInt8: String}, packRaritiesDistribution: {UInt8: UInt}){
+        pub fun addPackInfo(setID: UInt32, packInfo: {TradingFungiblePack.PackInfo}){
             
             let set = &WnW.sets[setID] as &WnWSet
-            // Create the new Pack
-            var newPack = TNFCGPackInfo(packID: set.nextPackID, setID: setID, packRarities: packRarities, packRaritiesDistribution: packRaritiesDistribution)
-            
-            set.addPackInfo(packInfo: newPack)
+
+            set.addPackInfo(packInfo: packInfo)
         }
 
         pub fun addCard(setID: UInt32, cardID: UInt32, rarity: UInt8){
@@ -740,10 +728,10 @@ pub contract WnW: NonFungibleToken, TradingNonFungibleCardGame {
         // 
         access(contract) let printedCardsCollectionPrivateReceiver: Capability<&{NonFungibleToken.Receiver}>
         
-        pub fun printRun(setID: UInt32){
+        pub fun printRun(setID: UInt32, packID: UInt8){
             
             let set = &WnW.sets[setID] as &WnWSet
-            let printedCards <- set.printRun()
+            let printedCards <- set.printRun(packID: packID)
             let printedCardsIDs = printedCards.getIDs()
             let printedCardsReceiverRef = self.printedCardsCollectionPrivateReceiver.borrow()!
             for tnfcID in printedCardsIDs{
@@ -830,20 +818,23 @@ pub contract WnW: NonFungibleToken, TradingNonFungibleCardGame {
     // Parameters: setID: The id of the Set that is being searched
     //
     // Returns: The name of the Set
-    pub fun getSetName(setID: UInt32): String? {
+    pub fun getSetName(_ setID: UInt32): String? {
         // Don't force a revert if the setID is invalid
         return WnW.sets[setID]?.name
     }
+    pub fun getSetNextPackID(_ setID: UInt32): UInt8? {
+        return WnW.sets[setID]?.nextPackID
+    }
 
-    pub fun getSetPrintingInProgress(setID: UInt32): Bool? {
+    pub fun getSetPrintingInProgress(_ setID: UInt32): Bool? {
         return WnW.sets[setID]?.printingInProgress
     }
     
-    pub fun getSetRarities(setID: UInt32): {UInt8: String}? {
+    pub fun getSetRarities(_ setID: UInt32): {UInt8: String}? {
         return WnW.sets[setID]?.rarities
     }
 
-    pub fun getSetRaritiesDistribution(setID: UInt32): {UInt8: UInt}? {  
+    pub fun getSetRaritiesDistribution(_ setID: UInt32): {UInt8: UInt}? {  
         return WnW.sets[setID]?.raritiesDistribution
     }
 
@@ -852,11 +843,11 @@ pub contract WnW: NonFungibleToken, TradingNonFungibleCardGame {
         return  raritiesDistribution[rarityID]
     }
 
-    pub fun getSetCardsByRarity(setID: UInt32): {UInt8: [UInt32]}? {
+    pub fun getSetCardsByRarity(_ setID: UInt32): {UInt8: [UInt32]}? {
         return WnW.sets[setID]?.cardsByRarity
     }
 
-    pub fun getSetNumberMintedPerCard(setID: UInt32): {UInt32: UInt32}? {
+    pub fun getSetNumberMintedPerCard(_ setID: UInt32): {UInt32: UInt32}? {
         return WnW.sets[setID]?.numberMintedPerCard
     }
 
@@ -887,7 +878,7 @@ pub contract WnW: NonFungibleToken, TradingNonFungibleCardGame {
     // Returns: The total number of TNFCs 
     //          that have been minted from an edition
     pub fun getNumTNFCsInSet(setID: UInt32, cardID: UInt32): UInt32? {
-        if let numberMintedPerCard = self.getSetNumberMintedPerCard(setID: setID){
+        if let numberMintedPerCard = self.getSetNumberMintedPerCard(setID){
 
             // Read the numMintedPerCard
             let amount = numberMintedPerCard[cardID]

@@ -1,6 +1,5 @@
 import NonFungibleToken from "./NonFungibleToken.cdc"
 import FungibleToken from "./FungibleToken.cdc"
-import TradingNonFungibleCardGame from "./TradingNonFungibleCardGame.cdc"
 //import NonFungibleToken from 0xf8d6e0586b0a20c7
 //import FungibleToken from 0xf8d6e0586b0a20c7
 //import TradingNonFungibleCardGame from 0xf8d6e0586b0a20c7
@@ -54,9 +53,27 @@ pub contract interface TradingFungiblePack {
     // Id from the set the packs belongs to
     pub let setID: UInt32
 
-    pub let TFPackInfo: {TradingNonFungibleCardGame.PackInfo}
+    pub let TFPackInfo: {PackInfo}
 
+    pub struct interface PackInfo {
+        pub let packID: UInt8
+        pub let packRaritiesDistribution: {UInt8: UInt}
+        pub let packPrintingSize: UInt
+        pub let raritiesSheetsPrintingSize: {UInt8: UInt}
+    }
 
+    /// Pack Setter
+    ///
+    /// The interface that enforces the requirements for opening Packs
+    ///
+    /// We do not include a condition that checks the balance because
+    /// we want to give users the ability to make custom receivers that
+    /// can do custom things with the Packs, like split them up and
+    /// send them to different places.
+    ///
+    pub resource interface PackSetter{
+        pub fun createPackInfo(): {PackInfo}
+    }
 
     /// Pack Seller
     ///

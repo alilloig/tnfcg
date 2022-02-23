@@ -1,7 +1,9 @@
 import NonFungibleToken from "./NonFungibleToken.cdc"
 import FungibleToken from "./FungibleToken.cdc"
+import TradingFungiblePack from "./TradingFungiblePack.cdc"
 //import NonFungibleToken from 0xf8d6e0586b0a20c7
 //import FungibleToken from 0xf8d6e0586b0a20c7
+//import TradingFungiblePack from 0xf8d6e0586b0a20c7
 
 /**
 
@@ -123,22 +125,6 @@ pub contract interface TradingNonFungibleCardGame {
     // read the metadata associated with a specific Card ID
     //
 
-    pub struct interface PackInfo {
-        pub let packID: UInt8
-        pub let setID: UInt32
-        pub let packRarities: {UInt8: String}
-        pub let packRaritiesDistribution: {UInt8: UInt}
-        pub let packPrintingSize: UInt
-    }
-
-    pub struct TNFCGPackInfo: PackInfo{
-        pub let packID: UInt8
-        pub let setID: UInt32
-        pub let packRarities: {UInt8: String}
-        pub let packRaritiesDistribution: {UInt8: UInt}
-        pub let packPrintingSize: UInt
-    }
-
     pub struct interface Card {
 
         // The unique ID for the Card
@@ -236,7 +222,7 @@ pub contract interface TradingNonFungibleCardGame {
         //  INFORMACION DE LOS PACKS QUE SE VENDEN DE UN SET
         //
         pub var nextPackID: UInt8
-        access(contract) var packsInfo: {UInt8: {PackInfo}}
+        access(contract) var packsInfo: {UInt8: {TradingFungiblePack.PackInfo}}
 
         // Array of card that are a part of this set.
         // When a card is added to the set, its ID gets appended here.
@@ -270,7 +256,7 @@ pub contract interface TradingNonFungibleCardGame {
         // The Set needs to be not locked
         // The Card can't have already been added to the Set
         //
-        pub fun addPackInfo(packInfo: {TradingNonFungibleCardGame.PackInfo}){
+        pub fun addPackInfo(packInfo: {TradingFungiblePack.PackInfo}){
             pre{
                 !self.printingInProgress: "No more packs can be added when the set is beeing printed"
                 //check que el set existe como poco
@@ -337,7 +323,7 @@ pub contract interface TradingNonFungibleCardGame {
             }
         }
 
-        pub fun printRun(): @NonFungibleToken.Collection{
+        pub fun printRun(packID: UInt8): @NonFungibleToken.Collection{
             pre{
                 self.printingInProgress: "The printing must be in progress"
             }
@@ -430,7 +416,7 @@ pub contract interface TradingNonFungibleCardGame {
     ///
     pub resource interface SetManager{
         pub fun createSet(name: String, rarities: {UInt8: String}): UInt32
-        pub fun createPackInfo(setID: UInt32, packRarities: {UInt8: String}, packRaritiesDistribution: {UInt8: UInt})
+        pub fun addPackInfo(setID: UInt32, packInfo: {TradingFungiblePack.PackInfo})
         pub fun addCard(setID: UInt32, cardID: UInt32, rarity: UInt8)
         pub fun addCardsByRarity(setID: UInt32, cardIDs: [UInt32], rarity: UInt8)
         pub fun startPrinting(setID: UInt32)
@@ -443,7 +429,7 @@ pub contract interface TradingNonFungibleCardGame {
     ///
     pub resource interface SetPrintRunner{
         /// this should create a number of NFTs depending on the number of packs createds
-        pub fun printRun(setID: UInt32)
+        pub fun printRun(setID: UInt32, packID: UInt8)
     }
 
     /// Pack fulfiler
