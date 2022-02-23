@@ -392,8 +392,11 @@ pub contract interface TradingNonFungibleCardGame {
         pub let printingInProgress: Bool
         access(contract) let rarities: {UInt8: String}
         access(contract) let raritiesDistribution: {UInt8: UInt}
+        pub let nextPackID: UInt8
+        access(contract) let packsInfo: {UInt8: {TradingFungiblePack.PackInfo}}
         access(contract) let cardsByRarity: {UInt8: [UInt32]}
         access(contract) let numberMintedPerCard: {UInt32: UInt32}
+        access(contract) var mintedTNFCsIDsByRarity: {UInt8: [UInt64]}
     }
 
     // -----------------------------------------------------------------------
