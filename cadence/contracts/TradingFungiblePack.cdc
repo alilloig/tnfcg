@@ -36,10 +36,10 @@ pub contract interface TradingFungiblePack {
     // The event that is emitted when Packs are destroyed
     pub event PacksSelled(amount: UFix64)
 
-    // PacksOpened
+    // PacksDestroyedgit
     //
     // The event that is emitted when Packs are destroyed
-    pub event PacksOpened(amount: UFix64)
+    pub event PacksDestroyedgit(amount: UFix64)
 
     // PackMinterCreated
     //

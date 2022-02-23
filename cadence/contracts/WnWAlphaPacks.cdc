@@ -104,10 +104,10 @@ pub contract WnWAlphaPacks: FungibleToken, TradingFungiblePack{
     // The event that is emitted when new Packs are selled
     pub event PacksSelled(amount: UFix64)
 
-    // PacksOpened
+    // PacksDestroyed
     //
     // The event that is emitted when Packs are destroyed
-    pub event PacksOpened(amount: UFix64)
+    pub event PacksDestroyed(amount: UFix64)
 
     // PackSellerCreated
     //
@@ -196,7 +196,7 @@ pub contract WnWAlphaPacks: FungibleToken, TradingFungiblePack{
         destroy() {
             WnWAlphaPacks.totalSupply = WnWAlphaPacks.totalSupply - self.balance
             if(self.balance > 0.0) {
-                emit PacksOpened(amount: self.balance)
+                emit PacksDestroyed(amount: self.balance)
             }
         }
     }
@@ -294,10 +294,9 @@ pub contract WnWAlphaPacks: FungibleToken, TradingFungiblePack{
                 packsToOpen.balance <= self.allowedAmount: "Amount opened must be less than the remaining amount of unopened packs"
             }
             let openedPacks <- packsToOpen.withdraw(amount: packsToOpen.balance)
-            WnWAlphaPacks.totalSupply = WnWAlphaPacks.totalSupply - openedPacks.balance
             self.allowedAmount = self.allowedAmount - openedPacks.balance
             self.packFulfilerCapability.borrow()!.fulfilPacks(setID: WnWAlphaPacks.setID, packID: WnWAlphaPacks.packID, amount: openedPacks.balance, packsOwnerCardCollectionPublic: packsOwnerCardCollectionPublic)
-            emit PacksOpened(amount: openedPacks.balance)
+            emit PacksDestroyed(amount: openedPacks.balance)
             destroy openedPacks
         }
 
