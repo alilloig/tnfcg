@@ -72,9 +72,35 @@ pub contract interface TradingFungiblePack {
     /// can do custom things with the Packs, like split them up and
     /// send them to different places.
     ///
-    pub resource interface PackCrafter{
+    pub resource interface PackManager{
+        // The amount of packs created and not selled yet
+        pub var packsToSellAmount: UInt64
+        // The amount of packs selled and not opened yet
+        pub var packsToOpenAmount: UInt64
 
+        
+        access(contract) fun increasePacksToSell(_ amount: UInt64): UInt64
+        access(contract) fun increasePacksToOpen(_ amount: UInt64): UInt64
+        access(contract) fun decreasePacksToSell(_ amount: UInt64): UInt64
+        access(contract) fun decreasePacksToOpen(_ amount: UInt64): UInt64
     }
+
+    /// PackCreator
+    // The interface pa crear packs en el set y que se impriman los nfts
+    pub resource interface PackPrinter{
+        // The remaining amount of Packs that the PackCrafter is allowed to mint
+        pub var allowedAmount: UInt64
+        // printRun creates in the TNFCG contract the necessary amount of NFTs
+        // to fulfil the pack amount equal to the printRun times the printed print runs quantity
+        pub fun printRun(quantity: UInt64): UInt64{
+            post{
+                result <= before(self.allowedAmount): "The sum of the desired prints exceeds the allowed amount"
+                self.allowedAmount == before(self.allowedAmount) - result: "The printer's allowed amount must be reduced"
+            }
+        }
+        
+    }
+
     /// Pack Seller
     ///
     /// The interface that enforces the requirements for opening Packs
@@ -85,8 +111,6 @@ pub contract interface TradingFungiblePack {
     /// send them to different places.
     ///
     pub resource interface PackSeller{
-        // The amount of Packs that the PackMinter is allowed to mint
-        pub var allowedAmount: UFix64
         /// sellPacks takes a Vault with Flow currency and returns a Vault of TFP
         pub fun sellPacks(
             payment: &FungibleToken.Vault,
@@ -109,8 +133,6 @@ pub contract interface TradingFungiblePack {
     /// send them to different places.
     ///
     pub resource interface PackOpener{
-        // The amount of Packs that the PackMinter is allowed to mint
-        pub var allowedAmount: UFix64
         /// openPacks takes a Vault and destroys it returning the collection containing the opened cards
         ///
         pub fun openPacks(
