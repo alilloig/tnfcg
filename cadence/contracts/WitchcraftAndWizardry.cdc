@@ -111,6 +111,8 @@ pub contract WnW: NonFungibleToken, TradingNonFungibleCardGame {
     pub let AdminStoragePath: StoragePath
     pub let PackFulfilerStoragePath: StoragePath
     pub let PackFulfilerPrivatePath: PrivatePath
+    pub let SetManagerStoragePath: StoragePath
+    pub let SetManagerPrivatePath: PrivatePath
 
 
     pub struct WnWCard: TradingNonFungibleCardGame.Card {
@@ -918,6 +920,11 @@ pub contract WnW: NonFungibleToken, TradingNonFungibleCardGame {
         self.PackFulfilerStoragePath = /storage/WnWPackFulfiler
         // Capability para fulfilear packs
         self.PackFulfilerPrivatePath = /private/WnWPackFulfiler
+        // Almacenamiento pack set manager
+        self.SetManagerStoragePath = /storage/WnWSetManager
+        // Capability para
+        self.SetManagerPrivatePath = /private/WnWSetManager
+
 
         self.nextCardID = 1
         self.nextSetID = 1
