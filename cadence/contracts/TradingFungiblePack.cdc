@@ -73,27 +73,6 @@ pub contract interface TradingFungiblePack {
         pub let price: UFix64
     }
 
-    /// Pack Setter
-    ///
-    /// The interface that enforces the requirements for opening Packs
-    ///
-    /// We do not include a condition that checks the balance because
-    /// we want to give users the ability to make custom receivers that
-    /// can do custom things with the Packs, like split them up and
-    /// send them to different places.
-    ///
-    pub resource interface PackManager{
-        // The amount of packs created and not selled yet
-        pub var packsToSellAmount: UInt64
-        // The amount of packs selled and not opened yet
-        pub var packsToOpenAmount: UInt64
-
-        
-        access(contract) fun increasePacksToSell(_ amount: UInt64): UInt64
-        access(contract) fun increasePacksToOpen(_ amount: UInt64): UInt64
-        access(contract) fun decreasePacksToSell(_ amount: UInt64): UInt64
-        access(contract) fun decreasePacksToOpen(_ amount: UInt64): UInt64
-    }
 
     /// PackCreator
     // The interface pa crear packs en el set y que se impriman los nfts

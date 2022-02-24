@@ -98,6 +98,8 @@ pub contract WnWAlphaPacks: FungibleToken, TradingFungiblePack{
 
     // Total supply of Packs in existence
     pub var totalSupply: UFix64
+    pub var packsToSell: UInt64
+    pub var packsToOpen: UInt64
 
     // Id from the set the packs belongs to
     pub let setID: UInt32
@@ -117,13 +119,14 @@ pub contract WnWAlphaPacks: FungibleToken, TradingFungiblePack{
 
     
     pub struct AlphaPackInfo: TradingFungiblePack.PackInfo{
+
         pub let packID: UInt8
-        pub let packRaritiesDistribution: {UInt8: UInt}
-        pub let packPrintingSize: UInt
-        pub let raritiesSheetsPrintingSize: {UInt8: UInt}
+        pub let packRaritiesDistribution: {UInt8: UFix64}
+        pub let printingPacksAmount: UInt64
+        pub let printingRaritiesSheetsAmounts: {UInt8: UInt64}
         pub let price: UFix64
 
-        init(setID: UInt32, packRaritiesDistribution: {UInt8: UInt}, price: UFix64){
+        init(setID: UInt32, packRaritiesDistribution: {UInt8: UFix64}, price: UFix64){
             pre{
                 //set exists?
                 //Hay que explicar muchisimas cosas, lo de calcular el printingSize y lo de calcular el sheetsPrinting size...
@@ -134,17 +137,17 @@ pub contract WnWAlphaPacks: FungibleToken, TradingFungiblePack{
             self.packRaritiesDistribution = packRaritiesDistribution
             let setMinimun = DF.getNumbersDictionaryMinimun(WnW.getSetRaritiesDistribution(setID)!)
             let packMinimun = DF.getNumbersDictionaryMinimun(packRaritiesDistribution)
-            let printingSize = UInt(setMinimun) / UInt(packMinimun)
+            let printingSize = setMinimun / packMinimun
             DF.isNumberInteger(printingSize) ?? panic("The number of rarest cards must be divisible by its pack's apperance")
-            self.packPrintingSize = printingSize
-            self.raritiesSheetsPrintingSize = {}
+            self.printingPacksAmount = UInt64(printingSize)
+            self.printingRaritiesSheetsAmounts = {}
             for rarity in packRaritiesDistribution.keys{
                 let setMinimun = DF.getNumbersDictionaryMinimun(WnW.getSetRaritiesDistribution(setID)!)
                 let packMinimun = DF.getNumbersDictionaryMinimun(packRaritiesDistribution)
-                let sheetsPrintingSize = ( (UInt(setMinimun) * packRaritiesDistribution[rarity]!) / 
-                                            (UInt(packMinimun)) * set.getRaritiesDistribution()[rarity]! )
+                let sheetsPrintingSize =  ( UFix64(setMinimun) * packRaritiesDistribution[rarity]! ) /
+                                            ( UFix64(packMinimun) * set.getRaritiesDistribution()[rarity]! )
                 DF.isNumberInteger(printingSize) ?? panic("Bad pack rarity distribution for the set rarity distribution. See TNFCG Game Designer Help")
-                self.raritiesSheetsPrintingSize[rarity] = 1
+                self.printingRaritiesSheetsAmounts[rarity] = 1
             }
             self.price = price
         }
@@ -232,18 +235,15 @@ pub contract WnWAlphaPacks: FungibleToken, TradingFungiblePack{
         return <-create Vault(balance: 0.0)
     }
 
-    pub resource Administrator: TradingFungiblePack.PackManager{
+    pub resource Administrator{
 
-        // The amount of packs createds by this manager importa???
-        pub var packsToSellAmount: UInt64
-        // The remaining amount of packs to sell
-        pub var packsToOpenAmount: UInt64
+
 
         // createNewPackCrafter
         //
         // Function that creates and returns a new PackOpener resource
         //
-        pub fun createNewPackPrinter(allowedAmount: UInt64, printRunnerCapability: Capability<&WnW.SetPrintRunner>): @PackPrinter {
+        pub fun createNewPackPrinter(allowedAmount: UInt64, printRunnerCapability: Capability<&WnW.SetPrintRunner>, packManagerCapability: Capability<&WnWAlphaPacks.Administrator>): @PackPrinter {
             emit PackPrinterCreated(allowedAmount: allowedAmount)
             return <- create PackPrinter(allowedAmount: allowedAmount, printRunnerCapability: printRunnerCapability)
         }
@@ -252,7 +252,7 @@ pub contract WnWAlphaPacks: FungibleToken, TradingFungiblePack{
         //
         // Function that creates and returns a new PackSeller resource
         //
-        pub fun createNewPackSeller(packSellerFlowTokenCapability: Capability<&{FungibleToken.Receiver}>): @PackSeller {
+        pub fun createNewPackSeller(packSellerFlowTokenCapability: Capability<&{FungibleToken.Receiver}>, packManagerCapability: Capability<&WnWAlphaPacks.Administrator>): @PackSeller {
             emit PackSellerCreated()
             return <- create PackSeller(packSellerFlowTokenCapability: packSellerFlowTokenCapability)
         }
@@ -261,33 +261,12 @@ pub contract WnWAlphaPacks: FungibleToken, TradingFungiblePack{
         //
         // Function that creates and returns a new PackOpener resource
         //
-        pub fun createNewPackOpener(packFulfilerCapability: Capability<&WnW.SetPackFulfiler>): @PackOpener {
+        pub fun createNewPackOpener(packFulfilerCapability: Capability<&WnW.SetPackFulfiler>, packManagerCapability: Capability<&WnWAlphaPacks.Administrator>): @PackOpener {
             emit PackOpenerCreated()
             return <- create PackOpener(packFulfilerCapability: packFulfilerCapability)
         }
 
 
-        access(contract) fun increasePacksToSell(_ amount: UInt64): UInt64{
-            self.packsToSellAmount = self.packsToSellAmount + amount
-            return self.packsToSellAmount
-        }
-        access(contract) fun increasePacksToOpen(_ amount: UInt64): UInt64{
-            self.packsToOpenAmount = self.packsToOpenAmount + amount
-            return self.packsToOpenAmount
-        }
-        access(contract) fun decreasePacksToSell(_ amount: UInt64): UInt64{
-            self.packsToSellAmount = self.packsToSellAmount - amount
-            return self.packsToSellAmount
-        }        
-        access(contract) fun decreasePacksToOpen(_ amount: UInt64): UInt64{
-            self.packsToOpenAmount = self.packsToOpenAmount - amount
-            return self.packsToOpenAmount
-        }
-        
-        init(){
-            self.packsToSellAmount = 0
-            self.packsToOpenAmount = 0
-        }
     }
 
 
@@ -296,23 +275,25 @@ pub contract WnWAlphaPacks: FungibleToken, TradingFungiblePack{
         // This capability allows the resource to withdraw *any* NFT, so you should be careful when giving
         // such a capability to a resource and always check its code to make sure it will use it in the
         // way that it claims.
-        access(contract) let printRunnerCapability: Capability<&{TradingNonFungibleCardGame.SetPrintRunner}>
+        access(contract) let printRunnerCapability: Capability<&WnW.SetPrintRunner>
+
         // The remaining amount of Packs that the PackManager is allowed to mint
         pub var allowedAmount: UInt64
         // printRun creates in the TNFCG contract the necessary amount of NFTs
         // to fulfil the pack amount equal to the printRun times the printed print runs quantity
-        pub fun printRun(quantity: UInt64): UInt64{
-            //llamar a printRun de WnW pero hay que llamarlo distinto y ver donde manejamos cosas
-            //WnW.TFPackInfo.sheetsPrintingSize
-            
-            //var packsPrinted = UInt64(WnW.TFPackInfo.printingSize) * quantity
-            self.allowedAmount = self.allowedAmount - packsPrinted
-            return packsPrinted
-        }
-
-        access(contract) fun decreaseAllowedAmount(_ amount: UInt64): UInt64{
-            self.allowedAmount = self.allowedAmount - amount
-            return self.allowedAmount
+        pub fun printRuns(quantity: UInt64): UInt64{
+            var printingsCompleted: UInt64 = 0
+            while (printingsCompleted < quantity){
+                self.printRunnerCapability.borrow()!.printRun(setID: WnWAlphaPacks.setID, packID: WnWAlphaPacks.TFPackInfo.packID)
+                printingsCompleted = printingsCompleted + 1
+            }
+            // the total amount of packs created for the desireds print runs
+            let packsPrintedAmount = WnWAlphaPacks.TFPackInfo.printingPacksAmount * printingsCompleted
+            // decrease the amount of packs the printer is allowed to create
+            self.allowedAmount = self.allowedAmount - packsPrintedAmount
+            // increase the amount of packs that are available to sell
+            WnWAlphaPacks.packsToSell = WnWAlphaPacks.packsToSell + packsPrintedAmount
+            return packsPrintedAmount
         }
 
         init(allowedAmount: UInt64, printRunnerCapability: Capability<&WnW.SetPrintRunner>){
@@ -325,9 +306,6 @@ pub contract WnWAlphaPacks: FungibleToken, TradingFungiblePack{
         // A capability allowing this resource to deposit the Flow tokens given as payment
         access(contract) let packSellerFlowTokenCapability: Capability<&{FungibleToken.Receiver}>
 
-        // The amount of Packs that the PackMinter is allowed to mint
-        pub var allowedAmount: UFix64
-        
         // sellPacks
         //
         // Function that sells new Packs, adds them to the total supply,
@@ -337,21 +315,21 @@ pub contract WnWAlphaPacks: FungibleToken, TradingFungiblePack{
             pre {
                 payment.isInstance(Type<@FlowToken.Vault>()): "Payment must be done in Flow tokens"
                 packsPayerPackReceiver.isInstance(Type<@WnWAlphaPacks.Vault>()): "This only sells WnW Alpha Packs"
-                amount <= self.allowedAmount: "Amount minted must be less than the allowed amount of printed packs remaining"
+                UInt64(amount) <= WnWAlphaPacks.packsToSell: "Amount minted must be less than the allowed amount of printed packs remaining"
                 payment.balance >= amount * WnWAlphaPacks.TFPackInfo.price: "Payment is not enought for the desired pack amount"
             }
             //deposit the payment in the packs seller's account
             self.packSellerFlowTokenCapability.borrow()!.deposit(from: <- payment.withdraw(amount:amount * WnWAlphaPacks.TFPackInfo.price))
             //increase the totalSupply
             WnWAlphaPacks.totalSupply = WnWAlphaPacks.totalSupply + amount
-            self.allowedAmount = self.allowedAmount - amount
+            WnWAlphaPacks.packsToSell = WnWAlphaPacks.packsToSell - UInt64(amount)
+            WnWAlphaPacks.packsToOpen = WnWAlphaPacks.packsToOpen + UInt64(amount)
             emit PacksSelled(amount: amount)
             packsPayerPackReceiver.deposit(from: <- create Vault(balance: amount))
         }
         
         init (packSellerFlowTokenCapability: Capability<&{FungibleToken.Receiver}>) {
             self.packSellerFlowTokenCapability = packSellerFlowTokenCapability
-            self.allowedAmount = 0.0
         }
 
     }
@@ -362,9 +340,6 @@ pub contract WnWAlphaPacks: FungibleToken, TradingFungiblePack{
         // such a capability to a resource and always check its code to make sure it will use it in the
         // way that it claims.
         access(contract) let packFulfilerCapability: Capability<&WnW.SetPackFulfiler>
-
-        // The amount of Packs that the PackOpener is allowed to open
-        pub var allowedAmount: UFix64
         
         // openPacks
         //
@@ -374,24 +349,22 @@ pub contract WnWAlphaPacks: FungibleToken, TradingFungiblePack{
             pre {
                 packsToOpen.isInstance(Type<@WnWAlphaPacks.Vault>()): "Tokens must be WnW Alpha edition packs"
                 packsOwnerCardCollectionPublic.isInstance(Type<@WnW.Collection>()): "Reciving collection must belong to WnW"
-                packsToOpen.balance <= self.allowedAmount: "Amount opened must be less than the remaining amount of unopened packs"
+                UInt64(packsToOpen.balance) <= WnWAlphaPacks.packsToOpen: "Amount opened must be less than the remaining amount of unopened packs"
             }
             let openedPacks <- packsToOpen.withdraw(amount: packsToOpen.balance)
-            self.allowedAmount = self.allowedAmount - openedPacks.balance
             self.packFulfilerCapability.borrow()!.fulfilPacks(setID: WnWAlphaPacks.setID, packID: WnWAlphaPacks.TFPackInfo.packID, amount: openedPacks.balance, packsOwnerCardCollectionPublic: packsOwnerCardCollectionPublic)
             emit PacksDestroyed(amount: openedPacks.balance)
+            WnWAlphaPacks.packsToOpen = WnWAlphaPacks.packsToOpen - UInt64(openedPacks.balance)
             destroy openedPacks
         }
 
         init (packFulfilerCapability: Capability<&WnW.SetPackFulfiler>) {
             self.packFulfilerCapability = packFulfilerCapability
-            self.allowedAmount = 0.0
-        
         }
     }
 
 
-    init(setID: UInt32, packRaritiesDistribution: {UInt8: UInt}, price: UFix64, setManagerCapability: Capability<&WnW.SetManager>) {
+    init(setID: UInt32, packRaritiesDistribution: {UInt8: UFix64}, price: UFix64, setManagerCapability: Capability<&WnW.SetManager>) {
         pre{
 
         }
@@ -399,6 +372,8 @@ pub contract WnWAlphaPacks: FungibleToken, TradingFungiblePack{
         // Initialize contract state.
         //
         self.totalSupply = 0.0
+        self.packsToSell = 0
+        self.packsToOpen = 0
         self.setID = setID
         self.TFPackInfo = AlphaPackInfo(setID: setID, packRaritiesDistribution: packRaritiesDistribution, price: price)
         // add Pack Info to the set
