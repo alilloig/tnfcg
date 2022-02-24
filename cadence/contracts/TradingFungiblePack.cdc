@@ -40,15 +40,25 @@ pub contract interface TradingFungiblePack {
     // The event that is emitted when Packs are destroyed
     pub event PacksDestroyed(amount: UFix64)
 
+    // PackSellerCreated
+    //
+    // The event that is emitted when a new PackSeller resource is created
+    pub event PackManagerCreated()
+
     // PackMinterCreated
     //
     // The event that is emitted when a new PackMinter resource is created
-    pub event PackSellerCreated(allowedAmount: UFix64)
+    pub event PackSellerCreated()
 
     // PackOpenerCreated
     //
     // The event that is emitted when a new opener resource is created
-    pub event PackOpenerCreated(allowedAmount: UFix64)
+    pub event PackOpenerCreated()
+
+    // PackPrinterCreated
+    //
+    // The event that is emitted when a new opener resource is created
+    pub event PackPrinterCreated(allowedAmount: UInt64)
 
     // Id from the set the packs belongs to
     pub let setID: UInt32
