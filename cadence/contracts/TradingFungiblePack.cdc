@@ -67,9 +67,9 @@ pub contract interface TradingFungiblePack {
 
     pub struct interface PackInfo {
         pub let packID: UInt8
-        pub let packRaritiesDistribution: {UInt8: UInt}
-        pub let packPrintingSize: UInt
-        pub let raritiesSheetsPrintingSize: {UInt8: UInt}
+        pub let packRaritiesDistribution: {UInt8: UFix64}
+        pub let printingPacksAmount: UInt64
+        pub let printingRaritiesSheetsAmounts: {UInt8: UInt64}
         pub let price: UFix64
     }
 
@@ -102,7 +102,7 @@ pub contract interface TradingFungiblePack {
         pub var allowedAmount: UInt64
         // printRun creates in the TNFCG contract the necessary amount of NFTs
         // to fulfil the pack amount equal to the printRun times the printed print runs quantity
-        pub fun printRun(quantity: UInt64): UInt64{
+        pub fun printRuns(quantity: UInt64): UInt64{
             post{
                 result <= before(self.allowedAmount): "The sum of the desired prints exceeds the allowed amount"
                 self.allowedAmount == before(self.allowedAmount) - result: "The printer's allowed amount must be reduced"

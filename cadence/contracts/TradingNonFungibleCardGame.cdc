@@ -217,7 +217,7 @@ pub contract interface TradingNonFungibleCardGame {
         // diccionario de 
         access(contract) let rarities: {UInt8: String}
 
-        access(contract) var raritiesDistribution: {UInt8: UInt}
+        access(contract) var raritiesDistribution: {UInt8: UFix64}
 
         //  INFORMACION DE LOS PACKS QUE SE VENDEN DE UN SET
         //
@@ -391,7 +391,7 @@ pub contract interface TradingNonFungibleCardGame {
         pub let name: String
         pub let printingInProgress: Bool
         access(contract) let rarities: {UInt8: String}
-        access(contract) let raritiesDistribution: {UInt8: UInt}
+        access(contract) let raritiesDistribution: {UInt8: UFix64}
         pub let nextPackID: UInt8
         access(contract) let packsInfo: {UInt8: {TradingFungiblePack.PackInfo}}
         access(contract) let cardsByRarity: {UInt8: [UInt32]}

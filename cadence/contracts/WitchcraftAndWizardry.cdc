@@ -277,7 +277,7 @@ pub contract WnW: NonFungibleToken, TradingNonFungibleCardGame {
         // diccionario de 
         access(contract) let rarities: {UInt8: String}
 
-        access(contract) var raritiesDistribution: {UInt8: UInt}
+        access(contract) var raritiesDistribution: {UInt8: UFix64}
 
         //  INFORMACION DE LOS PACKS QUE SE VENDEN DE UN SET
         //
@@ -406,18 +406,14 @@ pub contract WnW: NonFungibleToken, TradingNonFungibleCardGame {
             var openedTNFCsIDs: [UInt64] = []
             var openedTNFCID: UInt64 = 0
             var randomTNFCIndex: UInt64 = 0
-            var rarityDistribution: UInt = 0
-            var rarityOpenedAmount: UInt = 0
-            var rartityTransferedAmount: UInt = 0
-            var flag: UInt = 0
+            var rarityDistribution: UFix64 = 0.0
+            var rarityOpenedAmount: UInt64 = 0
+            var rartityTransferedAmount: UInt64 = 0
             var packInfo = self.packsInfo[packID]!
 
             for rarity in packInfo.packRaritiesDistribution.keys{
                 rarityDistribution = packInfo.packRaritiesDistribution[rarity]!
-                rarityOpenedAmount = rarityDistribution *  UInt(amount)
-                //JODEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEER UInt(amount)!!! y muchas cosas mas!!!!!
-                //Poner tipos de datos como sean mas chanantes y apañar casteos
-                // while no necesita UInt vale lo que sea
+                rarityOpenedAmount = UInt64(rarityDistribution * amount)
                 
                 while (rartityTransferedAmount < rarityOpenedAmount){
                     // Habrá que explicar lo guapo que está esto no?
@@ -425,7 +421,6 @@ pub contract WnW: NonFungibleToken, TradingNonFungibleCardGame {
                     openedTNFCID = self.mintedTNFCsIDsByRarity[rarity]![randomTNFCIndex]
                     openedTNFCsIDs.append(openedTNFCID)
                     rartityTransferedAmount = rartityTransferedAmount + 1
-
                 }
 
             }
@@ -451,7 +446,7 @@ pub contract WnW: NonFungibleToken, TradingNonFungibleCardGame {
         pub let name: String
         pub let printingInProgress: Bool
         access(contract) let rarities: {UInt8: String}
-        access(contract) let raritiesDistribution: {UInt8: UInt}
+        access(contract) let raritiesDistribution: {UInt8: UFix64}
         pub let nextPackID: UInt8
         access(contract) let packsInfo: {UInt8: {TradingFungiblePack.PackInfo}}
         access(contract) let cardsByRarity: {UInt8: [UInt32]}
@@ -475,7 +470,7 @@ pub contract WnW: NonFungibleToken, TradingNonFungibleCardGame {
         pub fun getSetRarities(): {UInt8: String}{
             return self.rarities
         }
-        pub fun getRaritiesDistribution(): {UInt8: UInt}{
+        pub fun getRaritiesDistribution(): {UInt8: UFix64}{
             return self.raritiesDistribution
         }
         pub fun getCardsByRarity(): {UInt8: [UInt32]}{
@@ -841,12 +836,12 @@ pub contract WnW: NonFungibleToken, TradingNonFungibleCardGame {
         return WnW.sets[setID]?.rarities
     }
 
-    pub fun getSetRaritiesDistribution(_ setID: UInt32): {UInt8: UInt}? {  
+    pub fun getSetRaritiesDistribution(_ setID: UInt32): {UInt8: UFix64}? {  
         return WnW.sets[setID]?.raritiesDistribution
     }
 
-    pub fun getSetRarityDistribution(setID: UInt32, rarityID: UInt8): UInt? {
-        let raritiesDistribution = WnW.sets[setID]?.raritiesDistribution as! {UInt8: UInt}
+    pub fun getSetRarityDistribution(setID: UInt32, rarityID: UInt8): UFix64? {
+        let raritiesDistribution = WnW.sets[setID]?.raritiesDistribution as! {UInt8: UFix64}
         return  raritiesDistribution[rarityID]
     }
 
