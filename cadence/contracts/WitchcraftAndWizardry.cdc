@@ -641,7 +641,37 @@ pub contract WnW: NonFungibleToken, TradingNonFungibleCardGame {
 
     }
 
+    pub resource CardCreator: TradingNonFungibleCardGame.CardCreator{
+        
+        pub fun createNewCard(metadata: {String: String}): UInt32{
+            var newCard = WnWCard(metadata: metadata)
+            let newID = newCard.cardID
 
+            WnW.nextCardID = WnW.nextCardID + (1 as UInt32)
+
+            emit CardCreated(id: newID, metadata: metadata)
+
+            WnW.cardDatas[newID] = newCard
+
+            return newID
+            
+        }
+
+        pub fun batchCreateNewCards(metadatas: [{String: String}]): [UInt32]{
+            var newCardsIDs: [UInt32] = []
+
+            for metadata in metadatas{
+                var newCard = WnWCard(metadata: metadata)
+                let newID = newCard.cardID
+                WnW.nextCardID = WnW.nextCardID + (1 as UInt32)
+                emit CardCreated(id: newID, metadata: metadata)
+                WnW.cardDatas[newID] = newCard
+                newCardsIDs.append(newID)
+            }
+            return newCardsIDs
+        }
+
+    }
 
     pub resource SetManager: TradingNonFungibleCardGame.SetManager{
 
@@ -699,37 +729,7 @@ pub contract WnW: NonFungibleToken, TradingNonFungibleCardGame {
 
     }
 
-    pub resource CardCreator: TradingNonFungibleCardGame.CardCreator{
-        
-        pub fun createNewCard(metadata: {String: String}): UInt32{
-            var newCard = WnWCard(metadata: metadata)
-            let newID = newCard.cardID
 
-            WnW.nextCardID = WnW.nextCardID + (1 as UInt32)
-
-            emit CardCreated(id: newID, metadata: metadata)
-
-            WnW.cardDatas[newID] = newCard
-
-            return newID
-            
-        }
-
-        pub fun batchCreateNewCards(metadatas: [{String: String}]): [UInt32]{
-            var newCardsIDs: [UInt32] = []
-
-            for metadata in metadatas{
-                var newCard = WnWCard(metadata: metadata)
-                let newID = newCard.cardID
-                WnW.nextCardID = WnW.nextCardID + (1 as UInt32)
-                emit CardCreated(id: newID, metadata: metadata)
-                WnW.cardDatas[newID] = newCard
-                newCardsIDs.append(newID)
-            }
-            return newCardsIDs
-        }
-
-    }
 
     pub resource SetPrintRunner: TradingNonFungibleCardGame.SetPrintRunner{
         // A capability allowing this resource to deposit the NFTs created 
@@ -737,7 +737,6 @@ pub contract WnW: NonFungibleToken, TradingNonFungibleCardGame {
         access(contract) let printedCardsCollectionPrivateReceiver: Capability<&{NonFungibleToken.Receiver}>
         
         pub fun printRun(setID: UInt32, packID: UInt8){
-            
             let set = &WnW.sets[setID] as &WnWSet
             let printedCards <- set.printRun(packID: packID)
             let printedCardsIDs = printedCards.getIDs()
@@ -903,8 +902,6 @@ pub contract WnW: NonFungibleToken, TradingNonFungibleCardGame {
     //
 	init() {
         pre{
-            // checks that there is a flow token receiver on the account
-            self.account.getCapability<&FlowToken.Vault{FungibleToken.Receiver}>(/public/flowTokenReceiver).check<>()
         }
         //
         // Almacenamiento Cartas impresas
