@@ -110,8 +110,9 @@ pub contract WnWAlphaPacks: FungibleToken, TradingFungiblePack{
         pub let packRaritiesDistribution: {UInt8: UInt}
         pub let packPrintingSize: UInt
         pub let raritiesSheetsPrintingSize: {UInt8: UInt}
+        pub let price: UFix64
 
-        init(setID: UInt32, packRaritiesDistribution: {UInt8: UInt}){
+        init(setID: UInt32, packRaritiesDistribution: {UInt8: UInt}, price: UFix64){
             pre{
                 //set exists?
                 //Hay que explicar muchisimas cosas, lo de calcular el printingSize y lo de calcular el sheetsPrinting size...
@@ -134,6 +135,7 @@ pub contract WnWAlphaPacks: FungibleToken, TradingFungiblePack{
                 DF.isNumberInteger(printingSize) ?? panic("Bad pack rarity distribution for the set rarity distribution. See TNFCG Game Designer Help")
                 self.raritiesSheetsPrintingSize[rarity] = 1
             }
+            self.price = price
         }
     }
 
@@ -246,15 +248,10 @@ pub contract WnWAlphaPacks: FungibleToken, TradingFungiblePack{
         }
     }
 
-    pub resource PackSetter: TradingFungiblePack.PackSetter{
 
-    }
 
     pub resource PackSeller: TradingFungiblePack.PackSeller{
-        // A capability allowing this resource to withdraw the NFT with the given ID from its collection.
-        // This capability allows the resource to withdraw *any* NFT, so you should be careful when giving
-        // such a capability to a resource and always check its code to make sure it will use it in the
-        // way that it claims.
+        // A capability allowing this resource to deposit the Flow tokens given as payment
         access(contract) let packSellerFlowTokenCapability: Capability<&{FungibleToken.Receiver}>
 
         // The amount of Packs that the PackMinter is allowed to mint
@@ -268,17 +265,15 @@ pub contract WnWAlphaPacks: FungibleToken, TradingFungiblePack{
         pub fun sellPacks(payment: &FungibleToken.Vault, packsPayerPackReceiver: &{FungibleToken.Receiver}, amount: UFix64) {
             pre {
                 payment.isInstance(Type<@FlowToken.Vault>()): "Payment must be done in Flow tokens"
+                packsPayerPackReceiver.isInstance(Type<@WnWAlphaPacks.Vault>()): "This only sells WnW Alpha Packs"
                 amount <= self.allowedAmount: "Amount minted must be less than the allowed amount of printed packs remaining"
-                //amount debe ser inferior al precio del sobre + amount
+                payment.balance >= amount * WnWAlphaPacks.TFPackInfo.price: "Payment is not enought for the desired pack amount"
             }
-            /*FALTA CALCULAR EL PRECIO A COBRAR!!! AMOUNT * PRECIO DE SOBRE!!! 
-                empieza el movidote de definir el set incluyendo precio del sobre
-            */
+            //deposit the payment in the contract's account
             self.packSellerFlowTokenCapability.borrow()!.deposit(from: <- payment.withdraw(amount: 1.0))
+            //increase the totalSupply
             WnWAlphaPacks.totalSupply = WnWAlphaPacks.totalSupply + amount
-            //todo esto esta mal, hay que revisarlo y puede que caigan funciones para manipular las amounts de un recurso a otro
             self.allowedAmount = self.allowedAmount - amount
-            self.allowedAmount = self.allowedAmount + amount
             emit PacksSelled(amount: amount)
             packsPayerPackReceiver.deposit(from: <- create Vault(balance: amount))
         }
@@ -325,7 +320,7 @@ pub contract WnWAlphaPacks: FungibleToken, TradingFungiblePack{
     }
 
 
-    init(setID: UInt32, packRaritiesDistribution: {UInt8: UInt}) {
+    init(setID: UInt32, packRaritiesDistribution: {UInt8: UInt}, price: UFix64) {
         pre{
             // checks that there is a flow token receiver on the account
             self.account.getCapability<&FlowToken.Vault{FungibleToken.Receiver}>(/public/flowTokenReceiver).check<>(): "Account cannot receive flow tokens"
@@ -337,8 +332,8 @@ pub contract WnWAlphaPacks: FungibleToken, TradingFungiblePack{
         //
         self.totalSupply = 0.0
         self.setID = setID
-        self.TFPackInfo = AlphaPackInfo(setID: setID, packRaritiesDistribution: packRaritiesDistribution)
-        let SetManagerRef = self.account.borrow<&{TradingNonFungibleCardGame.SetManager}>(from: WnW.SetManagerStoragePath)!
+        self.TFPackInfo = AlphaPackInfo(setID: setID, packRaritiesDistribution: packRaritiesDistribution, price: price)
+        let SetManagerRef = self.account.borrow<&{TradingNonFungibleCardGame.SetManager}>(from: WnW.SetManagerStoragePath) ?? panic("Account does not have a set manager instaled")
         SetManagerRef.addPackInfo(setID: setID, packInfo: self.TFPackInfo)
 
 

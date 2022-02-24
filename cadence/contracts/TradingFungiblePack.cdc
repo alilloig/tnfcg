@@ -60,6 +60,7 @@ pub contract interface TradingFungiblePack {
         pub let packRaritiesDistribution: {UInt8: UInt}
         pub let packPrintingSize: UInt
         pub let raritiesSheetsPrintingSize: {UInt8: UInt}
+        pub let price: UFix64
     }
 
     /// Pack Setter
@@ -71,9 +72,9 @@ pub contract interface TradingFungiblePack {
     /// can do custom things with the Packs, like split them up and
     /// send them to different places.
     ///
-    pub resource interface PackSetter{
-    }
+    pub resource interface PackCrafter{
 
+    }
     /// Pack Seller
     ///
     /// The interface that enforces the requirements for opening Packs
