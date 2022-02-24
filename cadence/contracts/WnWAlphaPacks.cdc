@@ -75,15 +75,26 @@ pub contract WnWAlphaPacks: FungibleToken, TradingFungiblePack{
     // The event that is emitted when Packs are destroyed
     pub event PacksDestroyed(amount: UFix64)
 
+
     // PackSellerCreated
     //
     // The event that is emitted when a new PackSeller resource is created
-    pub event PackSellerCreated(allowedAmount: UFix64)
+    pub event PackManagerCreated()
+
+    // PackSellerCreated
+    //
+    // The event that is emitted when a new PackSeller resource is created
+    pub event PackSellerCreated()
 
     // PackOpenerCreated
     //
     // The event that is emitted when a new opener resource is created
-    pub event PackOpenerCreated(allowedAmount: UFix64)
+    pub event PackOpenerCreated()
+
+    // PackPrinterCreated
+    //
+    // The event that is emitted when a new opener resource is created
+    pub event PackPrinterCreated(allowedAmount: UInt64)
 
     // Total supply of Packs in existence
     pub var totalSupply: UFix64
@@ -221,20 +232,28 @@ pub contract WnWAlphaPacks: FungibleToken, TradingFungiblePack{
         return <-create Vault(balance: 0.0)
     }
 
-    pub resource Administrator{
+    pub resource Administrator: TradingFungiblePack.PackManager{
 
+        // The amount of packs createds by this manager importa???
+        pub var packsToSellAmount: UInt64
+        // The remaining amount of packs to sell
+        pub var packsToOpenAmount: UInt64
 
-        //createPackInfoAndAddToSet
-        pub fun packCreator(){
-
+        // createNewPackCrafter
+        //
+        // Function that creates and returns a new PackOpener resource
+        //
+        pub fun createNewPackPrinter(allowedAmount: UInt64, printRunnerCapability: Capability<&WnW.SetPrintRunner>): @PackPrinter {
+            emit PackPrinterCreated(allowedAmount: allowedAmount)
+            return <- create PackPrinter(allowedAmount: allowedAmount, printRunnerCapability: printRunnerCapability)
         }
-        
+
         // createNewPackSeller
         //
         // Function that creates and returns a new PackSeller resource
         //
         pub fun createNewPackSeller(packSellerFlowTokenCapability: Capability<&{FungibleToken.Receiver}>): @PackSeller {
-            emit PackSellerCreated(allowedAmount: 0.0)
+            emit PackSellerCreated()
             return <- create PackSeller(packSellerFlowTokenCapability: packSellerFlowTokenCapability)
         }
 
@@ -242,13 +261,65 @@ pub contract WnWAlphaPacks: FungibleToken, TradingFungiblePack{
         //
         // Function that creates and returns a new PackOpener resource
         //
-        pub fun createNewPackOpener(packFulfilerCapability: Capability<&{TradingNonFungibleCardGame.SetPackFulfiler}>): @PackOpener {
-            emit PackOpenerCreated(allowedAmount: 0.0)
+        pub fun createNewPackOpener(packFulfilerCapability: Capability<&WnW.SetPackFulfiler>): @PackOpener {
+            emit PackOpenerCreated()
             return <- create PackOpener(packFulfilerCapability: packFulfilerCapability)
+        }
+
+
+        access(contract) fun increasePacksToSell(_ amount: UInt64): UInt64{
+            self.packsToSellAmount = self.packsToSellAmount + amount
+            return self.packsToSellAmount
+        }
+        access(contract) fun increasePacksToOpen(_ amount: UInt64): UInt64{
+            self.packsToOpenAmount = self.packsToOpenAmount + amount
+            return self.packsToOpenAmount
+        }
+        access(contract) fun decreasePacksToSell(_ amount: UInt64): UInt64{
+            self.packsToSellAmount = self.packsToSellAmount - amount
+            return self.packsToSellAmount
+        }        
+        access(contract) fun decreasePacksToOpen(_ amount: UInt64): UInt64{
+            self.packsToOpenAmount = self.packsToOpenAmount - amount
+            return self.packsToOpenAmount
+        }
+        
+        init(){
+            self.packsToSellAmount = 0
+            self.packsToOpenAmount = 0
         }
     }
 
 
+    pub resource PackPrinter: TradingFungiblePack.PackPrinter{
+        // A capability allowing this resource to withdraw the NFT with the given ID from its collection.
+        // This capability allows the resource to withdraw *any* NFT, so you should be careful when giving
+        // such a capability to a resource and always check its code to make sure it will use it in the
+        // way that it claims.
+        access(contract) let printRunnerCapability: Capability<&{TradingNonFungibleCardGame.SetPrintRunner}>
+        // The remaining amount of Packs that the PackManager is allowed to mint
+        pub var allowedAmount: UInt64
+        // printRun creates in the TNFCG contract the necessary amount of NFTs
+        // to fulfil the pack amount equal to the printRun times the printed print runs quantity
+        pub fun printRun(quantity: UInt64): UInt64{
+            //llamar a printRun de WnW pero hay que llamarlo distinto y ver donde manejamos cosas
+            //WnW.TFPackInfo.sheetsPrintingSize
+            
+            //var packsPrinted = UInt64(WnW.TFPackInfo.printingSize) * quantity
+            self.allowedAmount = self.allowedAmount - packsPrinted
+            return packsPrinted
+        }
+
+        access(contract) fun decreaseAllowedAmount(_ amount: UInt64): UInt64{
+            self.allowedAmount = self.allowedAmount - amount
+            return self.allowedAmount
+        }
+
+        init(allowedAmount: UInt64, printRunnerCapability: Capability<&WnW.SetPrintRunner>){
+            self.allowedAmount = allowedAmount
+            self.printRunnerCapability = printRunnerCapability
+        }
+    }
 
     pub resource PackSeller: TradingFungiblePack.PackSeller{
         // A capability allowing this resource to deposit the Flow tokens given as payment
@@ -269,8 +340,8 @@ pub contract WnWAlphaPacks: FungibleToken, TradingFungiblePack{
                 amount <= self.allowedAmount: "Amount minted must be less than the allowed amount of printed packs remaining"
                 payment.balance >= amount * WnWAlphaPacks.TFPackInfo.price: "Payment is not enought for the desired pack amount"
             }
-            //deposit the payment in the contract's account
-            self.packSellerFlowTokenCapability.borrow()!.deposit(from: <- payment.withdraw(amount: 1.0))
+            //deposit the payment in the packs seller's account
+            self.packSellerFlowTokenCapability.borrow()!.deposit(from: <- payment.withdraw(amount:amount * WnWAlphaPacks.TFPackInfo.price))
             //increase the totalSupply
             WnWAlphaPacks.totalSupply = WnWAlphaPacks.totalSupply + amount
             self.allowedAmount = self.allowedAmount - amount
@@ -290,7 +361,7 @@ pub contract WnWAlphaPacks: FungibleToken, TradingFungiblePack{
         // This capability allows the resource to withdraw *any* NFT, so you should be careful when giving
         // such a capability to a resource and always check its code to make sure it will use it in the
         // way that it claims.
-        access(contract) let packFulfilerCapability: Capability<&{TradingNonFungibleCardGame.SetPackFulfiler}>
+        access(contract) let packFulfilerCapability: Capability<&WnW.SetPackFulfiler>
 
         // The amount of Packs that the PackOpener is allowed to open
         pub var allowedAmount: UFix64
@@ -312,7 +383,7 @@ pub contract WnWAlphaPacks: FungibleToken, TradingFungiblePack{
             destroy openedPacks
         }
 
-        init (packFulfilerCapability: Capability<&{TradingNonFungibleCardGame.SetPackFulfiler}>) {
+        init (packFulfilerCapability: Capability<&WnW.SetPackFulfiler>) {
             self.packFulfilerCapability = packFulfilerCapability
             self.allowedAmount = 0.0
         
@@ -320,12 +391,9 @@ pub contract WnWAlphaPacks: FungibleToken, TradingFungiblePack{
     }
 
 
-    init(setID: UInt32, packRaritiesDistribution: {UInt8: UInt}, price: UFix64) {
+    init(setID: UInt32, packRaritiesDistribution: {UInt8: UInt}, price: UFix64, setManagerCapability: Capability<&WnW.SetManager>) {
         pre{
-            // checks that there is a flow token receiver on the account
-            self.account.getCapability<&FlowToken.Vault{FungibleToken.Receiver}>(/public/flowTokenReceiver).check<>(): "Account cannot receive flow tokens"
-            // si cambiamos WnW para usar self.account habrá q cambiar packfulfiler por Administrator
-            self.account.getCapability<&{TradingNonFungibleCardGame.SetPackFulfiler}>(WnW.PackFulfilerPrivatePath).check<>(): "Account cannot fulfil WnW packs"
+
         }
 
         // Initialize contract state.
@@ -333,7 +401,8 @@ pub contract WnWAlphaPacks: FungibleToken, TradingFungiblePack{
         self.totalSupply = 0.0
         self.setID = setID
         self.TFPackInfo = AlphaPackInfo(setID: setID, packRaritiesDistribution: packRaritiesDistribution, price: price)
-        let SetManagerRef = self.account.borrow<&{TradingNonFungibleCardGame.SetManager}>(from: WnW.SetManagerStoragePath) ?? panic("Account does not have a set manager instaled")
+        // add Pack Info to the set
+        let SetManagerRef = setManagerCapability.borrow() ?? panic("Set manager not found")
         SetManagerRef.addPackInfo(setID: setID, packInfo: self.TFPackInfo)
 
 
@@ -357,19 +426,7 @@ pub contract WnWAlphaPacks: FungibleToken, TradingFungiblePack{
         //
         self.account.save(<-create Administrator(), to: self.AdminStoragePath)
 
-       /* packSellerFlowTokenCapability: self.account.getCapability<&{FungibleToken.Receiver}>(/public/flowTokenReceiver), 
-                packFulfilerCapability: self.account.getCapability<&{TradingNonFungibleCardGame.PackFulfiler}>(WnW.PackFulfilerPrivatePath)
-        // Expose a public capability allowing users to get packs in exchange for flow tokens
-        self.account.link<&WnWAlphaPacks.Administrator{TradingFungiblePack.PackSeller}>(
-            self.PackSellerPublicPath,
-            target: self.AdminStoragePath
-        )
 
-        // Expose a public capability allowing users to open packs, sending it to the account and receiving WnW cards
-        self.account.link<&WnWAlphaPacks.Administrator{TradingFungiblePack.PackOpener}>(
-            self.PackOpenerPublicPath,
-            target: self.AdminStoragePath
-        ) */
 
         // Emit an event that shows that the contract was initialized.
         emit TokensInitialized(initialSupply: self.totalSupply)
