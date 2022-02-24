@@ -4,6 +4,7 @@ import NonFungibleToken from "./NonFungibleToken.cdc"
 import TradingNonFungibleCardGame from "./TradingNonFungibleCardGame.cdc"
 import WnW from "./WitchcraftAndWizardry.cdc"
 import FlowToken from "./FlowToken.cdc"
+import DF from "./DiccionarioFacherito.cdc"
 //import FungibleToken from 0xf8d6e0586b0a20c7
 //import TradingFungiblePack from 0xf8d6e0586b0a20c7
 //import NonFungibleToken from 0xf8d6e0586b0a20c7
@@ -49,41 +50,6 @@ the deposit function on another user's Vault to complete the transfer.
 */
 
 pub contract WnWAlphaPacks: FungibleToken, TradingFungiblePack{
-
-    // Total supply of Packs in existence
-    pub var totalSupply: UFix64
-
-    // Id from the set the packs belongs to
-    pub let setID: UInt32
-
-    // Id of the pack in the set
-    pub let packID: UInt8
-
-    pub let TFPackInfo: {TradingNonFungibleCardGame.PackInfo}
-
-    pub struct WnWAlphaPacksInfo: TradingNonFungibleCardGame.PackInfo{
-        pub let packID: UInt8
-        pub let setID: UInt32
-        pub let packRarities: {UInt8: String}
-        pub let packRaritiesDistribution: {UInt8: UInt}
-        pub let packPrintingSize: UInt
-        init(packID: UInt8, setID: UInt32, packRarities: {UInt8: String}, packRarityDistribution: {UInt8: UInt}){
-            self.packID = packID
-            self.setID = setID
-            self.packRarities = packRarities
-            self.packRaritiesDistribution = packRarityDistribution
-            var size = self.packRaritiesDistribution[self.packRarities.keys[0]]!
-            for rarityID in packRarities.keys{
-                //self.packRarityProbability[rarityID] = 
-                    //self.packRarityDistribution[rarityID] / 3.0//WnW.getSetRarityDistribution(setID: setID, rarityID: rarityID)
-                if (self.packRaritiesDistribution[rarityID]! < size){
-                    size = self.packRaritiesDistribution[rarityID]!
-                }
-            }
-            self.packPrintingSize = size
-        }
-    }
-
     // TokensInitialized
     //
     // The event that is emitted when the contract is created
@@ -119,6 +85,14 @@ pub contract WnWAlphaPacks: FungibleToken, TradingFungiblePack{
     // The event that is emitted when a new opener resource is created
     pub event PackOpenerCreated(allowedAmount: UFix64)
 
+    // Total supply of Packs in existence
+    pub var totalSupply: UFix64
+
+    // Id from the set the packs belongs to
+    pub let setID: UInt32
+
+    pub let TFPackInfo: {TradingFungiblePack.PackInfo}
+
     // Named paths
     //
     pub let VaultStoragePath: StoragePath
@@ -129,6 +103,39 @@ pub contract WnWAlphaPacks: FungibleToken, TradingFungiblePack{
     pub let PackSellerPublicPath: PublicPath
     pub let PackOpenerStoragePath: StoragePath
     pub let PackOpenerPublicPath: PublicPath
+
+    
+    pub struct AlphaPackInfo: TradingFungiblePack.PackInfo{
+        pub let packID: UInt8
+        pub let packRaritiesDistribution: {UInt8: UInt}
+        pub let packPrintingSize: UInt
+        pub let raritiesSheetsPrintingSize: {UInt8: UInt}
+
+        init(setID: UInt32, packRaritiesDistribution: {UInt8: UInt}){
+            pre{
+                //set exists?
+                //Hay que explicar muchisimas cosas, lo de calcular el printingSize y lo de calcular el sheetsPrinting size...
+                // explicadas en los panic????
+            }
+            let set = WnW.WnWQuerySetData(setID)
+            self.packID = set.nextPackID
+            self.packRaritiesDistribution = packRaritiesDistribution
+            let setMinimun = DF.getNumbersDictionaryMinimun(WnW.getSetRaritiesDistribution(setID)!)
+            let packMinimun = DF.getNumbersDictionaryMinimun(packRaritiesDistribution)
+            let printingSize = UInt(setMinimun) / UInt(packMinimun)
+            DF.isNumberInteger(printingSize) ?? panic("The number of rarest cards must be divisible by its pack's apperance")
+            self.packPrintingSize = printingSize
+            self.raritiesSheetsPrintingSize = {}
+            for rarity in packRaritiesDistribution.keys{
+                let setMinimun = DF.getNumbersDictionaryMinimun(WnW.getSetRaritiesDistribution(setID)!)
+                let packMinimun = DF.getNumbersDictionaryMinimun(packRaritiesDistribution)
+                let sheetsPrintingSize = ( (UInt(setMinimun) * packRaritiesDistribution[rarity]!) / 
+                                            (UInt(packMinimun)) * set.getRaritiesDistribution()[rarity]! )
+                DF.isNumberInteger(printingSize) ?? panic("Bad pack rarity distribution for the set rarity distribution. See TNFCG Game Designer Help")
+                self.raritiesSheetsPrintingSize[rarity] = 1
+            }
+        }
+    }
 
     // Vault
     //
@@ -213,6 +220,12 @@ pub contract WnWAlphaPacks: FungibleToken, TradingFungiblePack{
     }
 
     pub resource Administrator{
+
+
+        //createPackInfoAndAddToSet
+        pub fun packCreator(){
+
+        }
         
         // createNewPackSeller
         //
@@ -231,6 +244,10 @@ pub contract WnWAlphaPacks: FungibleToken, TradingFungiblePack{
             emit PackOpenerCreated(allowedAmount: 0.0)
             return <- create PackOpener(packFulfilerCapability: packFulfilerCapability)
         }
+    }
+
+    pub resource PackSetter: TradingFungiblePack.PackSetter{
+
     }
 
     pub resource PackSeller: TradingFungiblePack.PackSeller{
@@ -295,7 +312,7 @@ pub contract WnWAlphaPacks: FungibleToken, TradingFungiblePack{
             }
             let openedPacks <- packsToOpen.withdraw(amount: packsToOpen.balance)
             self.allowedAmount = self.allowedAmount - openedPacks.balance
-            self.packFulfilerCapability.borrow()!.fulfilPacks(setID: WnWAlphaPacks.setID, packID: WnWAlphaPacks.packID, amount: openedPacks.balance, packsOwnerCardCollectionPublic: packsOwnerCardCollectionPublic)
+            self.packFulfilerCapability.borrow()!.fulfilPacks(setID: WnWAlphaPacks.setID, packID: WnWAlphaPacks.TFPackInfo.packID, amount: openedPacks.balance, packsOwnerCardCollectionPublic: packsOwnerCardCollectionPublic)
             emit PacksDestroyed(amount: openedPacks.balance)
             destroy openedPacks
         }
@@ -308,20 +325,21 @@ pub contract WnWAlphaPacks: FungibleToken, TradingFungiblePack{
     }
 
 
-    init(packID: UInt8, setID: UInt32, packRarities: {UInt8: String}, packRarityDistribution: {UInt8: UInt}) {
+    init(setID: UInt32, packRaritiesDistribution: {UInt8: UInt}) {
         pre{
             // checks that there is a flow token receiver on the account
             self.account.getCapability<&FlowToken.Vault{FungibleToken.Receiver}>(/public/flowTokenReceiver).check<>(): "Account cannot receive flow tokens"
             // si cambiamos WnW para usar self.account habrá q cambiar packfulfiler por Administrator
             self.account.getCapability<&{TradingNonFungibleCardGame.SetPackFulfiler}>(WnW.PackFulfilerPrivatePath).check<>(): "Account cannot fulfil WnW packs"
         }
-        
+
         // Initialize contract state.
         //
         self.totalSupply = 0.0
         self.setID = setID
-        self.packID = packID
-        self.TFPackInfo = WnWAlphaPacksInfo(packID: packID, setID: setID, packRarities: packRarities, packRarityDistribution: packRarityDistribution)
+        self.TFPackInfo = AlphaPackInfo(setID: setID, packRaritiesDistribution: packRaritiesDistribution)
+        let SetManagerRef = self.account.borrow<&{TradingNonFungibleCardGame.SetManager}>(from: WnW.SetManagerStoragePath)!
+        SetManagerRef.addPackInfo(setID: setID, packInfo: self.TFPackInfo)
 
 
         self.VaultStoragePath = /storage/WnWAlphaPacksVault

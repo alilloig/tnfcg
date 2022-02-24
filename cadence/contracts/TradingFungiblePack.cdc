@@ -38,7 +38,7 @@ pub contract interface TradingFungiblePack {
     // PacksDestroyedgit
     //
     // The event that is emitted when Packs are destroyed
-    pub event PacksDestroyedgit(amount: UFix64)
+    pub event PacksDestroyed(amount: UFix64)
 
     // PackMinterCreated
     //
@@ -72,7 +72,6 @@ pub contract interface TradingFungiblePack {
     /// send them to different places.
     ///
     pub resource interface PackSetter{
-        pub fun createPackInfo(): {PackInfo}
     }
 
     /// Pack Seller
