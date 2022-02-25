@@ -123,7 +123,7 @@ pub contract WnWAlphaPacks: FungibleToken, TradingFungiblePack{
         pub let packID: UInt8
         pub let packRaritiesDistribution: {UInt8: UFix64}
         pub let printingPacksAmount: UInt64
-        pub let printingRaritiesSheetsAmounts: {UInt8: UInt64}
+        pub let printingRaritiesSheetsQuantities: {UInt8: UInt64}
         pub let price: UFix64
 
         init(setID: UInt32, packRaritiesDistribution: {UInt8: UFix64}, price: UFix64){
@@ -140,14 +140,14 @@ pub contract WnWAlphaPacks: FungibleToken, TradingFungiblePack{
             let printingSize = setMinimun / packMinimun
             TF.isNumberInteger(printingSize) ?? panic("The number of rarest cards must be divisible by its pack's apperance")
             self.printingPacksAmount = UInt64(printingSize)
-            self.printingRaritiesSheetsAmounts = {}
+            self.printingRaritiesSheetsQuantities = {}
             for rarity in packRaritiesDistribution.keys{
                 let setMinimun = TF.getNumbersDictionaryMinimun(WnW.getSetRaritiesDistribution(setID)!)
                 let packMinimun = TF.getNumbersDictionaryMinimun(packRaritiesDistribution)
                 let sheetsPrintingSize =  ( UFix64(setMinimun) * packRaritiesDistribution[rarity]! ) /
                                             ( UFix64(packMinimun) * set.getRaritiesDistribution()[rarity]! )
                 TF.isNumberInteger(printingSize) ?? panic("Bad pack rarity distribution for the set rarity distribution. See TNFCG Game Designer Help")
-                self.printingRaritiesSheetsAmounts[rarity] = 1
+                self.printingRaritiesSheetsQuantities[rarity] = 1
             }
             self.price = price
         }
@@ -281,14 +281,13 @@ pub contract WnWAlphaPacks: FungibleToken, TradingFungiblePack{
         pub var allowedAmount: UInt64
         // printRun creates in the TNFCG contract the necessary amount of NFTs
         // to fulfil the pack amount equal to the printRun times the printed print runs quantity
-        pub fun printRuns(quantity: UInt64): UInt64{
-            var printingsCompleted: UInt64 = 0
-            while (printingsCompleted < quantity){
-                self.printRunnerCapability.borrow()!.printRun(setID: WnWAlphaPacks.setID, packID: WnWAlphaPacks.TFPackInfo.packID)
-                printingsCompleted = printingsCompleted + 1
-            }
+        pub fun printRun(quantity: UInt64): UInt64{
+            
+            // Creates and stores the necessary NFTs in the contract's collection por the desired quantity of printings
+            self.printRunnerCapability.borrow()!.printRun(setID: WnWAlphaPacks.setID, packID: WnWAlphaPacks.TFPackInfo.packID, quantity: quantity)
+ 
             // the total amount of packs created for the desireds print runs
-            let packsPrintedAmount = WnWAlphaPacks.TFPackInfo.printingPacksAmount * printingsCompleted
+            let packsPrintedAmount = WnWAlphaPacks.TFPackInfo.printingPacksAmount * quantity
             // decrease the amount of packs the printer is allowed to create
             self.allowedAmount = self.allowedAmount - packsPrintedAmount
             // increase the amount of packs that are available to sell
