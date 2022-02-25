@@ -138,13 +138,13 @@ pub contract WnW: NonFungibleToken, TradingNonFungibleCardGame {
 
         // The place in the edition that this Moment was minted
         // Otherwise know as the serial number
-        pub let collectorNumber: UInt32
+        pub let serialNumber: UInt32
 
-        init(cardID: UInt32, setID: UInt32, rarityID: UInt8, collectorNumber: UInt32){
+        init(cardID: UInt32, setID: UInt32, rarityID: UInt8, serialNumber: UInt32){
             self.cardID = cardID
             self.setID = setID
             self.rarityID = rarityID
-            self.collectorNumber = collectorNumber
+            self.serialNumber = serialNumber
         }
     }
 
@@ -156,7 +156,7 @@ pub contract WnW: NonFungibleToken, TradingNonFungibleCardGame {
         pub let name: String?
         pub let setName: String?
         pub let rarity: String?
-        pub let collectorNumber: UInt32
+        pub let serialNumber: UInt32
         pub let cardID: UInt32
         pub let setID: UInt32
         pub let numTNFCsInSet: UInt32?
@@ -167,7 +167,7 @@ pub contract WnW: NonFungibleToken, TradingNonFungibleCardGame {
             name: String?,
             setName: String?,
             rarity: String?,
-            collectorNumber: UInt32,
+            serialNumber: UInt32,
             cardID: UInt32,
             setID: UInt32,
             numTNFCsInSet: UInt32?
@@ -175,7 +175,7 @@ pub contract WnW: NonFungibleToken, TradingNonFungibleCardGame {
             self.name = name
             self.setName = setName
             self.rarity = rarity
-            self.collectorNumber = collectorNumber
+            self.serialNumber = serialNumber
             self.cardID = cardID
             self.setID = setID
             self.numTNFCsInSet = numTNFCsInSet
@@ -193,13 +193,14 @@ pub contract WnW: NonFungibleToken, TradingNonFungibleCardGame {
         pub let data: {TradingNonFungibleCardGame.TNFCData}
         
         // initializer
-        init(initID: UInt64, cardID: UInt32, setID: UInt32, rarityID: UInt8, collectorNumber: UInt32){
+        init(cardID: UInt32, setID: UInt32, rarityID: UInt8, serialNumber: UInt32){
             pre {
                 //faltan comprobaciones de si esta vacio card templates
             }
-            self.id = initID
+            WnW.totalSupply = WnW.totalSupply + 1
+            self.id = WnW.totalSupply
             //estos arrays estan deliberadamente mal pensados por que pueden ser accedidos desde fuera
-            self.data = WnWTNFCData(cardID: cardID, setID: setID, rarityID: rarityID, collectorNumber: collectorNumber)
+            self.data = WnWTNFCData(cardID: cardID, setID: setID, rarityID: rarityID, serialNumber: serialNumber)
         }
 
         pub fun name(): String {
@@ -208,11 +209,11 @@ pub contract WnW: NonFungibleToken, TradingNonFungibleCardGame {
 
         pub fun description(): String {
             let setName: String = WnW.getSetName(self.data.setID) ?? ""
-            let collectorNumber: String = self.data.collectorNumber.toString()
+            let serialNumber: String = self.data.serialNumber.toString()
             return "A set "
                 .concat(setName)
-                .concat(" tnfc with collector number ")
-                .concat(collectorNumber)
+                .concat(" tnfc with serial number ")
+                .concat(serialNumber)
         }
 
          pub fun getViews(): [Type] {
@@ -235,7 +236,7 @@ pub contract WnW: NonFungibleToken, TradingNonFungibleCardGame {
                         name: WnW.getCardMetaDataByField(cardID: self.data.cardID, field: "name"),
                         setName: WnW.getSetName(self.data.setID),
                         rarity: WnW.getCardMetaDataByField(cardID: self.data.cardID, field: "rarity"),
-                        collectorNumber: self.data.collectorNumber,
+                        serialNumber: self.data.serialNumber,
                         cardID: self.data.cardID,
                         setID: self.data.setID,
                         numTNFCsInSet: WnW.getNumTNFCsInSet(setID: self.data.setID, cardID: self.data.cardID)
@@ -383,10 +384,38 @@ pub contract WnW: NonFungibleToken, TradingNonFungibleCardGame {
             self.printingInProgress = true
         }
 
-        pub fun printRun(packID: UInt8): @NonFungibleToken.Collection{
+        pub fun printRun(packID: UInt8, quantity: UInt64): @NonFungibleToken.Collection{
 
-            self.packsInfo
-            return <- WnW.createEmptyCollection()
+            let printedCards <- WnW.createEmptyCollection()
+            var i: UInt64 = 0
+            // Por cada printing que se quiera
+            while ( i < quantity){
+                var sheetQuantity: UInt64 = 0
+                // Por cada rareza que aparece en el pack
+                for rarityID in self.packsInfo[packID]!.printingRaritiesSheetsQuantities.keys {
+                    sheetQuantity = self.packsInfo[packID]!.printingRaritiesSheetsQuantities[rarityID]!
+                    var j: UInt64 = 0
+                    // Tantas veces como sheets de esa rareza por printing como diga la info del pack
+                    while (j < sheetQuantity){
+                        // Se imprime una sheet de esa rarity (se crea un TNFC por cada Card de esa rarity en el set)
+                        for card in self.cardsByRarity[rarityID]!{
+                            let TNFC <- self.mintTNFC(cardID: card, setID: self.setID, rarityID: rarityID)
+                            printedCards.deposit(token: <- TNFC)
+                        }
+                        j = j + 1
+                    }
+                }
+                i = i +1
+            }
+
+            return <- printedCards
+        }
+
+        access(self) fun mintTNFC(cardID: UInt32, setID: UInt32, rarityID: UInt8): @WnW.NFT{
+            let numInCard = self.numberMintedPerCard[cardID]!
+            let TNFC <- create WnW.NFT(cardID: cardID, setID: self.setID, rarityID: rarityID, serialNumber: numInCard)
+            self.numberMintedPerCard[cardID] = numInCard + 1
+            return <- TNFC
         }
 
         // stopPrinting() locks the Set so that no more cards can be printed
@@ -712,16 +741,14 @@ pub contract WnW: NonFungibleToken, TradingNonFungibleCardGame {
 
     }
 
-
-
     pub resource SetPrintRunner: TradingNonFungibleCardGame.SetPrintRunner{
         // A capability allowing this resource to deposit the NFTs created 
         // 
         access(contract) let printedCardsCollectionPrivateReceiver: Capability<&{NonFungibleToken.Receiver}>
         
-        pub fun printRun(setID: UInt32, packID: UInt8){
+        pub fun printRun(setID: UInt32, packID: UInt8, quantity: UInt64){
             let set = &WnW.sets[setID] as &WnWSet
-            let printedCards <- set.printRun(packID: packID)
+            let printedCards <- set.printRun(packID: packID, quantity: quantity)
             let printedCardsIDs = printedCards.getIDs()
             let printedCardsReceiverRef = self.printedCardsCollectionPrivateReceiver.borrow()!
             for tnfcID in printedCardsIDs{
