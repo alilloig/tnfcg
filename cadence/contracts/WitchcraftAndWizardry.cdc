@@ -344,7 +344,7 @@ pub contract WnW: NonFungibleToken, TradingNonFungibleCardGame {
         // The Set needs to be not locked
         // The Card can't have already been added to the Set
         //
-        pub fun addCard(cardID: UInt32, rarity: UInt8) {
+        access(self) fun addCard(cardID: UInt32, rarity: UInt8) {
             pre {
                 WnW.cardDatas[cardID] != nil: "Cannot add the Card to Set: Card doesn't exist."
                 !self.printingInProgress: "Cannot add the card to the Set after the set has been locked."
@@ -374,17 +374,13 @@ pub contract WnW: NonFungibleToken, TradingNonFungibleCardGame {
             for card in cardIDs {
                 self.addCard(cardID: card, rarity: rarity)
             }
-
+            self.raritiesDistribution[rarity] = UFix64(self.cardsByRarity[rarity]!.length)
         }
         
         // startPrinting() locks the Set so that no more cards can be printed
         //
         pub fun startPrinting(){
             self.printingInProgress = true
-        }
-
-        pub fun printTNFCs(){
-        
         }
 
         pub fun printRun(packID: UInt8): @NonFungibleToken.Collection{
@@ -550,21 +546,20 @@ pub contract WnW: NonFungibleToken, TradingNonFungibleCardGame {
         pub fun borrowNFT(id: UInt64): &NonFungibleToken.NFT {
             return &self.ownedNFTs[id] as &NonFungibleToken.NFT
         }
-
-        /* En cuarentena xk nos hemos cargado WnWCollectionPublic que era lo que lo usaba
-        // borrowTNFCGCard
-        // Gets a reference to an NFT in the collection as a TNFCGCard,
+        
+        // borrowTNFC
+        // Gets a reference to an NFT in the collection as a TNFC,
         // exposing all of its fields (including the typeID).
-        // This is safe as there are no functions that can be called on the TNFCGCard.
-        //
-        pub fun borrowTNFCGCard(id: UInt64): &WnW.NFT? {
+        // This is safe as there are no functions that can be called on the TNFC.
+        // (not in use, create WnWCollectionPublic??)
+        pub fun borrowTNFC(id: UInt64): &WnW.NFT? {
             if self.ownedNFTs[id] != nil {
                 let ref = &self.ownedNFTs[id] as auth &NonFungibleToken.NFT
                 return ref as! &WnW.NFT
             } else {
                 return nil
             }
-        }*/
+        }
 
         pub fun borrowViewResolver(id: UInt64): &AnyResource{MetadataViews.Resolver} {
             let nft = &self.ownedNFTs[id] as auth &NonFungibleToken.NFT
@@ -692,13 +687,6 @@ pub contract WnW: NonFungibleToken, TradingNonFungibleCardGame {
             let set = &WnW.sets[setID] as &WnWSet
 
             set.addPackInfo(packInfo: packInfo)
-        }
-
-        pub fun addCard(setID: UInt32, cardID: UInt32, rarity: UInt8){
-            
-            let set = &WnW.sets[setID] as &WnWSet
-
-            set.addCard(cardID: cardID, rarity: rarity)
         }
 
         pub fun addCardsByRarity(setID: UInt32, cardIDs: [UInt32], rarity: UInt8){
