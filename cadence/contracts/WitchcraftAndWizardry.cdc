@@ -4,7 +4,7 @@ import FungibleToken from "./FungibleToken.cdc"
 import TradingNonFungibleCardGame from "./TradingNonFungibleCardGame.cdc"
 import TradingFungiblePack from "./TradingFungiblePack.cdc"
 import FlowToken from "./FlowToken.cdc"
-import DF from "./DiccionarioFacherito.cdc"
+import TF from "./TradingFunctions.cdc"
 
 //import NonFungibleToken from 0xf8d6e0586b0a20c7
 //import TradingNonFungibleCardGame from 0xf8d6e0586b0a20c7

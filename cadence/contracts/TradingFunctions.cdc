@@ -2,7 +2,7 @@ import FungibleToken from "./FungibleToken.cdc"
 //import FlowToken from 0xf8d6e0586b0a20c7
 
 
-pub contract DF{
+pub contract TF{
 
     pub fun getNumbersDictionaryMinimun(_ dictionary: {Number: Number}): Number{
         var min = dictionary[dictionary.keys[0]]!

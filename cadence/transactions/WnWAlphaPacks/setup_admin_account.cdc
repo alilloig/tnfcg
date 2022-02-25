@@ -42,18 +42,33 @@ transaction {
         }
 
         //if the account doesn't already have a PackSeller
-        if signer.borrow<&WnWAlphaPacks.PackSeller{TradingFungiblePack.PackSeller}>(from: WnWAlphaPacks.PackSellerStoragePath) == nil {
+        if signer.borrow<&{TradingFungiblePack.PackSeller}>(from: WnWAlphaPacks.PackSellerStoragePath) == nil {
             signer.save(
                 <- self.packsAdmin.createNewPackSeller(packSellerFlowTokenCapability: signer.getCapability<&{FungibleToken.Receiver}>(/public/flowTokenReceiver)), 
                 to: WnWAlphaPacks.PackSellerStoragePath)
         }
 
         // if the account doesn't already have a PackOpener
-        if signer.borrow<&WnWAlphaPacks.PackOpener{TradingFungiblePack.PackOpener}>(from: WnWAlphaPacks.PackOpenerStoragePath) == nil {
+        if signer.borrow<&{TradingFungiblePack.PackOpener}>(from: WnWAlphaPacks.PackOpenerStoragePath) == nil {
             signer.save(
-                <- self.packsAdmin.createNewPackOpener(packFulfilerCapability: signer.getCapability<&{TradingNonFungibleCardGame.PackFulfiler}>(WnW.PackFulfilerPrivatePath)), 
+                <- self.packsAdmin.createNewPackOpener(packFulfilerCapability: signer.getCapability<&WnW.SetPackFulfiler>(WnW.PackFulfilerPrivatePath)), 
                 to: WnWAlphaPacks.PackOpenerStoragePath)
         }
 
     }
 }
+
+
+       /* packSellerFlowTokenCapability: self.account.getCapability<&{FungibleToken.Receiver}>(/public/flowTokenReceiver), 
+                packFulfilerCapability: self.account.getCapability<&{TradingNonFungibleCardGame.PackFulfiler}>(WnW.PackFulfilerPrivatePath)
+        // Expose a public capability allowing users to get packs in exchange for flow tokens
+        self.account.link<&WnWAlphaPacks.Administrator{TradingFungiblePack.PackSeller}>(
+            self.PackSellerPublicPath,
+            target: self.AdminStoragePath
+        )
+
+        // Expose a public capability allowing users to open packs, sending it to the account and receiving WnW cards
+        self.account.link<&WnWAlphaPacks.Administrator{TradingFungiblePack.PackOpener}>(
+            self.PackOpenerPublicPath,
+            target: self.AdminStoragePath
+        ) */

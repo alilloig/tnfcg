@@ -4,7 +4,7 @@ import NonFungibleToken from "./NonFungibleToken.cdc"
 import TradingNonFungibleCardGame from "./TradingNonFungibleCardGame.cdc"
 import WnW from "./WitchcraftAndWizardry.cdc"
 import FlowToken from "./FlowToken.cdc"
-import DF from "./DiccionarioFacherito.cdc"
+import TF from "./TradingFunctions.cdc"
 //import FungibleToken from 0xf8d6e0586b0a20c7
 //import TradingFungiblePack from 0xf8d6e0586b0a20c7
 //import NonFungibleToken from 0xf8d6e0586b0a20c7
@@ -135,18 +135,18 @@ pub contract WnWAlphaPacks: FungibleToken, TradingFungiblePack{
             let set = WnW.WnWQuerySetData(setID)
             self.packID = set.nextPackID
             self.packRaritiesDistribution = packRaritiesDistribution
-            let setMinimun = DF.getNumbersDictionaryMinimun(WnW.getSetRaritiesDistribution(setID)!)
-            let packMinimun = DF.getNumbersDictionaryMinimun(packRaritiesDistribution)
+            let setMinimun = TF.getNumbersDictionaryMinimun(WnW.getSetRaritiesDistribution(setID)!)
+            let packMinimun = TF.getNumbersDictionaryMinimun(packRaritiesDistribution)
             let printingSize = setMinimun / packMinimun
-            DF.isNumberInteger(printingSize) ?? panic("The number of rarest cards must be divisible by its pack's apperance")
+            TF.isNumberInteger(printingSize) ?? panic("The number of rarest cards must be divisible by its pack's apperance")
             self.printingPacksAmount = UInt64(printingSize)
             self.printingRaritiesSheetsAmounts = {}
             for rarity in packRaritiesDistribution.keys{
-                let setMinimun = DF.getNumbersDictionaryMinimun(WnW.getSetRaritiesDistribution(setID)!)
-                let packMinimun = DF.getNumbersDictionaryMinimun(packRaritiesDistribution)
+                let setMinimun = TF.getNumbersDictionaryMinimun(WnW.getSetRaritiesDistribution(setID)!)
+                let packMinimun = TF.getNumbersDictionaryMinimun(packRaritiesDistribution)
                 let sheetsPrintingSize =  ( UFix64(setMinimun) * packRaritiesDistribution[rarity]! ) /
                                             ( UFix64(packMinimun) * set.getRaritiesDistribution()[rarity]! )
-                DF.isNumberInteger(printingSize) ?? panic("Bad pack rarity distribution for the set rarity distribution. See TNFCG Game Designer Help")
+                TF.isNumberInteger(printingSize) ?? panic("Bad pack rarity distribution for the set rarity distribution. See TNFCG Game Designer Help")
                 self.printingRaritiesSheetsAmounts[rarity] = 1
             }
             self.price = price
