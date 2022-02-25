@@ -1,5 +1,5 @@
 import NonFungibleToken from "../../contracts/NonFungibleToken.cdc"
-import WnW from "../../contracts/Witchcraft&Wizardry.cdc"
+import WnW from "../../contracts/WitchcraftandWizardry.cdc"
 //import NonFungibleToken from 0xf8d6e0586b0a20c7
 //import WnW from 0xf8d6e0586b0a20c7
 
