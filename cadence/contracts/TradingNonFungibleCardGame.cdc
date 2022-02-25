@@ -149,7 +149,7 @@ pub contract interface TradingNonFungibleCardGame {
 
         // The place in the edition that this Moment was minted
         // Otherwise know as the serial number
-        pub let collectorNumber: UInt32
+        pub let serialNumber: UInt32
 
     }
 
@@ -297,7 +297,7 @@ pub contract interface TradingNonFungibleCardGame {
             }
         }
 
-        pub fun printRun(packID: UInt8): @NonFungibleToken.Collection{
+        pub fun printRun(packID: UInt8, quantity: UInt64): @NonFungibleToken.Collection{
             pre{
                 self.printingInProgress: "The printing must be in progress"
             }
@@ -376,7 +376,7 @@ pub contract interface TradingNonFungibleCardGame {
     ///
     pub resource interface SetPrintRunner{
         /// this should create a number of NFTs depending on the number of packs createds
-        pub fun printRun(setID: UInt32, packID: UInt8)
+        pub fun printRun(setID: UInt32, packID: UInt8, quantity: UInt64)
     }
 
     /// Pack fulfiler
