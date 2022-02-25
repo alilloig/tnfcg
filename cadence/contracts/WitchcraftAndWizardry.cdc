@@ -400,6 +400,7 @@ pub contract WnW: NonFungibleToken, TradingNonFungibleCardGame {
                         // Se imprime una sheet de esa rarity (se crea un TNFC por cada Card de esa rarity en el set)
                         for card in self.cardsByRarity[rarityID]!{
                             let TNFC <- self.mintTNFC(cardID: card, setID: self.setID, rarityID: rarityID)
+                            self.mintedTNFCsIDsByRarity[rarityID]!.append(TNFC.id)
                             printedCards.deposit(token: <- TNFC)
                         }
                         j = j + 1
