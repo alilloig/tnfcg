@@ -507,11 +507,20 @@ pub contract WnW: NonFungibleToken, TradingNonFungibleCardGame {
         }
     }
     
+    pub resource interface WnWCollectionPublic {
+        // borrowTNFC
+        // Gets a reference to an NFT in the collection as a TNFC,
+        // exposing all of its fields (including the typeID).
+        // This is safe as there are no functions that can be called on the TNFC.
+        // (not in use, create WnWCollectionPublic??)
+        pub fun borrowTNFC(id: UInt64): &WnW.NFT?
+    }
 
     // Collection
     // A collection of TNFCGCard NFTs owned by an account
     //
-    pub resource Collection: NonFungibleToken.Provider, NonFungibleToken.Receiver, NonFungibleToken.CollectionPublic, MetadataViews.ResolverCollection, TradingNonFungibleCardGame.TNFCGCollection {
+    pub resource Collection: NonFungibleToken.Provider, NonFungibleToken.Receiver, NonFungibleToken.CollectionPublic, MetadataViews.ResolverCollection, TradingNonFungibleCardGame.TNFCGCollection, WnWCollectionPublic {
+    
         // dictionary of NFT conforming tokens
         // NFT is a resource type with an `UInt64` ID field
         //
