@@ -106,9 +106,10 @@ pub contract WnW: NonFungibleToken, TradingNonFungibleCardGame {
     // Named Paths
     //
     //
-    pub let PrintedCardsStoragePath: StoragePath
-    pub let PrintedCardsPublicPath: PublicPath
-    pub let PrintedCardsPrivatePath: PrivatePath
+    pub let OwnedCardsStoragePath: StoragePath
+    pub let OwnedCardsCollectionPublicPath: PublicPath
+    pub let PrintedCardsPrivateReceiverPath: PrivatePath
+    pub let PrintedCardsPrivateProviderPath: PrivatePath
     //
     pub let AdminStoragePath: StoragePath
     //
@@ -664,14 +665,14 @@ pub contract WnW: NonFungibleToken, TradingNonFungibleCardGame {
         // createNewPrintRunner
         // Function that creates and returns a new PrintRunner resource
         //
-        pub fun createNewPrintRunner(printedCardsCollectionPrivateReceiver: Capability<&{NonFungibleToken.Receiver}>): @SetPrintRunner{
+        pub fun createNewSetPrintRunner(printedCardsCollectionPrivateReceiver: Capability<&{NonFungibleToken.Receiver}>): @SetPrintRunner{
             return <- create SetPrintRunner(printedCardsCollectionPrivateReceiver: printedCardsCollectionPrivateReceiver)
         }
 
         // createNewSetPackFulfiler
         // Function that creates and returns a new PackFulfiler resource
         //
-        pub fun createNewSetPackFulfiler(printedCardsCollectionPrivateProvider: Capability<&{NonFungibleToken.Provider, TradingNonFungibleCardGame.TNFCGCollection}>): @SetPackFulfiler {
+        pub fun createNewSetPackFulfiler(printedCardsCollectionPrivateProvider: Capability<&{NonFungibleToken.Provider}>): @SetPackFulfiler {
             return <- create SetPackFulfiler(printedCardsCollectionPrivateProvider: printedCardsCollectionPrivateProvider)
         }
 
@@ -824,7 +825,7 @@ pub contract WnW: NonFungibleToken, TradingNonFungibleCardGame {
     //
     pub fun fetch(_ from: Address, itemID: UInt64): &NonFungibleToken.NFT? {
         let collection = getAccount(from)
-            .getCapability(WnW.PrintedCardsPublicPath)!
+            .getCapability(WnW.OwnedCardsCollectionPublicPath)!
             .borrow<&WnW.Collection{TradingNonFungibleCardGame.TNFCGCollection}>()
             ?? panic("Couldn't get collection")
         // We trust WnW.Collection.borowTNFCGCard to get the correct itemID
@@ -930,11 +931,16 @@ pub contract WnW: NonFungibleToken, TradingNonFungibleCardGame {
         }
         //
         // Almacenamiento Cartas impresas
-        self.PrintedCardsStoragePath = /storage/WnWPrintedCardsCollection
+        self.OwnedCardsStoragePath = /storage/WnWPrintedCardsCollection
         // Capability pa ver cartas impresas
-        self.PrintedCardsPublicPath = /public/WnWPrintedCardsCollection
+        self.OwnedCardsCollectionPublicPath = /public/WnWOwnedCardsCollectionPublic        
+        // Capability pa ver cartas impresas
+        self.PrintedCardsPrivateReceiverPath = /private/WnWPrintedCardsCollectionReceiver
         //Capability pa sacar cartas
-        self.PrintedCardsPrivatePath = /private/WnWPrintedCardsCollection
+        self.PrintedCardsPrivateProviderPath = /private/WnWPrintedCardsCollectionProvider
+
+
+
         // Almacenamiento recurso admin
         self.AdminStoragePath = /storage/WnWAdmin
         //Almacenamiento y capability pack card creator

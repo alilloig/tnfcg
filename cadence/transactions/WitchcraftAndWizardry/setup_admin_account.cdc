@@ -18,16 +18,17 @@ transaction {
             ?? panic("Signer is not the WnW admin")
 
         // if the account doesn't already have a collection
-        if signer.borrow<&WnW.Collection>(from: WnW.PrintedCardsStoragePath) == nil {
+        if signer.borrow<&WnW.Collection>(from: WnW.OwnedCardsStoragePath) == nil {
             // save it to the account
-            signer.save(<- WnW.createEmptyCollection(), to: WnW.PrintedCardsStoragePath)
+            signer.save(<- WnW.createEmptyCollection(), to: WnW.OwnedCardsStoragePath)
 
-            //hay que crear un receiver privado y una collection espesial solo para ver
-            // create a public capability for the collection
-            signer.link<&WnW.Collection{WnW.WnWCollectionPublic}>(WnW.PrintedCardsPublicPath, target: WnW.PrintedCardsStoragePath)
+            // create a private receiver capability for the collection
+            signer.link<&WnW.Collection{NonFungibleToken.Receiver}>(WnW.PrintedCardsPrivateReceiverPath, target: WnW.PrintedCardsStoragePath)
             
             // create a private capability for extracting the cards from the printed collection
-            signer.link<&WnW.Collection{NonFungibleToken.Provider}>(WnW.PrintedCardsPrivatePath, target: WnW.PrintedCardsStoragePath)
+            signer.link<&WnW.Collection{NonFungibleToken.Provider}>(WnW.PrintedCardsPrivateProviderPath, target: WnW.PrintedCardsStoragePath)
+        
+        
         }
 
         //if the account doesn't already have a CardCreator
@@ -50,7 +51,7 @@ transaction {
         if signer.borrow<&WnW.SetPrintRunner{TradingNonFungibleCardGame.SetPrintRunner}>(from: WnW.SetPrintRunnerStoragePath) == nil{
             signer.save(
                 <- self.wnwAdmin.createNewSetPrintRunner(
-                        printedCardsCollectionPrivateReceiver: signer.getCapability<&{NonFungibleToken.Receiver}>(WnW.PrintedCardsPrivatePath)), 
+                        printedCardsCollectionPrivateReceiver: signer.getCapability<&{NonFungibleToken.Receiver}>(WnW.PrintedCardsPrivateReceiverPath)), 
                 to: WnW.SetPrintRunnerStoragePath)
             // expose a private capability to the pack fulfiler
             signer.link<&{TradingNonFungibleCardGame.SetPrintRunner}>(WnW.SetPrintRunnerPrivatePath, target: WnW.SetPrintRunnerStoragePath)
@@ -60,7 +61,7 @@ transaction {
         if signer.borrow<&WnW.SetPackFulfiler{TradingNonFungibleCardGame.SetPackFulfiler}>(from: WnW.SetPackFulfilerStoragePath) == nil{
             signer.save(
                 <- self.wnwAdmin.createNewSetPackFulfiler(
-                        printedCardsCollectionPrivateProvider: signer.getCapability<&{NonFungibleToken.Provider, TradingNonFungibleCardGame.TNFCGCollection}>(WnW.PrintedCardsPrivatePath), allowedAmount: 100.0), 
+                        printedCardsCollectionPrivateProvider: signer.getCapability<&{NonFungibleToken.Provider}>(WnW.PrintedCardsPrivateProviderPath)), 
                 to: WnW.SetPackFulfilerStoragePath)
             // expose a private capability to the pack fulfiler
             signer.link<&{TradingNonFungibleCardGame.SetPackFulfiler}>(WnW.SetPackFulfilerPrivatePath, target: WnW.SetPackFulfilerStoragePath)
