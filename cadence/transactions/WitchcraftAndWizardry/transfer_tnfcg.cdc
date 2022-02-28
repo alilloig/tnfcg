@@ -12,11 +12,11 @@ transaction(recipient: Address, withdrawID: UInt64) {
         let recipient = getAccount(recipient)
 
         // borrow a reference to the signer's NFT collection
-        let collectionRef = signer.borrow<&WnW.Collection>(from: WnW.PrintedCardsStoragePath)
+        let collectionRef = signer.borrow<&WnW.Collection>(from: WnW.OwnedCardsStoragePath)
             ?? panic("Could not borrow a reference to the owner's collection")
 
         // borrow a public reference to the receivers collection
-        let depositRef = recipient.getCapability(WnW.PrintedCardsPublicPath)!.borrow<&{NonFungibleToken.CollectionPublic}>()!
+        let depositRef = recipient.getCapability(WnW.OwnedCardsCollectionPublicPath)!.borrow<&{NonFungibleToken.CollectionPublic}>()!
 
         // withdraw the NFT from the owner's collection
         let nft <- collectionRef.withdraw(withdrawID: withdrawID)

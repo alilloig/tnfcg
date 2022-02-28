@@ -8,16 +8,16 @@ import WnW from "../../contracts/WitchcraftAndWizardry.cdc"
 transaction {
     prepare(signer: AuthAccount) {
         // if the account doesn't already have a collection
-        if signer.borrow<&WnW.Collection>(from: WnW.PrintedCardsStoragePath) == nil {
+        if signer.borrow<&WnW.Collection>(from: WnW.OwnedCardsStoragePath) == nil {
 
             // create a new empty collection
             let collection <- WnW.createEmptyCollection()
             
             // save it to the account
-            signer.save(<-collection, to: WnW.PrintedCardsStoragePath)
+            signer.save(<-collection, to: WnW.OwnedCardsStoragePath)
 
             // create a public capability for the collection
-            signer.link<&WnW.Collection{NonFungibleToken.CollectionPublic, WnW.WnWCollectionPublic}>(WnW.PrintedCardsPublicPath, target: WnW.PrintedCardsStoragePath)
+            signer.link<&WnW.Collection{NonFungibleToken.CollectionPublic, WnW.WnWCollectionPublic}>(WnW.OwnedCardsCollectionPublicPath, target: WnW.OwnedCardsStoragePath)
         }
     }
 }
