@@ -105,15 +105,24 @@ pub contract WnW: NonFungibleToken, TradingNonFungibleCardGame {
 
     // Named Paths
     //
+    //
     pub let PrintedCardsStoragePath: StoragePath
     pub let PrintedCardsPublicPath: PublicPath
     pub let PrintedCardsPrivatePath: PrivatePath
+    //
     pub let AdminStoragePath: StoragePath
-    pub let PackFulfilerStoragePath: StoragePath
-    pub let PackFulfilerPrivatePath: PrivatePath
+    //
+    pub let CardCreatorStoragePath: StoragePath
+    pub let CardCreatorPrivatePath: PrivatePath
+    //
     pub let SetManagerStoragePath: StoragePath
     pub let SetManagerPrivatePath: PrivatePath
-
+    //
+    pub let SetPrintRunnerStoragePath: StoragePath
+    pub let SetPrintRunnerPrivatePath: PrivatePath
+    //
+    pub let SetPackFulfilerStoragePath: StoragePath
+    pub let SetPackFulfilerPrivatePath: PrivatePath
 
     pub struct WnWCard: TradingNonFungibleCardGame.Card {
         pub let cardID: UInt32
@@ -659,12 +668,11 @@ pub contract WnW: NonFungibleToken, TradingNonFungibleCardGame {
             return <- create SetPrintRunner(printedCardsCollectionPrivateReceiver: printedCardsCollectionPrivateReceiver)
         }
 
-        // createNewPackFulfiler
+        // createNewSetPackFulfiler
         // Function that creates and returns a new PackFulfiler resource
         //
-        pub fun createNewPackFulfiler(printedCardsCollectionPrivateProvider: Capability<&{NonFungibleToken.Provider, TradingNonFungibleCardGame.TNFCGCollection}>, allowedAmount: UFix64): @SetPackFulfiler {
-            //emit PackFulfilerCreated(allowedAmount: allowedAmount)
-            return <- create SetPackFulfiler(printedCardsCollectionPrivateProvider: printedCardsCollectionPrivateProvider, allowedAmount: allowedAmount)
+        pub fun createNewSetPackFulfiler(printedCardsCollectionPrivateProvider: Capability<&{NonFungibleToken.Provider, TradingNonFungibleCardGame.TNFCGCollection}>): @SetPackFulfiler {
+            return <- create SetPackFulfiler(printedCardsCollectionPrivateProvider: printedCardsCollectionPrivateProvider)
         }
 
 
@@ -777,10 +785,8 @@ pub contract WnW: NonFungibleToken, TradingNonFungibleCardGame {
         // This capability allows the resource to withdraw *any* NFT, so you should be careful when giving
         // such a capability to a resource and always check its code to make sure it will use it in the
         // way that it claims.
-        access(contract) let printedCardsCollectionPrivateProvider: Capability<&{NonFungibleToken.Provider, TradingNonFungibleCardGame.TNFCGCollection}>
+        access(contract) let printedCardsCollectionPrivateProvider: Capability<&{NonFungibleToken.Provider}>
 
-        //se puede tener una variable publica en un recurso pero no en un contrato verdad???
-        pub var allowedAmount: UFix64
 
         // fulfilPacks
         //
@@ -800,9 +806,8 @@ pub contract WnW: NonFungibleToken, TradingNonFungibleCardGame {
             }   
         }
 
-        init(printedCardsCollectionPrivateProvider: Capability<&{NonFungibleToken.Provider, TradingNonFungibleCardGame.TNFCGCollection}>, allowedAmount: UFix64){
+        init(printedCardsCollectionPrivateProvider: Capability<&{NonFungibleToken.Provider}>){
             self.printedCardsCollectionPrivateProvider = printedCardsCollectionPrivateProvider
-            self.allowedAmount = allowedAmount
         }
     }
     
@@ -930,17 +935,21 @@ pub contract WnW: NonFungibleToken, TradingNonFungibleCardGame {
         self.PrintedCardsPublicPath = /public/WnWPrintedCardsCollection
         //Capability pa sacar cartas
         self.PrintedCardsPrivatePath = /private/WnWPrintedCardsCollection
-
         // Almacenamiento recurso admin
         self.AdminStoragePath = /storage/WnWAdmin
-        // Almacenamiento pack fulfiler
-        self.PackFulfilerStoragePath = /storage/WnWPackFulfiler
-        // Capability para fulfilear packs
-        self.PackFulfilerPrivatePath = /private/WnWPackFulfiler
-        // Almacenamiento pack set manager
+        //Almacenamiento y capability pack card creator
+        self.CardCreatorStoragePath = /storage/WnWCardCreator
+        self.CardCreatorPrivatePath = /private/WnWCardCreator
+        // Almacenamiento y capability pack set manager
         self.SetManagerStoragePath = /storage/WnWSetManager
-        // Capability para
         self.SetManagerPrivatePath = /private/WnWSetManager
+        // Almacenamiento print runner y Capability para imprimir sets
+        self.SetPrintRunnerStoragePath = /storage/WnWSetPrintRunner
+        self.SetPrintRunnerPrivatePath = /private/WnWSetPrintRunner
+        // Almacenamiento pack fulfiler y Capability para fulfilear packs
+        self.SetPackFulfilerStoragePath = /storage/WnWSetPackFulfiler
+        self.SetPackFulfilerPrivatePath = /private/WnWSetPackFulfiler
+
 
 
         self.nextCardID = 1
