@@ -23,10 +23,10 @@ transaction {
             signer.save(<- WnW.createEmptyCollection(), to: WnW.OwnedCardsStoragePath)
 
             // create a private receiver capability for the collection
-            signer.link<&WnW.Collection{NonFungibleToken.Receiver}>(WnW.PrintedCardsPrivateReceiverPath, target: WnW.PrintedCardsStoragePath)
+            signer.link<&WnW.Collection{NonFungibleToken.Receiver}>(WnW.PrintedCardsPrivateReceiverPath, target: WnW.OwnedCardsStoragePath)
             
             // create a private capability for extracting the cards from the printed collection
-            signer.link<&WnW.Collection{NonFungibleToken.Provider}>(WnW.PrintedCardsPrivateProviderPath, target: WnW.PrintedCardsStoragePath)
+            signer.link<&WnW.Collection{NonFungibleToken.Provider}>(WnW.PrintedCardsPrivateProviderPath, target: WnW.OwnedCardsStoragePath)
         
         
         }
