@@ -33,4 +33,3 @@ transaction(recipient: Address, amount: UFix64) {
         destroy minter
     }
 }
- 
