@@ -113,8 +113,8 @@ pub contract WnWAlphaPacks: FungibleToken, TradingFungiblePack{
     pub let ReceiverPublicPath: PublicPath
     pub let BalancePublicPath: PublicPath
     pub let AdminStoragePath: StoragePath
-    pub let PackCreatorStoragePath: StoragePath
-    pub let PackCreatorPrivatePath: PrivatePath
+    pub let PackPrinterStoragePath: StoragePath
+    pub let PackPrinterPrivatePath: PrivatePath
     pub let PackSellerStoragePath: StoragePath
     pub let PackSellerPublicPath: PublicPath
     pub let PackOpenerStoragePath: StoragePath
@@ -246,7 +246,7 @@ pub contract WnWAlphaPacks: FungibleToken, TradingFungiblePack{
         //
         // Function that creates and returns a new PackOpener resource
         //
-        pub fun createNewPackPrinter(allowedAmount: UInt64, printRunnerCapability: Capability<&WnW.SetPrintRunner>, packManagerCapability: Capability<&WnWAlphaPacks.Administrator>): @PackPrinter {
+        pub fun createNewPackPrinter(allowedAmount: UInt64, printRunnerCapability: Capability<&WnW.SetPrintRunner>): @PackPrinter {
             emit PackPrinterCreated(allowedAmount: allowedAmount)
             return <- create PackPrinter(allowedAmount: allowedAmount, printRunnerCapability: printRunnerCapability)
         }
@@ -255,7 +255,7 @@ pub contract WnWAlphaPacks: FungibleToken, TradingFungiblePack{
         //
         // Function that creates and returns a new PackSeller resource
         //
-        pub fun createNewPackSeller(packSellerFlowTokenCapability: Capability<&{FungibleToken.Receiver}>, packManagerCapability: Capability<&WnWAlphaPacks.Administrator>): @PackSeller {
+        pub fun createNewPackSeller(packSellerFlowTokenCapability: Capability<&{FungibleToken.Receiver}>): @PackSeller {
             emit PackSellerCreated()
             return <- create PackSeller(packSellerFlowTokenCapability: packSellerFlowTokenCapability)
         }
@@ -264,7 +264,7 @@ pub contract WnWAlphaPacks: FungibleToken, TradingFungiblePack{
         //
         // Function that creates and returns a new PackOpener resource
         //
-        pub fun createNewPackOpener(packFulfilerCapability: Capability<&WnW.SetPackFulfiler>, packManagerCapability: Capability<&WnWAlphaPacks.Administrator>): @PackOpener {
+        pub fun createNewPackOpener(packFulfilerCapability: Capability<&WnW.SetPackFulfiler>): @PackOpener {
             emit PackOpenerCreated()
             return <- create PackOpener(packFulfilerCapability: packFulfilerCapability)
         }
@@ -396,8 +396,8 @@ pub contract WnWAlphaPacks: FungibleToken, TradingFungiblePack{
         // path pa la capability del opener
         self.PackOpenerPublicPath = /public/WnWAlphaPackOpener
         // 
-        self.PackCreatorStoragePath = /storage/WnWAlphaPackCreator
-        self.PackCreatorPrivatePath = /private/WnWAlphaPackCreator
+        self.PackPrinterStoragePath = /storage/WnWAlphaPackPrinter
+        self.PackPrinterPrivatePath = /private/WnWAlphaPackPrinter
 
 
         // Create the one true Admin object and deposit it into the contract account.
