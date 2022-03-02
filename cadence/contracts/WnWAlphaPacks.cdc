@@ -109,9 +109,12 @@ pub contract WnWAlphaPacks: FungibleToken, TradingFungiblePack{
     // Named paths
     //
     pub let VaultStoragePath: StoragePath
+    pub let ReceiverPrivatePath: PrivatePath
     pub let ReceiverPublicPath: PublicPath
     pub let BalancePublicPath: PublicPath
     pub let AdminStoragePath: StoragePath
+    pub let PackCreatorStoragePath: StoragePath
+    pub let PackCreatorPrivatePath: PrivatePath
     pub let PackSellerStoragePath: StoragePath
     pub let PackSellerPublicPath: PublicPath
     pub let PackOpenerStoragePath: StoragePath
@@ -381,7 +384,8 @@ pub contract WnWAlphaPacks: FungibleToken, TradingFungiblePack{
 
 
         self.VaultStoragePath = /storage/WnWAlphaPacksVault
-        self.ReceiverPublicPath = /public/WnWAlphaPacksReceiver
+        self.ReceiverPublicPath = /public/WnWAlphaPacksVault
+        self.ReceiverPrivatePath = /private/WnWAlphaPacksVault
         self.BalancePublicPath = /public/WnWAlphaPacksBalance
         // path para guardar el recurso Admin (se guarda aqui en init)
         self.AdminStoragePath = /storage/WnWAlphaPacksAdmin
@@ -391,6 +395,9 @@ pub contract WnWAlphaPacks: FungibleToken, TradingFungiblePack{
         self.PackOpenerStoragePath = /storage/WnWAlphaPackOpener
         // path pa la capability del opener
         self.PackOpenerPublicPath = /public/WnWAlphaPackOpener
+        // 
+        self.PackCreatorStoragePath = /storage/WnWAlphaPackCreator
+        self.PackCreatorPrivatePath = /private/WnWAlphaPackCreator
 
 
         // Create the one true Admin object and deposit it into the contract account.
