@@ -313,7 +313,7 @@ pub contract WnWAlphaPacks: FungibleToken, TradingFungiblePack{
         // Function that sells new Packs, adds them to the total supply,
         // and returns them to the calling context.
         //
-        pub fun sellPacks(payment: &FungibleToken.Vault, packsPayerPackReceiver: &{FungibleToken.Receiver}, amount: UFix64) {
+        pub fun sellPacks(payment: @FungibleToken.Vault, packsPayerPackReceiver: &{FungibleToken.Receiver}, amount: UFix64) {
             pre {
                 payment.isInstance(Type<@FlowToken.Vault>()): "Payment must be done in Flow tokens"
                 packsPayerPackReceiver.isInstance(Type<@WnWAlphaPacks.Vault>()): "This only sells WnW Alpha Packs"
@@ -322,6 +322,7 @@ pub contract WnWAlphaPacks: FungibleToken, TradingFungiblePack{
             }
             //deposit the payment in the packs seller's account
             self.packSellerFlowTokenCapability.borrow()!.deposit(from: <- payment.withdraw(amount:amount * WnWAlphaPacks.TFPackInfo.price))
+            destroy payment
             //increase the totalSupply
             WnWAlphaPacks.totalSupply = WnWAlphaPacks.totalSupply + amount
             WnWAlphaPacks.packsToSell = WnWAlphaPacks.packsToSell - UInt64(amount)

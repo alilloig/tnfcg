@@ -102,7 +102,7 @@ pub contract interface TradingFungiblePack {
     pub resource interface PackSeller{
         /// sellPacks takes a Vault with Flow currency and returns a Vault of TFP
         pub fun sellPacks(
-            payment: &FungibleToken.Vault,
+            payment: @FungibleToken.Vault,
             packsPayerPackReceiver: &{FungibleToken.Receiver},
             amount: UFix64){
                 pre{
