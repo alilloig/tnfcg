@@ -111,6 +111,7 @@ pub contract WnWAlphaPacks: FungibleToken, TradingFungiblePack{
     pub let VaultStoragePath: StoragePath
     pub let ReceiverPrivatePath: PrivatePath
     pub let ReceiverPublicPath: PublicPath
+    pub let ProviderPrivatePath: PrivatePath
     pub let BalancePublicPath: PublicPath
     pub let AdminStoragePath: StoragePath
     pub let PackPrinterStoragePath: StoragePath
@@ -348,17 +349,16 @@ pub contract WnWAlphaPacks: FungibleToken, TradingFungiblePack{
         //
         // Function for destroying packs
         //
-        pub fun openPacks(packsToOpen: &FungibleToken.Vault, packsOwnerCardCollectionPublic: &{NonFungibleToken.CollectionPublic}){
+        pub fun openPacks(packsToOpen: @FungibleToken.Vault, packsOwnerCardCollectionPublic: &{NonFungibleToken.CollectionPublic}){
             pre {
                 packsToOpen.isInstance(Type<@WnWAlphaPacks.Vault>()): "Tokens must be WnW Alpha edition packs"
                 packsOwnerCardCollectionPublic.isInstance(Type<@WnW.Collection>()): "Reciving collection must belong to WnW"
                 UInt64(packsToOpen.balance) <= WnWAlphaPacks.packsToOpen: "Amount opened must be less than the remaining amount of unopened packs"
             }
-            let openedPacks <- packsToOpen.withdraw(amount: packsToOpen.balance)
-            self.packFulfilerCapability.borrow()!.fulfilPacks(setID: WnWAlphaPacks.setID, packID: WnWAlphaPacks.TFPackInfo.packID, amount: openedPacks.balance, packsOwnerCardCollectionPublic: packsOwnerCardCollectionPublic)
-            emit PacksDestroyed(amount: openedPacks.balance)
-            WnWAlphaPacks.packsToOpen = WnWAlphaPacks.packsToOpen - UInt64(openedPacks.balance)
-            destroy openedPacks
+            self.packFulfilerCapability.borrow()!.fulfilPacks(setID: WnWAlphaPacks.setID, packID: WnWAlphaPacks.TFPackInfo.packID, amount: packsToOpen.balance, packsOwnerCardCollectionPublic: packsOwnerCardCollectionPublic)
+            emit PacksDestroyed(amount: packsToOpen.balance)
+            WnWAlphaPacks.packsToOpen = WnWAlphaPacks.packsToOpen - UInt64(packsToOpen.balance)
+            destroy packsToOpen
         }
 
         init (packFulfilerCapability: Capability<&WnW.SetPackFulfiler>) {
@@ -387,6 +387,7 @@ pub contract WnWAlphaPacks: FungibleToken, TradingFungiblePack{
         self.VaultStoragePath = /storage/WnWAlphaPacksVault
         self.ReceiverPublicPath = /public/WnWAlphaPacksVault
         self.ReceiverPrivatePath = /private/WnWAlphaPacksVault
+        self.ProviderPrivatePath = /private/WnWAlphaPacksVault
         self.BalancePublicPath = /public/WnWAlphaPacksBalance
         // path para guardar el recurso Admin (se guarda aqui en init)
         self.AdminStoragePath = /storage/WnWAlphaPacksAdmin

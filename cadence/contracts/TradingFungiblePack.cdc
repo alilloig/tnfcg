@@ -125,7 +125,7 @@ pub contract interface TradingFungiblePack {
         /// openPacks takes a Vault and destroys it returning the collection containing the opened cards
         ///
         pub fun openPacks(
-            packsToOpen: &FungibleToken.Vault,
+            packsToOpen: @FungibleToken.Vault,
             packsOwnerCardCollectionPublic: &{NonFungibleToken.CollectionPublic}){
                 pre{
                     packsToOpen.balance > 0.0: "Amount opened must be greater than zero"
