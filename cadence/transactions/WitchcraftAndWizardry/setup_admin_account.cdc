@@ -1,9 +1,9 @@
-import NonFungibleToken from "../../contracts/NonFungibleToken.cdc"
-import TradingNonFungibleCardGame from "../../contracts/TradingNonFungibleCardGame.cdc"
-import WnW from "../../contracts/WitchcraftAndWizardry.cdc"
-//import NonFungibleToken from 0xf8d6e0586b0a20c7
-//import TradingNonFungibleCardGame from 0xf8d6e0586b0a20c7
-//import WnW from 0xf8d6e0586b0a20c7
+//import NonFungibleToken from "../../contracts/NonFungibleToken.cdc"
+//import TradingNonFungibleCardGame from "../../contracts/TradingNonFungibleCardGame.cdc"
+//import WnW from "../../contracts/WitchcraftAndWizardry.cdc"
+import NonFungibleToken from 0xf8d6e0586b0a20c7
+import TradingNonFungibleCardGame from 0xf8d6e0586b0a20c7
+import WnW from 0xf8d6e0586b0a20c7
 
 // This transaction configures an account to hold Kitty Items.
 

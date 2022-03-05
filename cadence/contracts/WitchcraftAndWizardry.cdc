@@ -1,17 +1,17 @@
-import NonFungibleToken from "./NonFungibleToken.cdc"
-import MetadataViews from "./MetadataViews.cdc"
-import FungibleToken from "./FungibleToken.cdc"
-import TradingNonFungibleCardGame from "./TradingNonFungibleCardGame.cdc"
-import TradingFungiblePack from "./TradingFungiblePack.cdc"
-import FlowToken from "./FlowToken.cdc"
-import TF from "./TradingFunctions.cdc"
-
-//import NonFungibleToken from 0xf8d6e0586b0a20c7
-//import TradingNonFungibleCardGame from 0xf8d6e0586b0a20c7
-//import MetadataViews from 0xf8d6e0586b0a20c7
-//import FungibleToken from 0xf8d6e0586b0a20c7
-//import TradingFungiblePack from 0xf8d6e0586b0a20c7
-//import FlowToken from 0xf8d6e0586b0a20c7
+//import NonFungibleToken from "./NonFungibleToken.cdc"
+//import MetadataViews from "./MetadataViews.cdc"
+//import FungibleToken from "./FungibleToken.cdc"
+//import TradingNonFungibleCardGame from "./TradingNonFungibleCardGame.cdc"
+//import TradingFungiblePack from "./TradingFungiblePack.cdc"
+//import FlowToken from "./FlowToken.cdc"
+//import TF from "./TradingFunctions.cdc"
+import NonFungibleToken from 0xf8d6e0586b0a20c7
+import MetadataViews from 0xf8d6e0586b0a20c7
+import FungibleToken from 0xf8d6e0586b0a20c7
+import TradingNonFungibleCardGame from 0xf8d6e0586b0a20c7
+import TradingFungiblePack from 0xf8d6e0586b0a20c7
+import FlowToken from 0xf8d6e0586b0a20c7
+import TF from 0xf8d6e0586b0a20c7
 
 /**
 
@@ -68,7 +68,7 @@ pub contract WnW: NonFungibleToken, TradingNonFungibleCardGame {
     // Emitted when a new Set is created
     pub event SetCreated(setID: UInt32)
     // Emitted when a new Card is added to a Set
-    pub event CardAddedToSet(setID: UInt32, cardID: UInt32)
+    pub event CardAddedToSet(setID: UInt32, cardID: UInt32, rarity: UInt8)
     // Emitted when a Set is locked, meaning Cards cannot be added
     pub event SetPrintingStoped(setID: UInt32)
     // Emitted when a Card is minted from a Set
@@ -321,6 +321,9 @@ pub contract WnW: NonFungibleToken, TradingNonFungibleCardGame {
             self.nextPackID = 1
             self.packsInfo = {}
             self.cardsByRarity = {}
+            for rarity in rarities.keys{
+                self.cardsByRarity[rarity] = []
+            }
             self.numberMintedPerCard = {}
             self.mintedTNFCsIDsByRarity = {}
         }
@@ -340,6 +343,7 @@ pub contract WnW: NonFungibleToken, TradingNonFungibleCardGame {
         // 
         //
         pub fun addPackInfo(packInfo: {TradingFungiblePack.PackInfo}){
+
             self.packsInfo[self.nextPackID] = packInfo
             // Increment the packID so that it isnt't used again
             self.nextPackID = self.nextPackID + 1
@@ -368,7 +372,7 @@ pub contract WnW: NonFungibleToken, TradingNonFungibleCardGame {
             // Initialize the Moment count to zero
             self.numberMintedPerCard[cardID] = 0
 
-            emit CardAddedToSet(setID: self.setID, cardID: cardID)
+            emit CardAddedToSet(setID: self.setID, cardID: cardID, rarity: rarity)
         }
 
         // addCardsByRarity adds a card to the set
@@ -503,17 +507,40 @@ pub contract WnW: NonFungibleToken, TradingNonFungibleCardGame {
             self.mintedTNFCsIDsByRarity = set.mintedTNFCsIDsByRarity
         }
 
-        pub fun getSetRarities(): {UInt8: String}{
-            return self.rarities
+        pub fun getSetRarities(): {UInt8: String}?{
+            if (self.rarities.keys.length > 0){
+                return self.rarities
+            } else {
+                return nil
+            }
         }
-        pub fun getRaritiesDistribution(): {UInt8: UFix64}{
-            return self.raritiesDistribution
+        pub fun getRaritiesDistribution(): {UInt8: UFix64}?{
+            if (self.raritiesDistribution.keys.length > 0){
+                return self.raritiesDistribution
+            } else {
+                return nil
+            }
         }
-        pub fun getCardsByRarity(): {UInt8: [UInt32]}{
-            return self.cardsByRarity
+        pub fun getCardsByRarity(): {UInt8: [UInt32]}?{
+            if (self.cardsByRarity.keys.length > 0){
+                return self.cardsByRarity
+            } else {
+                return nil
+            }
         }
-        pub fun getNumberMintedPerCard(): {UInt32: UInt32}{
-            return self.numberMintedPerCard
+        pub fun getNumberMintedPerCard(): {UInt32: UInt32}?{
+            if (self.numberMintedPerCard.keys.length > 0){
+                return self.numberMintedPerCard
+            } else {
+                return nil
+            }
+        }
+        pub fun getPacksInfo(): {UInt8: {TradingFungiblePack.PackInfo}}?{
+            if (self.packsInfo.keys.length > 0){
+                return self.packsInfo
+            } else {
+                return nil
+            }            
         }
     }
     
@@ -832,6 +859,16 @@ pub contract WnW: NonFungibleToken, TradingNonFungibleCardGame {
         // (it checks it before returning it).
         return collection.borrowNFT(id: itemID)
     }
+
+
+    pub fun getCardsIDs(): [UInt32]?{
+        if WnW.cardDatas.keys.length == 0 {
+            return nil
+        } else {
+            return WnW.cardDatas.keys
+        }        
+    }
+
 
     // Al final SetData y getSetData son una forma publica facil de sacar info
     // de campos del contrato que queremos que sean de acceso restringido pero 

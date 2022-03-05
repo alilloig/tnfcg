@@ -1,9 +1,9 @@
-import NonFungibleToken from "./NonFungibleToken.cdc"
-import FungibleToken from "./FungibleToken.cdc"
-import TradingFungiblePack from "./TradingFungiblePack.cdc"
-//import NonFungibleToken from 0xf8d6e0586b0a20c7
-//import FungibleToken from 0xf8d6e0586b0a20c7
-//import TradingFungiblePack from 0xf8d6e0586b0a20c7
+//import NonFungibleToken from "./NonFungibleToken.cdc"
+//import FungibleToken from "./FungibleToken.cdc"
+//import TradingFungiblePack from "./TradingFungiblePack.cdc"
+import NonFungibleToken from 0xf8d6e0586b0a20c7
+import FungibleToken from 0xf8d6e0586b0a20c7
+import TradingFungiblePack from 0xf8d6e0586b0a20c7
 
 /**
 
@@ -68,7 +68,7 @@ pub contract interface TradingNonFungibleCardGame {
     // Emitted when a new Set is created
     pub event SetCreated(setID: UInt32)
     // Emitted when a new Card is added to a Set
-    pub event CardAddedToSet(setID: UInt32, cardID: UInt32)
+    pub event CardAddedToSet(setID: UInt32, cardID: UInt32, rarity: UInt8)
     // Emitted when a Set is locked, meaning Cards cannot be added
     pub event SetPrintingStoped(setID: UInt32)
     // Emitted when a Card is minted from a Set
@@ -288,12 +288,12 @@ pub contract interface TradingNonFungibleCardGame {
         pub fun startPrinting(){
             pre {
                 !self.printingInProgress: "The set is already beeing printed"
-                self.packsInfo.length > 1: "There should be at least one kind of pack before printing the set"
-                self.cardsByRarity.length > 1: "There should be at least one card in the set"
+                //self.packsInfo.keys.length > 1: "There should be at least one kind of pack before printing the set"
+                self.cardsByRarity.keys.length > 1: "There should be at least one card in the set"
             }
             post {
                 self.printingInProgress: "The printing must be in progress"
-                self.raritiesDistribution.length == self.rarities.length: "The set's rarity distribution must be setted"
+                self.raritiesDistribution.keys.length == self.rarities.keys.length: "The set's rarity distribution must be setted"
             }
         }
 
@@ -388,3 +388,4 @@ pub contract interface TradingNonFungibleCardGame {
         pub fun fulfilPacks(setID: UInt32, packID: UInt8, amount: UFix64, packsOwnerCardCollectionPublic: &{NonFungibleToken.CollectionPublic})
     }
 }
+ 

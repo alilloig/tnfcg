@@ -1,4 +1,4 @@
-import FungibleToken from "./FungibleToken.cdc"
+import FungibleToken from 0xf8d6e0586b0a20c7
 
 pub contract FlowToken: FungibleToken {
 
@@ -170,16 +170,12 @@ pub contract FlowToken: FungibleToken {
 
         // Create the Vault with the total supply of tokens and save it in storage
         //
-        let vault <- create Vault(balance: self.totalSupply)
-        adminAccount.save(<-vault, to: /storage/flowTokenVault)
+        
 
-        // Create a public capability to the stored Vault that only exposes
-        // the `deposit` method through the `Receiver` interface
-        //
-        adminAccount.link<&FlowToken.Vault{FungibleToken.Receiver}>(
-            /public/flowTokenReceiver,
-            target: /storage/flowTokenVault
-        )
+        let vault <- create Vault(balance: self.totalSupply)
+        adminAccount.save(<-vault, to: /storage/flowTokenMyVault)
+
+
 
         // Create a public capability to the stored Vault that only exposes
         // the `balance` field through the `Balance` interface
@@ -190,9 +186,10 @@ pub contract FlowToken: FungibleToken {
         )
 
         let admin <- create Administrator()
-        adminAccount.save(<-admin, to: /storage/flowTokenAdmin)
+        adminAccount.save(<-admin, to: /storage/flowTokenMyAdmin)
 
         // Emit an event that shows that the contract was initialized
         emit TokensInitialized(initialSupply: self.totalSupply)
     }
 }
+ 

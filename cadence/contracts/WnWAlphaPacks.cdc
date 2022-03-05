@@ -1,17 +1,17 @@
-import FungibleToken from "./FungibleToken.cdc"
-import TradingFungiblePack from "./TradingFungiblePack.cdc"
-import NonFungibleToken from "./NonFungibleToken.cdc"
-import TradingNonFungibleCardGame from "./TradingNonFungibleCardGame.cdc"
-import WnW from "./WitchcraftAndWizardry.cdc"
-import FlowToken from "./FlowToken.cdc"
-import TF from "./TradingFunctions.cdc"
-//import FungibleToken from 0xf8d6e0586b0a20c7
-//import TradingFungiblePack from 0xf8d6e0586b0a20c7
-//import NonFungibleToken from 0xf8d6e0586b0a20c7
-//import TradingNonFungibleCardGame from 0xf8d6e0586b0a20c7
-//import WnW from 0xf8d6e0586b0a20c7
-//import FlowToken from 0xf8d6e0586b0a20c7
-
+//import FungibleToken from "./FungibleToken.cdc"
+//import TradingFungiblePack from "./TradingFungiblePack.cdc"
+//import NonFungibleToken from "./NonFungibleToken.cdc"
+//import TradingNonFungibleCardGame from "./TradingNonFungibleCardGame.cdc"
+//import WnW from "./WitchcraftAndWizardry.cdc"
+//import FlowToken from "./FlowToken.cdc"
+//import TF from "./TradingFunctions.cdc"
+import FungibleToken from 0xf8d6e0586b0a20c7
+import TradingFungiblePack from 0xf8d6e0586b0a20c7
+import NonFungibleToken from 0xf8d6e0586b0a20c7
+import TradingNonFungibleCardGame from 0xf8d6e0586b0a20c7
+import WnW from 0xf8d6e0586b0a20c7
+import FlowToken from 0xf8d6e0586b0a20c7
+import TF from 0xf8d6e0586b0a20c7
 /**
 
 ## The Flow Trading Non-Fungible Card Pack standard
@@ -132,14 +132,17 @@ pub contract WnWAlphaPacks: FungibleToken, TradingFungiblePack{
 
         init(setID: UInt32, packRaritiesDistribution: {UInt8: UFix64}, price: UFix64){
             pre{
-                //set exists?
+                //set exists? no hace falta x el panic siguiente
+                //lo que si hace puta falta es que pete si no hay cartas!!!!
+
                 //Hay que explicar muchisimas cosas, lo de calcular el printingSize y lo de calcular el sheetsPrinting size...
                 // explicadas en los panic????
             }
-            let set = WnW.WnWQuerySetData(setID)
-            self.packID = set.nextPackID
+            let setData = WnW.getSetData(setID: setID) ?? panic ("Set does not exists")
+            self.packID = setData.nextPackID
             self.packRaritiesDistribution = packRaritiesDistribution
-            let setMinimun = TF.getNumbersDictionaryMinimun(WnW.getSetRaritiesDistribution(setID)!)
+            let SetRaritiesDistribution = setData.getRaritiesDistribution() ?? panic ("Set has no cards on it yet")
+            let setMinimun = TF.getNumbersDictionaryMinimun(SetRaritiesDistribution)
             let packMinimun = TF.getNumbersDictionaryMinimun(packRaritiesDistribution)
             let printingSize = setMinimun / packMinimun
             TF.isNumberInteger(printingSize) ?? panic("The number of rarest cards must be divisible by its pack's apperance")
@@ -149,7 +152,7 @@ pub contract WnWAlphaPacks: FungibleToken, TradingFungiblePack{
                 let setMinimun = TF.getNumbersDictionaryMinimun(WnW.getSetRaritiesDistribution(setID)!)
                 let packMinimun = TF.getNumbersDictionaryMinimun(packRaritiesDistribution)
                 let sheetsPrintingSize =  ( UFix64(setMinimun) * packRaritiesDistribution[rarity]! ) /
-                                            ( UFix64(packMinimun) * set.getRaritiesDistribution()[rarity]! )
+                                            ( UFix64(packMinimun) * setData.getRaritiesDistribution()![rarity]! )
                 TF.isNumberInteger(printingSize) ?? panic("Bad pack rarity distribution for the set rarity distribution. See TNFCG Game Designer Help")
                 self.printingRaritiesSheetsQuantities[rarity] = 1
             }
@@ -367,11 +370,7 @@ pub contract WnWAlphaPacks: FungibleToken, TradingFungiblePack{
     }
 
 
-    init(setID: UInt32, packRaritiesDistribution: {UInt8: UFix64}, price: UFix64, setManagerCapability: Capability<&WnW.SetManager>) {
-        pre{
-
-        }
-
+    init(setID: UInt32, packRaritiesDistribution: {UInt8: UFix64}, price: UFix64, setManagerCapability: Capability<&{TradingNonFungibleCardGame.SetManager}>) {
         // Initialize contract state.
         //
         self.totalSupply = 0.0
@@ -381,9 +380,12 @@ pub contract WnWAlphaPacks: FungibleToken, TradingFungiblePack{
         self.TFPackInfo = AlphaPackInfo(setID: setID, packRaritiesDistribution: packRaritiesDistribution, price: price)
         // add Pack Info to the set
         let SetManagerRef = setManagerCapability.borrow() ?? panic("Set manager not found")
+        log("Se va a añadir el pack info al set ")
+        log(setID)
         SetManagerRef.addPackInfo(setID: setID, packInfo: self.TFPackInfo)
-
-
+        log(self.TFPackInfo.packID)
+        log(self.TFPackInfo.printingPacksAmount)
+        log(self.TFPackInfo.price)
         self.VaultStoragePath = /storage/WnWAlphaPacksVault
         self.ReceiverPublicPath = /public/WnWAlphaPacksVault
         self.ReceiverPrivatePath = /private/WnWAlphaPacksVault

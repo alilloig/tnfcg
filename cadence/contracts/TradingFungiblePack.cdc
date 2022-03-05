@@ -1,8 +1,7 @@
-import NonFungibleToken from "./NonFungibleToken.cdc"
-import FungibleToken from "./FungibleToken.cdc"
-//import NonFungibleToken from 0xf8d6e0586b0a20c7
-//import FungibleToken from 0xf8d6e0586b0a20c7
-//import TradingNonFungibleCardGame from 0xf8d6e0586b0a20c7
+//import NonFungibleToken from "./NonFungibleToken.cdc"
+//import FungibleToken from "./FungibleToken.cdc"
+import NonFungibleToken from 0xf8d6e0586b0a20c7
+import FungibleToken from 0xf8d6e0586b0a20c7
 
 /**
 

@@ -1,5 +1,5 @@
-import WnW from "../../contracts/WitchcraftAndWizardry.cdc"
-//import WnW from 0xf8d6e0586b0a20c7
+//import WnW from "../../contracts/WitchcraftAndWizardry.cdc"
+import WnW from 0xf8d6e0586b0a20c7
 
 // This transction uses the NFTMinter resource to mint a new NFT.
 //
