@@ -19,3 +19,4 @@ transaction(quantity: UInt64) {
         self.alphaPrinter.printRun(quantity: quantity)
     }
 }
+ 

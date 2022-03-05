@@ -222,7 +222,11 @@ pub contract WnW: NonFungibleToken, TradingNonFungibleCardGame {
             let serialNumber: String = self.data.serialNumber.toString()
             return "A set "
                 .concat(setName)
-                .concat(" tnfc with serial number ")
+                .concat(" tnfc copy of card ")
+                .concat(self.data.cardID.toString())
+                .concat(" at rarity ")
+                .concat(self.data.rarityID.toString())
+                .concat(" with serial number ")
                 .concat(serialNumber)
         }
 
@@ -321,11 +325,12 @@ pub contract WnW: NonFungibleToken, TradingNonFungibleCardGame {
             self.nextPackID = 1
             self.packsInfo = {}
             self.cardsByRarity = {}
+            self.mintedTNFCsIDsByRarity = {}
             for rarity in rarities.keys{
                 self.cardsByRarity[rarity] = []
+                self.mintedTNFCsIDsByRarity[rarity] = []
             }
             self.numberMintedPerCard = {}
-            self.mintedTNFCsIDsByRarity = {}
         }
 
         //
@@ -369,7 +374,7 @@ pub contract WnW: NonFungibleToken, TradingNonFungibleCardGame {
             // Add the Card to the arrays dictionary of Cards/Rarity
             self.cardsByRarity[rarity]!.append(cardID)
 
-            // Initialize the Moment count to zero
+            // Initialize the TNFC count to zero
             self.numberMintedPerCard[cardID] = 0
 
             emit CardAddedToSet(setID: self.setID, cardID: cardID, rarity: rarity)
@@ -541,6 +546,13 @@ pub contract WnW: NonFungibleToken, TradingNonFungibleCardGame {
             } else {
                 return nil
             }            
+        }
+        pub fun getMintedTNFCsIDsByRarity(): {UInt8: [UInt64]}?{
+            if (self.mintedTNFCsIDsByRarity.keys.length > 0){
+                return self.mintedTNFCsIDsByRarity
+            } else {
+                return nil
+            }             
         }
     }
     
@@ -796,7 +808,7 @@ pub contract WnW: NonFungibleToken, TradingNonFungibleCardGame {
             let set = &WnW.sets[setID] as &WnWSet
             let printedCards <- set.printRun(packID: packID, quantity: quantity)
             let printedCardsIDs = printedCards.getIDs()
-            let printedCardsReceiverRef = self.printedCardsCollectionPrivateReceiver.borrow()!
+            let printedCardsReceiverRef = self.printedCardsCollectionPrivateReceiver.borrow() ?? panic("Cannot borrow reference to printed cards collection private receiver")
             for tnfcID in printedCardsIDs{
                 printedCardsReceiverRef.deposit(token: <-printedCards.withdraw(withdrawID: tnfcID))
             }

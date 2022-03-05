@@ -1,9 +1,11 @@
 //import TradingFungiblePack from "../../contracts/TradingFungiblePack.cdc"
+//import TradingNonFungibleCardGame from "../../contracts/TradingNonFungibleCardGame.cdc"
 //import WnWAlphaPacks from "../../contracts/WnWAlphaPacks.cdc"
 //import WnW from "../../contracts/WitchcraftAndWizardry.cdc"
 import TradingFungiblePack from 0xf8d6e0586b0a20c7
 import WnWAlphaPacks from 0xf8d6e0586b0a20c7
 import WnW from 0xf8d6e0586b0a20c7
+import TradingNonFungibleCardGame from 0xf8d6e0586b0a20c7
 
 
 // Tx para setear el packprinter
@@ -24,7 +26,7 @@ transaction (maxPrinterPrintings: UInt64){
             signer.save(
                 <- self.alphaAdmin.createNewPackPrinter(
                     allowedAmount: maxPrinterPrintings * WnWAlphaPacks.TFPackInfo.printingPacksAmount,
-                    printRunnerCapability: signer.getCapability<&WnW.SetPrintRunner>(WnW.SetPrintRunnerPrivatePath)),
+                    printRunnerCapability: signer.getCapability<&{TradingNonFungibleCardGame.SetPrintRunner}>(WnW.SetPrintRunnerPrivatePath)),
                 to: WnWAlphaPacks.PackPrinterStoragePath)
 
             // Expose a private capability allowing admin to create new packs

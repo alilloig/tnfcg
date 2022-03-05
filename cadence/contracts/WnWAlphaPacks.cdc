@@ -250,7 +250,7 @@ pub contract WnWAlphaPacks: FungibleToken, TradingFungiblePack{
         //
         // Function that creates and returns a new PackOpener resource
         //
-        pub fun createNewPackPrinter(allowedAmount: UInt64, printRunnerCapability: Capability<&WnW.SetPrintRunner>): @PackPrinter {
+        pub fun createNewPackPrinter(allowedAmount: UInt64, printRunnerCapability: Capability<&{TradingNonFungibleCardGame.SetPrintRunner}>): @PackPrinter {
             emit PackPrinterCreated(allowedAmount: allowedAmount)
             return <- create PackPrinter(allowedAmount: allowedAmount, printRunnerCapability: printRunnerCapability)
         }
@@ -268,7 +268,7 @@ pub contract WnWAlphaPacks: FungibleToken, TradingFungiblePack{
         //
         // Function that creates and returns a new PackOpener resource
         //
-        pub fun createNewPackOpener(packFulfilerCapability: Capability<&WnW.SetPackFulfiler>): @PackOpener {
+        pub fun createNewPackOpener(packFulfilerCapability: Capability<&{TradingNonFungibleCardGame.SetPackFulfiler}>): @PackOpener {
             emit PackOpenerCreated()
             return <- create PackOpener(packFulfilerCapability: packFulfilerCapability)
         }
@@ -282,16 +282,16 @@ pub contract WnWAlphaPacks: FungibleToken, TradingFungiblePack{
         // This capability allows the resource to withdraw *any* NFT, so you should be careful when giving
         // such a capability to a resource and always check its code to make sure it will use it in the
         // way that it claims.
-        access(contract) let printRunnerCapability: Capability<&WnW.SetPrintRunner>
+        access(contract) let printRunnerCapability: Capability<&{TradingNonFungibleCardGame.SetPrintRunner}>
 
         // The remaining amount of Packs that the PackManager is allowed to mint
         pub var allowedAmount: UInt64
         // printRun creates in the TNFCG contract the necessary amount of NFTs
         // to fulfil the pack amount equal to the printRun times the printed print runs quantity
         pub fun printRun(quantity: UInt64): UInt64{
-            
+            let printRunnerRef = self.printRunnerCapability.borrow() ?? panic ("Cannot borrow reference to WnW Set printer")
             // Creates and stores the necessary NFTs in the contract's collection por the desired quantity of printings
-            self.printRunnerCapability.borrow()!.printRun(setID: WnWAlphaPacks.setID, packID: WnWAlphaPacks.TFPackInfo.packID, quantity: quantity)
+            printRunnerRef.printRun(setID: WnWAlphaPacks.setID, packID: WnWAlphaPacks.TFPackInfo.packID, quantity: quantity)
  
             // the total amount of packs created for the desireds print runs
             let packsPrintedAmount = WnWAlphaPacks.TFPackInfo.printingPacksAmount * quantity
@@ -302,7 +302,7 @@ pub contract WnWAlphaPacks: FungibleToken, TradingFungiblePack{
             return packsPrintedAmount
         }
 
-        init(allowedAmount: UInt64, printRunnerCapability: Capability<&WnW.SetPrintRunner>){
+        init(allowedAmount: UInt64, printRunnerCapability: Capability<&{TradingNonFungibleCardGame.SetPrintRunner}>){
             self.allowedAmount = allowedAmount
             self.printRunnerCapability = printRunnerCapability
         }
@@ -346,7 +346,7 @@ pub contract WnWAlphaPacks: FungibleToken, TradingFungiblePack{
         // This capability allows the resource to withdraw *any* NFT, so you should be careful when giving
         // such a capability to a resource and always check its code to make sure it will use it in the
         // way that it claims.
-        access(contract) let packFulfilerCapability: Capability<&WnW.SetPackFulfiler>
+        access(contract) let packFulfilerCapability: Capability<&{TradingNonFungibleCardGame.SetPackFulfiler}>
         
         // openPacks
         //
@@ -364,7 +364,7 @@ pub contract WnWAlphaPacks: FungibleToken, TradingFungiblePack{
             destroy packsToOpen
         }
 
-        init (packFulfilerCapability: Capability<&WnW.SetPackFulfiler>) {
+        init (packFulfilerCapability: Capability<&{TradingNonFungibleCardGame.SetPackFulfiler}>) {
             self.packFulfilerCapability = packFulfilerCapability
         }
     }
