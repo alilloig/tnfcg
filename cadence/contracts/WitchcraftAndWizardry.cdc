@@ -464,6 +464,7 @@ pub contract WnW: NonFungibleToken, TradingNonFungibleCardGame {
                     // Habrá que explicar lo guapo que está esto no?
                     randomTNFCIndex = self.generateRandomTNFCIndex(tnfcAmount: self.mintedTNFCsIDsByRarity[rarity]!.length)
                     openedTNFCID = self.mintedTNFCsIDsByRarity[rarity]![randomTNFCIndex]
+                    self.mintedTNFCsIDsByRarity[rarity]!.remove(at: randomTNFCIndex)
                     openedTNFCsIDs.append(openedTNFCID)
                     rartityTransferedAmount = rartityTransferedAmount + 1
                 }

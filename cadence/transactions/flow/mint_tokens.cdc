@@ -1,5 +1,7 @@
-import FungibleToken from "../../contracts/FungibleToken.cdc"
-import FlowToken from "../../contracts/FlowToken.cdc"
+//import FungibleToken from "../../contracts/FungibleToken.cdc"
+//import FlowToken from "../../contracts/FlowToken.cdc"
+import FungibleToken from 0xf8d6e0586b0a20c7
+import FlowToken from 0xf8d6e0586b0a20c7
 
 transaction(recipient: Address, amount: UFix64) {
 
@@ -8,11 +10,11 @@ transaction(recipient: Address, amount: UFix64) {
 
     prepare(signer: AuthAccount) {
         self.tokenAdmin = signer
-        .borrow<&FlowToken.Administrator>(from: /storage/flowTokenAdmin)
+        .borrow<&FlowToken.Administrator>(from: FlowToken.AdministratorStoragePath)
         ?? panic("Signer is not the token admin")
 
         self.tokenReceiver = getAccount(recipient)
-            .getCapability(/public/flowTokenReceiver)!
+            .getCapability(FlowToken.ReceiverPublicPath)
             .borrow<&{FungibleToken.Receiver}>()
             ?? panic("Unable to borrow receiver reference")
     }
@@ -26,3 +28,4 @@ transaction(recipient: Address, amount: UFix64) {
         destroy minter
     }
 }
+ 

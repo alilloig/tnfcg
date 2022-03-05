@@ -1,9 +1,7 @@
-import FungibleToken from "../../contracts/FungibleToken.cdc"
-import TradingFungiblePack from "../../contracts/TradingFungiblePack.cdc"
-import WnWAlphaPacks from "../../contracts/WnWAlphaPacks.cdc"
-//import FungibleToken from 0xf8d6e0586b0a20c7
-//import NonFungiblePack from 0xf8d6e0586b0a20c7
-//import WnWAlphaPacks from 0xf8d6e0586b0a20c7
+//import FungibleToken from "../../contracts/FungibleToken.cdc"
+//import WnWAlphaPacks from "../../contracts/WnWAlphaPacks.cdc"
+import FungibleToken from 0xf8d6e0586b0a20c7
+import WnWAlphaPacks from 0xf8d6e0586b0a20c7
 
 // This transaction is a template for a transaction
 // to add a Vault resource to their account

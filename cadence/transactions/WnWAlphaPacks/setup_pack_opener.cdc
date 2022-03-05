@@ -1,9 +1,9 @@
-import TradingFungiblePack from "../../contracts/TradingFungiblePack.cdc"
-import WnWAlphaPacks from "../../contracts/WnWAlphaPacks.cdc"
-import WnW from "../../contracts/WitchcraftAndWizardry.cdc"
-//import TradingFungiblePack from 0xf8d6e0586b0a20c7
-//import WnWAlphaPacks from 0xf8d6e0586b0a20c7
-//import WnW from 0xf8d6e0586b0a20c7
+//import TradingFungiblePack from "../../contracts/TradingFungiblePack.cdc"
+//import WnWAlphaPacks from "../../contracts/WnWAlphaPacks.cdc"
+//import WnW from "../../contracts/WitchcraftAndWizardry.cdc"
+import TradingFungiblePack from 0xf8d6e0586b0a20c7
+import WnWAlphaPacks from 0xf8d6e0586b0a20c7
+import WnW from 0xf8d6e0586b0a20c7
 
 
 // Tx para setear el packOpener

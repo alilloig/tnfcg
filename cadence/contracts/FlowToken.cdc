@@ -26,6 +26,11 @@ pub contract FlowToken: FungibleToken {
     // Event that is emitted when a new burner resource is created
     pub event BurnerCreated()
 
+    pub let VaultStoragePath: StoragePath
+    pub let BalancePublicPath: PublicPath
+    pub let ReceiverPublicPath: PublicPath
+    pub let AdministratorStoragePath: StoragePath
+
     // Vault
     //
     // Each user stores an instance of only the Vault in their storage
@@ -168,12 +173,16 @@ pub contract FlowToken: FungibleToken {
     init(adminAccount: AuthAccount) {
         self.totalSupply = 0.0
 
+        self.VaultStoragePath = /storage/flowTokenMyVault
+        self.BalancePublicPath = /public/flowTokenMyReceiver
+        self.ReceiverPublicPath = /public/flowTokenMyReceiver
+        self.AdministratorStoragePath = /storage/flowTokenMyAdmin
+
+
         // Create the Vault with the total supply of tokens and save it in storage
         //
-        
-
         let vault <- create Vault(balance: self.totalSupply)
-        adminAccount.save(<-vault, to: /storage/flowTokenMyVault)
+        adminAccount.save(<-vault, to: self.VaultStoragePath)
 
 
 
@@ -181,12 +190,13 @@ pub contract FlowToken: FungibleToken {
         // the `balance` field through the `Balance` interface
         //
         adminAccount.link<&FlowToken.Vault{FungibleToken.Balance}>(
-            /public/flowTokenBalance,
-            target: /storage/flowTokenVault
+            self.ReceiverPublicPath,
+            target: self.VaultStoragePath
         )
 
+
         let admin <- create Administrator()
-        adminAccount.save(<-admin, to: /storage/flowTokenMyAdmin)
+        adminAccount.save(<-admin, to: self.AdministratorStoragePath)
 
         // Emit an event that shows that the contract was initialized
         emit TokensInitialized(initialSupply: self.totalSupply)
