@@ -1,16 +1,17 @@
-import FungibleToken from "../../contracts/FungibleToken.cdc"
-import NonFungibleToken from "../../contracts/NonFungibleToken.cdc"
-import FlowToken from "../../contracts/FlowToken.cdc"
-import TradingFungiblePack from "../../contracts/TradingFungiblePack.cdc"
-import WnW from "../../contracts/WitchcraftAndWizardry.cdc"
-import WnWAlphaPacks from "../../contracts/WnWAlphaPacks.cdc"
-//import FungibleToken from 0xf8d6e0586b0a20c7
-//import import NonFungibleToken from 0xf8d6e0586b0a20c7
-//import FlowToken from 0xf8d6e0586b0a20c7
-//import FungiblePack from 0xf8d6e0586b0a20c7
-//import WnWAlphaPacks from 0xf8d6e0586b0a20c7
+//import FungibleToken from "../../contracts/FungibleToken.cdc"
+//import NonFungibleToken from "../../contracts/NonFungibleToken.cdc"
+//import FlowToken from "../../contracts/FlowToken.cdc"
+//import TradingFungiblePack from "../../contracts/TradingFungiblePack.cdc"
+//import WnW from "../../contracts/WitchcraftAndWizardry.cdc"
+//import WnWAlphaPacks from "../../contracts/WnWAlphaPacks.cdc"
+import FungibleToken from 0xf8d6e0586b0a20c7
+import NonFungibleToken from 0xf8d6e0586b0a20c7
+import FlowToken from 0xf8d6e0586b0a20c7
+import TradingFungiblePack from 0xf8d6e0586b0a20c7
+import WnW from 0xf8d6e0586b0a20c7
+import WnWAlphaPacks from 0xf8d6e0586b0a20c7
 
-transaction(seller: Address, amount: UFix64) {
+transaction() {
 
     //The collection where the opened TNFCs will be deposit
     let tnfcCollection: &{NonFungibleToken.CollectionPublic}
@@ -32,12 +33,12 @@ transaction(seller: Address, amount: UFix64) {
             ?? panic("Could not borrow reference to the payer's Vault!")
 
         // Withdraw tokens from the signer's stored vault
-        self.packsToOpen <- vaultRef.withdraw(amount: amount)
+        self.packsToOpen <- vaultRef.withdraw(amount: 1.0)
     }
 
     execute {
         //get a reference to the WnW Alpha Packs Seller         
-        let packSellerRef = getAccount(seller)
+        let packSellerRef = getAccount(0xf8d6e0586b0a20c7)
         .getCapability(WnWAlphaPacks.PackOpenerPublicPath)
         .borrow<&{TradingFungiblePack.PackOpener}>() 
         ?? panic("Bad seller address")

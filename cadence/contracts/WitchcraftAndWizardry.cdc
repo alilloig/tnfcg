@@ -454,16 +454,17 @@ pub contract WnW: NonFungibleToken, TradingNonFungibleCardGame {
             var rarityDistribution: UFix64 = 0.0
             var rarityOpenedAmount: UInt64 = 0
             var rartityTransferedAmount: UInt64 = 0
-            var packInfo = self.packsInfo[packID]!
+            var packInfo = self.packsInfo[packID] ?? panic("Pack does not exists in set")
 
             for rarity in packInfo.packRaritiesDistribution.keys{
-                rarityDistribution = packInfo.packRaritiesDistribution[rarity]!
+                rarityDistribution = packInfo.packRaritiesDistribution[rarity] ?? panic("PackInfo does not have rarity distribution")
                 rarityOpenedAmount = UInt64(rarityDistribution * amount)
                 
                 while (rartityTransferedAmount < rarityOpenedAmount){
                     // Habrá que explicar lo guapo que está esto no?
-                    randomTNFCIndex = self.generateRandomTNFCIndex(tnfcAmount: self.mintedTNFCsIDsByRarity[rarity]!.length)
-                    openedTNFCID = self.mintedTNFCsIDsByRarity[rarity]![randomTNFCIndex]
+                    let rarityMintedTNFCsIDs = self.mintedTNFCsIDsByRarity[rarity] ?? panic("No tnfcs minted with this rarity")
+                    randomTNFCIndex = TF.generateAcotatedRandom(UInt64(rarityMintedTNFCsIDs.length))
+                    openedTNFCID = rarityMintedTNFCsIDs[randomTNFCIndex]
                     self.mintedTNFCsIDsByRarity[rarity]!.remove(at: randomTNFCIndex)
                     openedTNFCsIDs.append(openedTNFCID)
                     rartityTransferedAmount = rartityTransferedAmount + 1
@@ -475,14 +476,6 @@ pub contract WnW: NonFungibleToken, TradingNonFungibleCardGame {
 
             return openedTNFCsIDs
         }
-
-        access(self) fun generateRandomTNFCIndex(tnfcAmount: Int): UInt64{
-            let random = unsafeRandom()
-            let acotatedRandom = random % UInt64(tnfcAmount)
-            return acotatedRandom - 1
-        }
-
-
 
     }
 
@@ -839,7 +832,7 @@ pub contract WnW: NonFungibleToken, TradingNonFungibleCardGame {
             let set = &WnW.sets[setID] as &WnWSet
             let openedTNFCsIDs = set.fulfilPacks(packID: packID, amount: amount)
 
-            let printedCardsProviderRef = self.printedCardsCollectionPrivateProvider.borrow()!
+            let printedCardsProviderRef = self.printedCardsCollectionPrivateProvider.borrow() ?? panic("Cannot borrow printed cards provider")
 
             for tnfcID in openedTNFCsIDs{
                 packsOwnerCardCollectionPublic.deposit(

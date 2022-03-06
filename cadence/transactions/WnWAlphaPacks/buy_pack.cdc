@@ -16,7 +16,7 @@ transaction() {
         //get a reference to the buyer's packs receiver
         self.packsReceiver = signer
         .getCapability(WnWAlphaPacks.ReceiverPublicPath)
-        .borrow<&{FungibleToken.Receiver}>()
+        .borrow<&WnWAlphaPacks.Vault{FungibleToken.Receiver}>()
         ?? panic("Unable to borrow receiver reference")
 
         // Get a reference to the signer's stored flow vault
@@ -34,7 +34,7 @@ transaction() {
         //get a reference to the WnW Alpha Packs Seller         
         let packSellerRef = getAccount(0xf8d6e0586b0a20c7)
         .getCapability(WnWAlphaPacks.PackSellerPublicPath)
-        .borrow<&{TradingFungiblePack.PackSeller}>() 
+        .borrow<&WnWAlphaPacks.PackSeller{TradingFungiblePack.PackSeller}>() 
         ?? panic("Bad seller address")
 
         packSellerRef.sellPacks(payment: <- self.flowPayment, packsPayerPackReceiver: self.packsReceiver, amount: 1.0)

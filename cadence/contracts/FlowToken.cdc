@@ -185,12 +185,17 @@ pub contract FlowToken: FungibleToken {
         adminAccount.save(<-vault, to: self.VaultStoragePath)
 
 
-
+        // Create a public capability to the Vault that only exposes
+        // the deposit function through the Receiver interface
+        adminAccount.link<&FlowToken.Vault{FungibleToken.Receiver}>(
+            self.ReceiverPublicPath,
+            target: self.VaultStoragePath
+        )
         // Create a public capability to the stored Vault that only exposes
         // the `balance` field through the `Balance` interface
         //
         adminAccount.link<&FlowToken.Vault{FungibleToken.Balance}>(
-            self.ReceiverPublicPath,
+            self.BalancePublicPath,
             target: self.VaultStoragePath
         )
 

@@ -33,4 +33,13 @@ pub contract TF{
             return nil
         }
     }
+
+    pub fun generateAcotatedRandom(_ max: UInt64): UInt64{
+        let random = unsafeRandom()
+        log(random)
+        let acotatedRandom = random % max
+        log(acotatedRandom)
+        return acotatedRandom
+    }
 }
+ 

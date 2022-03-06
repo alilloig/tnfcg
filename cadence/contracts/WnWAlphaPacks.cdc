@@ -325,7 +325,8 @@ pub contract WnWAlphaPacks: FungibleToken, TradingFungiblePack{
                 payment.balance >= amount * WnWAlphaPacks.TFPackInfo.price: "Payment is not enought for the desired pack amount"
             }
             //deposit the payment in the packs seller's account
-            self.packSellerFlowTokenCapability.borrow()!.deposit(from: <- payment.withdraw(amount:amount * WnWAlphaPacks.TFPackInfo.price))
+            let flowTokenRef = self.packSellerFlowTokenCapability.borrow() ?? panic("Cannot borrow flow receiver")
+            flowTokenRef.deposit(from: <- payment.withdraw(amount:amount * WnWAlphaPacks.TFPackInfo.price))
             destroy payment
             //increase the totalSupply
             WnWAlphaPacks.totalSupply = WnWAlphaPacks.totalSupply + amount
@@ -358,7 +359,8 @@ pub contract WnWAlphaPacks: FungibleToken, TradingFungiblePack{
                 packsOwnerCardCollectionPublic.isInstance(Type<@WnW.Collection>()): "Reciving collection must belong to WnW"
                 UInt64(packsToOpen.balance) <= WnWAlphaPacks.packsToOpen: "Amount opened must be less than the remaining amount of unopened packs"
             }
-            self.packFulfilerCapability.borrow()!.fulfilPacks(setID: WnWAlphaPacks.setID, packID: WnWAlphaPacks.TFPackInfo.packID, amount: packsToOpen.balance, packsOwnerCardCollectionPublic: packsOwnerCardCollectionPublic)
+            let packFulfilerRef = self.packFulfilerCapability.borrow() ?? panic("Cannot borrow WnW pack fulfiler")
+            packFulfilerRef.fulfilPacks(setID: WnWAlphaPacks.setID, packID: WnWAlphaPacks.TFPackInfo.packID, amount: packsToOpen.balance, packsOwnerCardCollectionPublic: packsOwnerCardCollectionPublic)
             emit PacksDestroyed(amount: packsToOpen.balance)
             WnWAlphaPacks.packsToOpen = WnWAlphaPacks.packsToOpen - UInt64(packsToOpen.balance)
             destroy packsToOpen
