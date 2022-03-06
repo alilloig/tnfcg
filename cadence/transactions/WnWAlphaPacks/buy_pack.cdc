@@ -7,14 +7,12 @@ import FlowToken from 0xf8d6e0586b0a20c7
 import TradingFungiblePack from 0xf8d6e0586b0a20c7
 import WnWAlphaPacks from 0xf8d6e0586b0a20c7
 
-transaction(seller: Address, amount: UFix64) {
-
+transaction() {
     let packsReceiver: &{FungibleToken.Receiver}
     let flowPayment: @FungibleToken.Vault
 
 
     prepare(signer: AuthAccount) {
-
         //get a reference to the buyer's packs receiver
         self.packsReceiver = signer
         .getCapability(WnWAlphaPacks.ReceiverPublicPath)
@@ -26,7 +24,7 @@ transaction(seller: Address, amount: UFix64) {
             ?? panic("Could not borrow reference to the payer's Vault!")
 
         // Withdraw tokens from the signer's stored vault
-        let purchaseAmount = amount * WnWAlphaPacks.TFPackInfo.price
+        let purchaseAmount = 1.0 * WnWAlphaPacks.TFPackInfo.price
         log("paying")
         log(purchaseAmount)
         self.flowPayment <- vaultRef.withdraw(amount: purchaseAmount)
@@ -34,11 +32,12 @@ transaction(seller: Address, amount: UFix64) {
 
     execute {
         //get a reference to the WnW Alpha Packs Seller         
-        let packSellerRef = getAccount(seller)
+        let packSellerRef = getAccount(0xf8d6e0586b0a20c7)
         .getCapability(WnWAlphaPacks.PackSellerPublicPath)
         .borrow<&{TradingFungiblePack.PackSeller}>() 
         ?? panic("Bad seller address")
 
-        packSellerRef.sellPacks(payment: <- self.flowPayment, packsPayerPackReceiver: self.packsReceiver, amount: amount)
+        packSellerRef.sellPacks(payment: <- self.flowPayment, packsPayerPackReceiver: self.packsReceiver, amount: 1.0)
     }
 }
+ 

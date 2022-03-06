@@ -3,41 +3,53 @@
 //import TradingNonFungibleCardGame from "../../contracts/TradingNonFungibleCardGame.cdc"
 //import WnWAlphaPacks from "../../contracts/WnWAlphaPacks.cdc"
 //import WnW from "../../contracts/WitchcraftAndWizardry.cdc"
+//import FlowToken from "../../contracts/FlowToken.cdc"
+import FlowToken from 0xf8d6e0586b0a20c7
 import FungibleToken from 0xf8d6e0586b0a20c7
 import TradingFungiblePack from 0xf8d6e0586b0a20c7
 import TradingNonFungibleCardGame from 0xf8d6e0586b0a20c7
 import WnWAlphaPacks from 0xf8d6e0586b0a20c7
 import WnW from 0xf8d6e0586b0a20c7
-//import NonFungiblePack from 0xf8d6e0586b0a20c7
 
 
 // Tx para setear el admin
 
 transaction() {
-    let packsAdmin: &WnWAlphaPacks.Administrator
+    let alphaAdmin: &WnWAlphaPacks.Administrator
 
     prepare(signer: AuthAccount) {
 
         // Check if the signer is the WnWAlphaPacks Admin
-        self.packsAdmin = signer.borrow<&WnWAlphaPacks.Administrator>(from: WnWAlphaPacks.AdminStoragePath)
+        self.alphaAdmin = signer.borrow<&WnWAlphaPacks.Administrator>(from: WnWAlphaPacks.AdminStoragePath)
             ?? panic("Signer is not the WnW Alpha packs admin")
 
-        // if the account doesn't already have a vault
-        if signer.borrow<&WnWAlphaPacks.Vault>(from: WnWAlphaPacks.VaultStoragePath) == nil {
-            // Create a new Pack Vault and put it in storage
-            signer.save(<-WnWAlphaPacks.createEmptyVault(), to: WnWAlphaPacks.VaultStoragePath)
-            // Create a public capability to the Vault that only exposes
-            
-            // the deposit function through the Receiver interface
-            signer.link<&WnWAlphaPacks.Vault{FungibleToken.Receiver}>(
-                WnWAlphaPacks.ReceiverPublicPath,
-                target: WnWAlphaPacks.VaultStoragePath
+        //if the account doesn't already have a PackSeller
+        if signer.borrow<&WnWAlphaPacks.PackSeller>(from: WnWAlphaPacks.PackSellerStoragePath) == nil {
+            signer.save(
+                <- self.alphaAdmin.createNewPackSeller(
+                    packSellerFlowTokenCapability: 
+                        signer.getCapability<&{FungibleToken.Receiver}>(FlowToken.ReceiverPublicPath)),
+                to: WnWAlphaPacks.PackSellerStoragePath)
+
+            // Expose a public capability allowing users to buy packs
+            signer.link<&WnWAlphaPacks.PackSeller{TradingFungiblePack.PackSeller}>(
+                WnWAlphaPacks.PackSellerPublicPath,
+                target: WnWAlphaPacks.PackSellerStoragePath
             )
-            // Create a public capability to the Vault that only exposes
-            // the balance field through the Balance interface
-            signer.link<&WnWAlphaPacks.Vault{FungibleToken.Balance}>(
-                WnWAlphaPacks.BalancePublicPath,
-                target: WnWAlphaPacks.VaultStoragePath
+        }
+
+        //if the account doesn't already have a PackOpener
+        if signer.borrow<&WnWAlphaPacks.PackOpener>(from: WnWAlphaPacks.PackOpenerStoragePath) == nil {
+            signer.save(
+                <- self.alphaAdmin.createNewPackOpener(
+                    packFulfilerCapability: 
+                        signer.getCapability<&{TradingNonFungibleCardGame.SetPackFulfiler}>(WnW.SetPackFulfilerPrivatePath)),
+                to: WnWAlphaPacks.PackOpenerStoragePath)
+            
+            // Expose a public capability allowing users to open packs, sending it to the account and receiving WnW cards
+            signer.link<&WnWAlphaPacks.PackOpener{TradingFungiblePack.PackOpener}>(
+                WnWAlphaPacks.PackOpenerPublicPath,
+                target: WnWAlphaPacks.PackOpenerStoragePath
             )
         }
     }

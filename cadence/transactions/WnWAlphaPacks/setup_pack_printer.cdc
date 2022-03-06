@@ -21,16 +21,17 @@ transaction (maxPrinterPrintings: UInt64){
             ?? panic("Signer is not the WnW Alpha packs admin")
 
         //if the account doesn't already have a PackPrinter
-        if signer.borrow<&{TradingFungiblePack.PackPrinter}>(from: WnWAlphaPacks.PackPrinterStoragePath) == nil {
+        if signer.borrow<&WnWAlphaPacks.PackPrinter>(from: WnWAlphaPacks.PackPrinterStoragePath) == nil {
             //Create a PackPrinter resource
             signer.save(
                 <- self.alphaAdmin.createNewPackPrinter(
                     allowedAmount: maxPrinterPrintings * WnWAlphaPacks.TFPackInfo.printingPacksAmount,
-                    printRunnerCapability: signer.getCapability<&{TradingNonFungibleCardGame.SetPrintRunner}>(WnW.SetPrintRunnerPrivatePath)),
+                    printRunnerCapability: 
+                        signer.getCapability<&{TradingNonFungibleCardGame.SetPrintRunner}>(WnW.SetPrintRunnerPrivatePath)),
                 to: WnWAlphaPacks.PackPrinterStoragePath)
 
             // Expose a private capability allowing admin to create new packs
-            signer.link<&WnWAlphaPacks.PackPrinter{TradingFungiblePack.PackPrinter}>(
+            signer.link<&{TradingFungiblePack.PackPrinter}>(
                 WnWAlphaPacks.PackPrinterPrivatePath,
                 target: WnWAlphaPacks.PackPrinterStoragePath
             )
@@ -38,3 +39,4 @@ transaction (maxPrinterPrintings: UInt64){
 
     }
 }
+ 
