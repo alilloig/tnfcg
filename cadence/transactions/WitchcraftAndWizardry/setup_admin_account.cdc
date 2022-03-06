@@ -34,8 +34,12 @@ transaction {
             signer.link<&WnW.Collection{NonFungibleToken.Provider}>(
                 WnW.PrintedCardsPrivateProviderPath, 
                 target: WnW.OwnedCardsStoragePath)
-        
-        
+            
+            // create a public capability to get access to see TNFCs
+            // but not to deposit any TNFCs on the collection
+            signer.link<&WnW.Collection{WnW.WnWCollectionPublic, TradingNonFungibleCardGame.TNFCGCollection}>(
+                WnW.PrintedCardsTNFCGCollectionPath,
+                target: WnW.OwnedCardsStoragePath)
         }
 
         //if the account doesn't already have a CardCreator

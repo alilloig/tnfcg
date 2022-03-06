@@ -110,6 +110,7 @@ pub contract WnW: NonFungibleToken, TradingNonFungibleCardGame {
     pub let OwnedCardsCollectionPublicPath: PublicPath
     pub let PrintedCardsPrivateReceiverPath: PrivatePath
     pub let PrintedCardsPrivateProviderPath: PrivatePath
+    pub let PrintedCardsTNFCGCollectionPath: PublicPath
     //
     pub let AdminStoragePath: StoragePath
     //
@@ -348,36 +349,13 @@ pub contract WnW: NonFungibleToken, TradingNonFungibleCardGame {
         // 
         //
         pub fun addPackInfo(packInfo: {TradingFungiblePack.PackInfo}){
-
+            log("Adding to set ")
+            log(self.setID)
+            log(" pack Info ")
+            log(self.nextPackID)
             self.packsInfo[self.nextPackID] = packInfo
             // Increment the packID so that it isnt't used again
             self.nextPackID = self.nextPackID + 1
-        }
-
-        // addCard adds a card to the set
-        //
-        // Parameters: cardID: The ID of the Card that is being added
-        //              rarity: The id of the card's set rarity appearance
-        //
-        // Pre-Conditions:
-        // The Card needs to be an existing card
-        // The Set needs to be not locked
-        // The Card can't have already been added to the Set
-        //
-        access(self) fun addCard(cardID: UInt32, rarity: UInt8) {
-            pre {
-                WnW.cardDatas[cardID] != nil: "Cannot add the Card to Set: Card doesn't exist."
-                !self.printingInProgress: "Cannot add the card to the Set after the set has been locked."
-                self.numberMintedPerCard[cardID] == nil: "The card has already beed added to the set."
-            }
-
-            // Add the Card to the arrays dictionary of Cards/Rarity
-            self.cardsByRarity[rarity]!.append(cardID)
-
-            // Initialize the TNFC count to zero
-            self.numberMintedPerCard[cardID] = 0
-
-            emit CardAddedToSet(setID: self.setID, cardID: cardID, rarity: rarity)
         }
 
         // addCardsByRarity adds a card to the set
@@ -397,12 +375,6 @@ pub contract WnW: NonFungibleToken, TradingNonFungibleCardGame {
             self.raritiesDistribution[rarity] = UFix64(self.cardsByRarity[rarity]!.length)
         }
         
-        // startPrinting() locks the Set so that no more cards can be printed
-        //
-        pub fun startPrinting(){
-            self.printingInProgress = true
-        }
-
         pub fun printRun(packID: UInt8, quantity: UInt64): @NonFungibleToken.Collection{
 
             let printedCards <- WnW.createEmptyCollection()
@@ -431,19 +403,6 @@ pub contract WnW: NonFungibleToken, TradingNonFungibleCardGame {
             return <- printedCards
         }
 
-        access(self) fun mintTNFC(cardID: UInt32, setID: UInt32, rarityID: UInt8): @WnW.NFT{
-            let numInCard = self.numberMintedPerCard[cardID]!
-            let TNFC <- create WnW.NFT(cardID: cardID, setID: self.setID, rarityID: rarityID, serialNumber: numInCard)
-            self.numberMintedPerCard[cardID] = numInCard + 1
-            return <- TNFC
-        }
-
-        // stopPrinting() locks the Set so that no more cards can be printed
-        //
-        pub fun stopPrinting(){
-            self.printingInProgress = false
-        }
-
         pub fun fulfilPacks(packID: UInt8, amount: UFix64): [UInt64]{
             // aqui va la manteca aleatoria no?
             // amount x packrarity de randoms de cardsPrintedByRarity
@@ -452,17 +411,28 @@ pub contract WnW: NonFungibleToken, TradingNonFungibleCardGame {
             var openedTNFCID: UInt64 = 0
             var randomTNFCIndex: UInt64 = 0
             var rarityDistribution: UFix64 = 0.0
-            var rarityOpenedAmount: UInt64 = 0
+            var rarityAmountToFulfil: UInt64 = 0
             var rartityTransferedAmount: UInt64 = 0
             var packInfo = self.packsInfo[packID] ?? panic("Pack does not exists in set")
 
             for rarity in packInfo.packRaritiesDistribution.keys{
+                log("Fulfiling pack rarity")
+                log(rarity)
                 rarityDistribution = packInfo.packRaritiesDistribution[rarity] ?? panic("PackInfo does not have rarity distribution")
-                rarityOpenedAmount = UInt64(rarityDistribution * amount)
-                
-                while (rartityTransferedAmount < rarityOpenedAmount){
+                log("amount of TNFC in pack for this rarity")
+                log(rarityDistribution)
+                rarityAmountToFulfil = UInt64(rarityDistribution) * UInt64(amount)
+                log("total amount of that rarity that is beeing fulfiled")
+                log(rarityAmountToFulfil)
+                rartityTransferedAmount = 0
+                while (rartityTransferedAmount < rarityAmountToFulfil){
                     // Habrá que explicar lo guapo que está esto no?
+                    
                     let rarityMintedTNFCsIDs = self.mintedTNFCsIDsByRarity[rarity] ?? panic("No tnfcs minted with this rarity")
+                    if (UInt64(rarityMintedTNFCsIDs.length) == 0){
+                        panic("Hay 0 TNFCs minteados de esta rarity")
+                    }
+
                     randomTNFCIndex = TF.generateAcotatedRandom(UInt64(rarityMintedTNFCsIDs.length))
                     openedTNFCID = rarityMintedTNFCsIDs[randomTNFCIndex]
                     self.mintedTNFCsIDsByRarity[rarity]!.remove(at: randomTNFCIndex)
@@ -477,6 +447,49 @@ pub contract WnW: NonFungibleToken, TradingNonFungibleCardGame {
             return openedTNFCsIDs
         }
 
+        // startPrinting() locks the Set so that no more cards can be printed
+        //
+        pub fun startPrinting(){
+            self.printingInProgress = true
+        }
+
+        // stopPrinting() locks the Set so that no more cards can be printed
+        //
+        pub fun stopPrinting(){
+            self.printingInProgress = false
+        }
+        // addCard adds a card to the set
+        //
+        // Parameters: cardID: The ID of the Card that is being added
+        //              rarity: The id of the card's set rarity appearance
+        //
+        // Pre-Conditions:
+        // The Card needs to be an existing card
+        // The Set needs to be not locked
+        // The Card can't have already been added to the Set
+        //
+        access(self) fun addCard(cardID: UInt32, rarity: UInt8) {
+            pre {
+                WnW.cardDatas[cardID] != nil: "Cannot add the Card to Set: Card doesn't exist."
+                !self.printingInProgress: "Cannot add the card to the Set after the set has been locked."
+                self.numberMintedPerCard[cardID] == nil: "The card has already beed added to the set."
+            }
+
+            // Add the Card to the arrays dictionary of Cards/Rarity
+            self.cardsByRarity[rarity]!.append(cardID)
+
+            // Initialize the TNFC count to zero
+            self.numberMintedPerCard[cardID] = 0
+
+            emit CardAddedToSet(setID: self.setID, cardID: cardID, rarity: rarity)
+        }
+        
+        access(self) fun mintTNFC(cardID: UInt32, setID: UInt32, rarityID: UInt8): @WnW.NFT{
+            let numInCard = self.numberMintedPerCard[cardID]!
+            let TNFC <- create WnW.NFT(cardID: cardID, setID: self.setID, rarityID: rarityID, serialNumber: numInCard)
+            self.numberMintedPerCard[cardID] = numInCard + 1
+            return <- TNFC
+        }        
     }
 
     pub struct WnWQuerySetData: TradingNonFungibleCardGame.QuerySetData{
@@ -549,7 +562,6 @@ pub contract WnW: NonFungibleToken, TradingNonFungibleCardGame {
             }             
         }
     }
-    
     pub resource interface WnWCollectionPublic {
         // borrowTNFC
         // Gets a reference to an NFT in the collection as a TNFC,
@@ -981,7 +993,8 @@ pub contract WnW: NonFungibleToken, TradingNonFungibleCardGame {
         self.PrintedCardsPrivateReceiverPath = /private/WnWPrintedCardsCollectionReceiver
         //Capability pa sacar cartas
         self.PrintedCardsPrivateProviderPath = /private/WnWPrintedCardsCollectionProvider
-
+        //Capability pa ver las cartas imprimidas sin abrir
+        self.PrintedCardsTNFCGCollectionPath = /public/WnWPrintedCardsTNFCGCollection
 
 
         // Almacenamiento recurso admin

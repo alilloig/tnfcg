@@ -132,9 +132,8 @@ pub contract WnWAlphaPacks: FungibleToken, TradingFungiblePack{
 
         init(setID: UInt32, packRaritiesDistribution: {UInt8: UFix64}, price: UFix64){
             pre{
-                //set exists? no hace falta x el panic siguiente
-                //lo que si hace puta falta es que pete si no hay cartas!!!!
-
+                packRaritiesDistribution.keys.length > 0 : "Pack should contain TNFCs of at least one rarity"
+                price > 0.0 : "Pack price cant be 0"
                 //Hay que explicar muchisimas cosas, lo de calcular el printingSize y lo de calcular el sheetsPrinting size...
                 // explicadas en los panic????
             }
@@ -384,6 +383,8 @@ pub contract WnWAlphaPacks: FungibleToken, TradingFungiblePack{
         let SetManagerRef = setManagerCapability.borrow() ?? panic("Set manager not found")
         log("Se va a añadir el pack info al set ")
         log(setID)
+        log("Pack Info")
+        log(self.TFPackInfo)
         SetManagerRef.addPackInfo(setID: setID, packInfo: self.TFPackInfo)
         log(self.TFPackInfo.packID)
         log(self.TFPackInfo.printingPacksAmount)

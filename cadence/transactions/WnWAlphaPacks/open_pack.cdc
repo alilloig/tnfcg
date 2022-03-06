@@ -46,3 +46,4 @@ transaction() {
         packSellerRef.openPacks(packsToOpen: <- self.packsToOpen, packsOwnerCardCollectionPublic: self.tnfcCollection)
     }
 }
+ 

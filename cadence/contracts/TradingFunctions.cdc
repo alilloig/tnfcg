@@ -36,8 +36,12 @@ pub contract TF{
 
     pub fun generateAcotatedRandom(_ max: UInt64): UInt64{
         let random = unsafeRandom()
+        log("Random")
         log(random)
+        log("max")
+        log(max)
         let acotatedRandom = random % max
+        log("acotated random")
         log(acotatedRandom)
         return acotatedRandom
     }

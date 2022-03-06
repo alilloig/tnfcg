@@ -288,8 +288,8 @@ pub contract interface TradingNonFungibleCardGame {
         pub fun startPrinting(){
             pre {
                 !self.printingInProgress: "The set is already beeing printed"
-                //self.packsInfo.keys.length > 1: "There should be at least one kind of pack before printing the set"
-                self.cardsByRarity.keys.length > 1: "There should be at least one card in the set"
+                self.packsInfo.keys.length != 0: "There should be at least one kind of pack before printing the set"
+                self.cardsByRarity.keys.length != 0: "There should be at least one card in the set"
             }
             post {
                 self.printingInProgress: "The printing must be in progress"
@@ -303,7 +303,7 @@ pub contract interface TradingNonFungibleCardGame {
             }
         }
 
-        // fulfilPacks() THA RANDOM BITCH!!!!!!!!!!!!!!
+        // fulfilPacks()
         //
         // Pre-Conditions:
         //
