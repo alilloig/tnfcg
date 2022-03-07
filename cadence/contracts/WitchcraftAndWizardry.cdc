@@ -375,33 +375,45 @@ pub contract WnW: NonFungibleToken, TradingNonFungibleCardGame {
             self.raritiesDistribution[rarity] = UFix64(self.cardsByRarity[rarity]!.length)
         }
         
-        pub fun printRun(packID: UInt8, quantity: UInt64): @NonFungibleToken.Collection{
 
+
+
+        pub fun printRun(packID: UInt8, quantity: UInt64): @NonFungibleToken.Collection{
+            let packInfo = self.packsInfo[packID] ?? panic("Pack does not exist in set")
             let printedCards <- WnW.createEmptyCollection()
-            var i: UInt64 = 0
-            // Por cada printing que se quiera
-            while ( i < quantity){
-                var sheetQuantity: UInt64 = 0
+            var completedPrintRuns: UInt64 = 0
+            var sheetQuantity: UInt64 = 0
+            var printedSheets: UInt64 = 0
+            var rarityCardsIDs: [UInt32] = []
+            log("Number of printings running: ".concat(quantity.toString()))
+            while (completedPrintRuns < quantity){
+                sheetQuantity = 0
                 // Por cada rareza que aparece en el pack
-                for rarityID in self.packsInfo[packID]!.printingRaritiesSheetsQuantities.keys {
-                    sheetQuantity = self.packsInfo[packID]!.printingRaritiesSheetsQuantities[rarityID]!
-                    var j: UInt64 = 0
+                for rarityID in packInfo.printingRaritiesSheetsQuantities.keys {
+                    sheetQuantity = packInfo.printingRaritiesSheetsQuantities[rarityID] ?? panic("Rarity does not have a sheet quantity per printing")
+                    log("Printing rarity ".concat(rarityID.toString()))
+                    log("Total of sheets for rarity: ".concat(sheetQuantity.toString()))
+                    printedSheets = 0
                     // Tantas veces como sheets de esa rareza por printing como diga la info del pack
-                    while (j < sheetQuantity){
+                    while (printedSheets < sheetQuantity){
                         // Se imprime una sheet de esa rarity (se crea un TNFC por cada Card de esa rarity en el set)
-                        for card in self.cardsByRarity[rarityID]!{
-                            let TNFC <- self.mintTNFC(cardID: card, setID: self.setID, rarityID: rarityID)
+                        rarityCardsIDs = self.cardsByRarity[rarityID] ?? panic("No cards for rarity ".concat(rarityID.toString()))
+                        for cardID in rarityCardsIDs{
+                            let TNFC <- self.mintTNFC(cardID: cardID, setID: self.setID, rarityID: rarityID)
                             self.mintedTNFCsIDsByRarity[rarityID]!.append(TNFC.id)
                             printedCards.deposit(token: <- TNFC)
                         }
-                        j = j + 1
+                        printedSheets = printedSheets + 1
                     }
                 }
-                i = i +1
+                completedPrintRuns = completedPrintRuns + 1
             }
 
             return <- printedCards
         }
+
+
+
 
         pub fun fulfilPacks(packID: UInt8, amount: UFix64): [UInt64]{
             // aqui va la manteca aleatoria no?
@@ -427,12 +439,7 @@ pub contract WnW: NonFungibleToken, TradingNonFungibleCardGame {
                 rartityTransferedAmount = 0
                 while (rartityTransferedAmount < rarityAmountToFulfil){
                     // Habrá que explicar lo guapo que está esto no?
-                    
                     let rarityMintedTNFCsIDs = self.mintedTNFCsIDsByRarity[rarity] ?? panic("No tnfcs minted with this rarity")
-                    if (UInt64(rarityMintedTNFCsIDs.length) == 0){
-                        panic("Hay 0 TNFCs minteados de esta rarity")
-                    }
-
                     randomTNFCIndex = TF.generateAcotatedRandom(UInt64(rarityMintedTNFCsIDs.length))
                     openedTNFCID = rarityMintedTNFCsIDs[randomTNFCIndex]
                     self.mintedTNFCsIDsByRarity[rarity]!.remove(at: randomTNFCIndex)
