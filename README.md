@@ -18,7 +18,8 @@ When [Interface Implementation Requirements](https://docs.onflow.org/cadence/lan
 ### TradingNonFungibleCardGame.cdc
 - A TNFCG can have any number of cards. Trading Non-Fungible Cards are NFTs copies of those cards.
 - A TNFCG is made up of any number of sets. A set include any number of cards each of them at a certain rarity.
-- Each set must have at least one type of pack. The pack contains a certain amount of TNFC of any of the set's rartities. 
+- Each set must have at least one type of pack. The pack contains a certain amount of TNFC of any of the set's rartities.
+- NFT resource will also conform to TradingNonFungibleCard, that has a TNFCData field containing the relating info.
 - TNFCG defines the following structs  and resource interfaces in order to handle this logic. Detailed comments and pre/post conditions can be found in the source code:
 
 ```cadence
@@ -46,7 +47,6 @@ When [Interface Implementation Requirements](https://docs.onflow.org/cadence/lan
         access(contract) var cardsByRarity: {UInt8: [UInt32]}
         access(contract) var numberMintedPerCard: {UInt32: UInt32}
         access(contract) var mintedTNFCsIDsByRarity: {UInt8: [UInt64]}
-
         pub fun addPackInfo(packInfo: {TradingFungiblePack.PackInfo})
         pub fun addCardsByRarity(cardIDs: [UInt32], rarity: UInt8)
         pub fun startPrinting()
