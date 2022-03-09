@@ -18,6 +18,7 @@ In order to allow other TNFCGs to be created and simplifying the creation of new
 - A TNFCG is made up of any number of sets. A set include any number of cards each of them at a certain rarity.
 - Each set must have at least one type of pack. The pack contains a certain amount of TNFC of any of the set's rartities. 
 - TNFCG defines the following structs  and resource interfaces in order to handle this logic. Detailed comments and pre/post conditions can be found in the source code:
+
       ```cadence
       pub struct interface Card {
         pub let cardID: UInt32
@@ -52,7 +53,9 @@ In order to allow other TNFCGs to be created and simplifying the creation of new
         pub fun stopPrinting()
     }
       ```
+      
 - It also defines four admin resources for exposing capabilities to create cards, handle set info, print cards and fulfil packs:
+
     ```cadence
       pub resource interface CardCreator{
         pub fun createNewCard(metadata: {String: String}): UInt32
