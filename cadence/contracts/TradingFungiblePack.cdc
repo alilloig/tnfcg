@@ -11,15 +11,24 @@ import FungibleToken from 0xf8d6e0586b0a20c7
 
 The interface that all fungible Pack contracts would have to conform to.
 If a users wants to deploy a new Pack contract, their contract
-would need to implement the TradingFungiblePack interface.
+would need to implement the TradingFungiblePack and FungibleToken interfaces.
 
 Their contract would have to follow all the rules and naming
 that the interface specifies.
 
-## Set Data?
+## PackPrinter
+
+The admin only access resource that can allow packs to be minted and is 
+responsible for calling the set print run function in the TNFCG 
+
+## PackSeller
+
+The admin only access resource that can mint packs into users vaults
+
 ## Pack Opener
 
-
+The admin only access resource that can accept TFP to return the TNFCs provided 
+by the TNFCG fulfilPacks function.
 
 */
 
@@ -34,19 +43,19 @@ pub contract interface TradingFungiblePack {
     // The event that is emitted when Packs are destroyed
     pub event PacksSelled(amount: UFix64)
 
-    // PacksDestroyedgit
+    // PacksDestroyed
     //
     // The event that is emitted when Packs are destroyed
     pub event PacksDestroyed(amount: UFix64)
 
-    // PackSellerCreated
+    // PackManagerCreated
     //
     // The event that is emitted when a new PackSeller resource is created
     pub event PackManagerCreated()
 
-    // PackMinterCreated
+    // PackSellerCreated
     //
-    // The event that is emitted when a new PackMinter resource is created
+    // The event that is emitted when a new PackSeller resource is created
     pub event PackSellerCreated()
 
     // PackOpenerCreated
@@ -62,8 +71,10 @@ pub contract interface TradingFungiblePack {
     // Id from the set the packs belongs to
     pub let setID: UInt32
 
+    // Info of the pack
     pub let TFPackInfo: {PackInfo}
 
+    // PackInfo
     pub struct interface PackInfo {
         pub let packID: UInt8
         pub let packRaritiesDistribution: {UInt8: UFix64}
@@ -74,9 +85,10 @@ pub contract interface TradingFungiblePack {
 
 
     /// PackPrinter
-    // The interface pa crear packs en el set y que se impriman los nfts
+    // The interface to allow minting packs and calling the TNFCG to create the 
+    // needed NFTs
     pub resource interface PackPrinter{
-        // The remaining amount of Packs that the PackCrafter is allowed to mint
+        // The remaining amount of Packs that the PackPrinterr is allowed to mint
         pub var allowedAmount: UInt64
         // printRun creates in the TNFCG contract the necessary amount of NFTs
         // to fulfil the pack amount equal to the printRun times the printed print quantity quantity
@@ -92,14 +104,11 @@ pub contract interface TradingFungiblePack {
     /// Pack Seller
     ///
     /// The interface that enforces the requirements for opening Packs
-    ///
-    /// We do not include a condition that checks the balance because
-    /// we want to give users the ability to make custom receivers that
-    /// can do custom things with the Packs, like split them up and
-    /// send them to different places.
+    /// We define a very specific provider requesting a payment in the form of
+    /// some sort of FungibleToken vault. Pre conditions assure that packs are 
+    /// sold in units but not fractions
     ///
     pub resource interface PackSeller{
-        /// sellPacks takes a Vault with Flow currency and returns a Vault of TFP
         pub fun sellPacks(
             payment: @FungibleToken.Vault,
             packsPayerPackReceiver: &{FungibleToken.Receiver},
@@ -115,14 +124,11 @@ pub contract interface TradingFungiblePack {
     ///
     /// The interface that enforces the requirements for opening Packs
     ///
-    /// We do not include a condition that checks the balance because
-    /// we want to give users the ability to make custom receivers that
-    /// can do custom things with the Packs, like split them up and
-    /// send them to different places.
+    /// We define a very specific receiver that asks for a Fungible Token vault
+    /// that will contain the TFP and a NFT collection for depositing the obtained
+    /// NFTs
     ///
     pub resource interface PackOpener{
-        /// openPacks takes a Vault and destroys it returning the collection containing the opened cards
-        ///
         pub fun openPacks(
             packsToOpen: @FungibleToken.Vault,
             packsOwnerCardCollectionPublic: &{NonFungibleToken.CollectionPublic}){
