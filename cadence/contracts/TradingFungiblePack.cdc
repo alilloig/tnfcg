@@ -73,7 +73,7 @@ pub contract interface TradingFungiblePack {
     }
 
 
-    /// PackCreator
+    /// PackPrinter
     // The interface pa crear packs en el set y que se impriman los nfts
     pub resource interface PackPrinter{
         // The remaining amount of Packs that the PackCrafter is allowed to mint

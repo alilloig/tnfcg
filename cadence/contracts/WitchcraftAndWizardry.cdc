@@ -703,7 +703,7 @@ pub contract WnW: NonFungibleToken, TradingNonFungibleCardGame {
         // Function that creates and returns a new CardCreator resource
         //
         pub fun createNewCardCreator(): @CardCreator{
-            //emit PackCreatorCreated()
+            //emit PackPrinterCreated()
             return <- create CardCreator()
         }
 
