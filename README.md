@@ -7,9 +7,11 @@ This repository contains the smart contracts and transactions that implement the
 
 The main difference of WnW with any other NFT implementation is the definition of packs as Fungible Tokens. Collectible packs for NFTs, as other NFT containing them has no sense on the blockchain, due to his open-state which would cause it's content to be known before opening the pack. But if we think in how card packs from Trading Card Games work in real life, we see we can approach them as Fungible Tokens rather than Non-Fungible ones. Until a pack is opened, it has the same value of any other pack of the same kind, the potencial value of the cards that it contains, that are unknown but are known to belong to a printed pool of cards. 
 
-This behaviour is what this project tries to emulate. When Trading Packs (fungible tokens) are allowed to be minted, the necessary amount of Trading Non-Fungible Cards (nfts containing the info of a certain card from the set the packs belongs to) are minted and stored in the TNFCG account. Then packs can be selled to users, who can decide to open them and get some NFTs from the game collection (in the case of Witchcraft and Wizardry those NFTs are determined randonmly using the `unsafeRandom()` cadence built-in function) or to hold and trade them, since they allways could be traded latter for TNFCs with the contract.
+This behaviour is what this project tries to emulate. When Trading Fungible Packs (fungible tokens) are allowed to be minted, the necessary amount of Trading Non-Fungible Cards (nfts containing the info of a certain card from the set the packs belongs to) are minted and stored in the TNFCG account. Then packs can be selled to users, who can decide to open them and get some NFTs from the game collection (in the case of Witchcraft and Wizardry those NFTs are determined randonmly using the `unsafeRandom()` cadence built-in function) or to hold and trade them, since they allways could be traded latter for TNFCs with the contract.
 
 In order to allow other TNFCGs to be created and simplifying the creation of new kind of packs, the contract interfaces `TradingNonFungibleCardGame.cdc` and `TradingFungiblePack.cdc` define the behaviour and data structs that need to be conformed respectively. Witchcraft&Wizardry and W&W Alpha Edition Packs are working examples of how to implement it.
+
+When [Interface Implementation Requirements](https://docs.onflow.org/cadence/language/interfaces/#interface-implementation-requirements) are fully working on cadence TradingNonFungibleCardGame.cdc should `:NonFungibleToken` and TradingFungiblePack.cdc should `:FungibleToken`. 
 
 ## Contract Interfaces
 
@@ -78,10 +80,37 @@ In order to allow other TNFCGs to be created and simplifying the creation of new
 
 ### TradingFungiblePack.cdc
 
-- When the pack contract is deployed, it's information is added to the set to which it belongs.
-- The pack's administrator resource can create 3 resources to manage the lyfe-cicle of the packs and 
-
-
+- A Trading Fungible Pack must belong to a set from a certain TNFCG, define a rarity distribution and a price per pack. This is all done when deploying the contract comforming to TradingFungiblePack.cdc
+- TFP defines the following structure to keep the pack info:
+``` cadence
+    pub struct interface PackInfo {
+        pub let packID: UInt8
+        pub let packRaritiesDistribution: {UInt8: UFix64}
+        pub let printingPacksAmount: UInt64
+        pub let printingRaritiesSheetsQuantities: {UInt8: UInt64}
+        pub let price: UFix64
+    }
+``` 
+- The amount of packs per printing, and the quantity of sheets of each rarity for printing (a sheet is a copy of each card of a certain set rarity) should be calculated on the PackInfo init function when the contract is deployed. 
+- In order to ensure the same distribution of TNFCs per card in each rarity, some rules have to be followed. WnWAlphaPacks enforces this checking that the printingSize (the number of packs that have to be printed to distribute at least one copy each of the rarest cards of the set) is an integer number, and that the number of sheets of each rarity that have to printed per printing are also integers. This can be easily achive having the same amount of cards in the set for each rarity and having the total number of rarest cards beeing divisible by the rarity distribution of the pack (e.g. WnW Alpha Packs features 1 rare, 2 uncommons and 3 commons per pack, and the set has 5 rares, 5 uncommon and 5 common cards).
+- The pack's administrator resource can create 3 resources to manage the lyfe-cicle of the packs and the tnfcs distributed with them:
+```cadence
+    pub resource interface PackPrinter{
+      pub var allowedAmount: UInt64
+      pub fun printRun(quantity: UInt64): UInt64
+    }
+    pub resource interface PackSeller{
+      pub fun sellPacks(
+            payment: @FungibleToken.Vault,
+            packsPayerPackReceiver: &{FungibleToken.Receiver},
+            amount: UFix64)
+    }
+    pub resource interface PackOpener{
+      pub fun openPacks(
+            packsToOpen: @FungibleToken.Vault,
+            packsOwnerCardCollectionPublic: &{NonFungibleToken.CollectionPublic})
+    }
+```
 
 ## How to Deploy and Test Witchcraft and Wizardry using VSCode and Flow CLI
 Before you start remember to have installed the VSCode extension and the Flow CLI in your enviroment. You also will be needing node.js for encoding to HEX some contracts. For the following stepswe asume that that WnW contracts will be deployed to the emulator's ServiceAccount 0xf8d6e0586b0a20c7
