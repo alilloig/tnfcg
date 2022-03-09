@@ -3,29 +3,80 @@
 
 This repository contains the smart contracts and transactions that implement the core functionality of Witchcraft And Wizardry, a learning cadence project emulating a Trading Card Game with NFTs, featuring random on-chain packs, implemented as FTs, as the only way to distribute said NFTs.
 
-### What is WnW?
+### What is a Trading Non-Fungible Card Game and a Trading Fungible Pack?
 
+The main difference of WnW with any other NFT implementation is the definition of packs as Fungible Tokens. Collectible packs for NFTs, as other NFT containing them has no sense on the blockchain, due to his open-state which would cause it's content to be known before opening the pack. But if we think in how card packs from Trading Card Games work in real life, we see we can approach them as Fungible Tokens rather than Non-Fungible ones. Until a pack is opened, it has the same value of any other pack of the same kind, the potencial value of the cards that it contains, that are unknown but are known to belong to a printed pool of cards. 
 
+This behaviour is what this project tries to emulate. When Trading Packs (fungible tokens) are allowed to be minted, the necessary amount of Trading Non-Fungible Cards (nfts containing the info of a certain card from the set the packs belongs to) are minted and stored in the TNFCG account. Then packs can be selled to users, who can decide to open them and get some NFTs from the game collection (in the case of Witchcraft and Wizardry those NFTs are determined randonmly using the `unsafeRandom()` cadence built-in function) or to hold and trade them, since they allways could be traded latter for TNFCs with the contract.
+
+In order to allow other TNFCGs to be created and simplifying the creation of new kind of packs, the contract interfaces `TradingNonFungibleCardGame.cdc` and `TradingFungiblePack.cdc` define the behaviour and data structs that need to be conformed respectively. Witchcraft&Wizardry and W&W Alpha Edition Packs are working examples of how to implement it.
 
 ## Contract Interfaces
 
-The functionalities of the TNFCGs are defined through the 'TradingNonFungibleCardGame.cdc' contract interface
 ### TradingNonFungibleCardGame.cdc
-
-WnW (or any other possible TNFCG) conforms to the NonTokenFungible.cdc interface and to the TradingNonFungibleCardGame.cdc interface
 - A TNFCG can have any number of cards. Trading Non-Fungible Cards are NFTs copies of those cards.
 - A TNFCG is made up of any number of sets. A set include any number of cards each of them at a certain rarity.
 - Each set must have at least one type of pack. The pack contains a certain amount of TNFC of any of the set's rartities. 
+- TNFCG defines the following structs  and resource interfaces in order to handle this logic. Detailed comments and pre/post conditions can be found in the source code:
+      ```cadence
+      pub struct interface Card {
+        pub let cardID: UInt32
+        pub let metadata: {String: String}
+      }
+      pub struct interface TNFCData {
+        pub let cardID: UInt32
+        pub let setID: UInt32
+        pub let rarityID: UInt8
+        pub let serialNumber: UInt32
+      }
+      pub resource interface TradingNonFungibleCard{
+        pub let data: {TNFCData}
+      }
+      pub resource interface Set{
+        pub let setID: UInt32
+        pub let name: String
+        pub var printingInProgress: Bool
+        access(contract) let rarities: {UInt8: String}
+        access(contract) var raritiesDistribution: {UInt8: UFix64}
+        pub var nextPackID: UInt8
+        access(contract) var packsInfo: {UInt8: {TradingFungiblePack.PackInfo}}
+        access(contract) var cardsByRarity: {UInt8: [UInt32]}
+        access(contract) var numberMintedPerCard: {UInt32: UInt32}
+        access(contract) var mintedTNFCsIDsByRarity: {UInt8: [UInt64]}
+
+        pub fun addPackInfo(packInfo: {TradingFungiblePack.PackInfo})
+        pub fun addCardsByRarity(cardIDs: [UInt32], rarity: UInt8)
+        pub fun startPrinting()
+        pub fun printRun(packID: UInt8, quantity: UInt64): @NonFungibleToken.Collection
+        pub fun fulfilPacks(packID: UInt8, amount: UFix64): [UInt64]
+        pub fun stopPrinting()
+    }
+      ```
+- It also defines four admin resources for exposing capabilities to create cards, handle set info, print cards and fulfil packs:
+    ```cadence
+      pub resource interface CardCreator{
+        pub fun createNewCard(metadata: {String: String}): UInt32
+        pub fun batchCreateNewCards(metadatas: [{String: String}]): [UInt32]
+      }
+      pub resource interface SetManager{
+        pub fun createSet(name: String, rarities: {UInt8: String}): UInt32
+        pub fun addPackInfo(setID: UInt32, packInfo: {TradingFungiblePack.PackInfo})
+        pub fun addCardsByRarity(setID: UInt32, cardIDs: [UInt32], rarity: UInt8)
+        pub fun startPrinting(setID: UInt32)
+        pub fun stopPrinting(setID: UInt32)
+      }
+      pub resource interface SetPrintRunner{
+        pub fun printRun(setID: UInt32, packID: UInt8, quantity: UInt64)
+      }
+      pub resource interface SetPackFulfiler{
+        pub fun fulfilPacks(setID: UInt32, packID: UInt8, amount: UFix64, packsOwnerCardCollectionPublic: &{NonFungibleToken.CollectionPublic})
+      }
+    ```
 
 ### TradingFungiblePack.cdc
 
-WnW Alpha Edition Packs (or any other TNFCG pack) conforms to the FungibleToken.cdc interface and to the TradingFungiblePack.cdc interface.
-Packs are Fungible Tokens that can be purchased in exchange to another FT from the contract. Alpha packs can be purchased using Flow Tokens. Packs can be traded as any other fungible token, or can be opened, wich means been send to the TradingFungiblePack contract, which will destroy those tokens and deposit the opened NFTs in the seller's collection.
-
 - When the pack contract is deployed, it's information is added to the set to which it belongs.
 - The pack's administrator resource can create 3 resources to manage the lyfe-cicle of the packs and 
-
-
 
 
 
