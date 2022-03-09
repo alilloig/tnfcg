@@ -19,7 +19,7 @@ In order to allow other TNFCGs to be created and simplifying the creation of new
 - Each set must have at least one type of pack. The pack contains a certain amount of TNFC of any of the set's rartities. 
 - TNFCG defines the following structs  and resource interfaces in order to handle this logic. Detailed comments and pre/post conditions can be found in the source code:
 
-      ```cadence
+```cadence
       pub struct interface Card {
         pub let cardID: UInt32
         pub let metadata: {String: String}
@@ -52,11 +52,11 @@ In order to allow other TNFCGs to be created and simplifying the creation of new
         pub fun fulfilPacks(packID: UInt8, amount: UFix64): [UInt64]
         pub fun stopPrinting()
     }
-      ```
-      
+```
+
 - It also defines four admin resources for exposing capabilities to create cards, handle set info, print cards and fulfil packs:
 
-    ```cadence
+```cadence
       pub resource interface CardCreator{
         pub fun createNewCard(metadata: {String: String}): UInt32
         pub fun batchCreateNewCards(metadatas: [{String: String}]): [UInt32]
@@ -74,7 +74,7 @@ In order to allow other TNFCGs to be created and simplifying the creation of new
       pub resource interface SetPackFulfiler{
         pub fun fulfilPacks(setID: UInt32, packID: UInt8, amount: UFix64, packsOwnerCardCollectionPublic: &{NonFungibleToken.CollectionPublic})
       }
-    ```
+```
 
 ### TradingFungiblePack.cdc
 
