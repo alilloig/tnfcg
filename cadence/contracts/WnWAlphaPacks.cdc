@@ -152,7 +152,7 @@ pub contract WnWAlphaPacks: FungibleToken, TradingFungiblePack{
                 let packMinimun = TF.getNumbersDictionaryMinimun(packRaritiesDistribution)
                 let sheetsPrintingSize =  ( UFix64(setMinimun) * packRaritiesDistribution[rarity]! ) /
                                             ( UFix64(packMinimun) * setData.getRaritiesDistribution()![rarity]! )
-                TF.isNumberInteger(printingSize) ?? panic("Bad pack rarity distribution for the set rarity distribution. See TNFCG Game Designer Help")
+                TF.isNumberInteger(sheetsPrintingSize) ?? panic("Bad pack rarity distribution for the set rarity distribution. See TNFCG Game Designer Help")
                 self.printingRaritiesSheetsQuantities[rarity] = UInt64(sheetsPrintingSize)
             }
             self.price = price
