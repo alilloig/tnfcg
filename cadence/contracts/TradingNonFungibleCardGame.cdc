@@ -9,18 +9,23 @@ import TradingFungiblePack from 0xf8d6e0586b0a20c7
 
 ## The Flow Trading Non-Fungible Card standard
 
-## `NonFungibleToken` contract interface
+## `TradingNonFungibleCardGame` contract interface
 
-The interface that all non-fungible token contracts could conform to.
-If a user wants to deploy a new nft contract, their contract would need
-to implement the NonFungibleToken interface.
+The interface that all trading non fungible card NFT based games contracts could 
+conform to. If a user wants to deploy a new tnfcg contract, their contract would need
+to implement the TradingNonFungibleCardGame interface.
 
 Their contract would have to follow all the rules and naming
 that the interface specifies.
+## `Card` struct
 
-## `NFT` resource
+## `TNFCData`struct
 
-The core resource type that represents an NFT in the smart contract.
+
+
+## `TradingNonFungibleCard` resource
+
+The core resource type that represents an TNFC in the smart contract.
 
 ## `Collection` Resource
 
