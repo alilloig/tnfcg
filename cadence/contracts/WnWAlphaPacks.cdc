@@ -352,14 +352,13 @@ pub contract WnWAlphaPacks: FungibleToken, TradingFungiblePack{
         //
         // Function for destroying packs
         //
-        pub fun openPacks(packsToOpen: @FungibleToken.Vault, packsOwnerCardCollectionPublic: &{NonFungibleToken.CollectionPublic}){
+        pub fun openPacks(packsToOpen: @FungibleToken.Vault){
             pre {
                 packsToOpen.isInstance(Type<@WnWAlphaPacks.Vault>()): "Tokens must be WnW Alpha edition packs"
-                packsOwnerCardCollectionPublic.isInstance(Type<@WnW.Collection>()): "Reciving collection must belong to WnW"
                 UInt64(packsToOpen.balance) <= WnWAlphaPacks.packsToOpen: "Amount opened must be less than the remaining amount of unopened packs"
             }
             let packFulfilerRef = self.packFulfilerCapability.borrow() ?? panic("Cannot borrow WnW pack fulfiler")
-            packFulfilerRef.fulfilPacks(setID: WnWAlphaPacks.setID, packID: WnWAlphaPacks.TFPackInfo.packID, amount: packsToOpen.balance, packsOwnerCardCollectionPublic: packsOwnerCardCollectionPublic)
+            packFulfilerRef.fulfilPacks(setID: WnWAlphaPacks.setID, packID: WnWAlphaPacks.TFPackInfo.packID, amount: packsToOpen.balance)
             emit PacksDestroyed(amount: packsToOpen.balance)
             WnWAlphaPacks.packsToOpen = WnWAlphaPacks.packsToOpen - UInt64(packsToOpen.balance)
             destroy packsToOpen
