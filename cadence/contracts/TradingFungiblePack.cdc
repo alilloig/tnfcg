@@ -129,9 +129,7 @@ pub contract interface TradingFungiblePack {
     /// NFTs
     ///
     pub resource interface PackOpener{
-        pub fun openPacks(
-            packsToOpen: @FungibleToken.Vault,
-            packsOwnerCardCollectionPublic: &{NonFungibleToken.CollectionPublic}){
+        pub fun openPacks(packsToOpen: @FungibleToken.Vault){
                 pre{
                     packsToOpen.balance > 0.0: "Amount opened must be greater than zero"
                     packsToOpen.balance % 1.0 == 0.0: "You cannot open fractions of packs"

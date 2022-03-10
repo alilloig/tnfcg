@@ -390,7 +390,8 @@ pub contract interface TradingNonFungibleCardGame {
     ///
     pub resource interface SetPackFulfiler{
         /// openPacks takes a Vault and destroys it returning the number of opened packs
-        pub fun fulfilPacks(setID: UInt32, packID: UInt8, amount: UFix64, packsOwnerCardCollectionPublic: &{NonFungibleToken.CollectionPublic})
+        pub fun fulfilPacks(setID: UInt32, packID: UInt8, amount: UFix64)
+        pub fun retrieveCards(packsOwnerCardCollectionPublic: &{NonFungibleToken.CollectionPublic})
     }
 }
  
