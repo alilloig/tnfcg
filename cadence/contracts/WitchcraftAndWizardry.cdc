@@ -680,8 +680,6 @@ pub contract WnW: NonFungibleToken, TradingNonFungibleCardGame {
             destroy self.ownedNFTs
         }
 
-        // initializer
-        //
         init () {
             self.ownedNFTs <- {}
         }
@@ -866,11 +864,11 @@ pub contract WnW: NonFungibleToken, TradingNonFungibleCardGame {
             WnW.openedTNFCsIDsByAccount[owner]!.append(openedTNFCsIDs)
         }
 
-        // retrieveCards
+        // retrieveTNFCs
         // Only method to get new WnW Cards
 		// and deposit it in the recipients collection using their collection reference
         //
-        pub fun retrieveCards(owner: Address){
+        pub fun retrieveTNFCs(owner: Address){
             // Borrow a reference to the printed TNFCs collection provider of WnW
             let printedTNFCsProviderRef = self.printedTNFCsCollectionPrivateProvider.borrow() ?? panic("Cannot borrow printed TNFCs provider")
             let packsOwnerCardCollectionPublic = getAccount(owner)

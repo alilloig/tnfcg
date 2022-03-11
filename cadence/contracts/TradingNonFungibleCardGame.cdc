@@ -391,7 +391,7 @@ pub contract interface TradingNonFungibleCardGame {
     pub resource interface SetPackFulfiler{
         /// openPacks takes a Vault and destroys it returning the number of opened packs
         pub fun fulfilPacks(setID: UInt32, packID: UInt8, amount: UFix64, owner: Address)
-        pub fun retrieveCards(owner: Address)
+        pub fun retrieveTNFCs(owner: Address)
     }
 }
  
