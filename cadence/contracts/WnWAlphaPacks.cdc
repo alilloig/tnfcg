@@ -358,7 +358,7 @@ pub contract WnWAlphaPacks: FungibleToken, TradingFungiblePack{
                 UInt64(packsToOpen.balance) <= WnWAlphaPacks.packsToOpen: "Amount opened must be less than the remaining amount of unopened packs"
             }
             let packFulfilerRef = self.packFulfilerCapability.borrow() ?? panic("Cannot borrow WnW pack fulfiler")
-            packFulfilerRef.fulfilPacks(setID: WnWAlphaPacks.setID, packID: WnWAlphaPacks.TFPackInfo.packID, amount: packsToOpen.balance)
+            packFulfilerRef.fulfilPacks(setID: WnWAlphaPacks.setID, packID: WnWAlphaPacks.TFPackInfo.packID, amount: packsToOpen.balance, owner: packsToOpen.owner())
             emit PacksDestroyed(amount: packsToOpen.balance)
             WnWAlphaPacks.packsToOpen = WnWAlphaPacks.packsToOpen - UInt64(packsToOpen.balance)
             destroy packsToOpen
@@ -380,14 +380,9 @@ pub contract WnWAlphaPacks: FungibleToken, TradingFungiblePack{
         self.TFPackInfo = AlphaPackInfo(setID: setID, packRaritiesDistribution: packRaritiesDistribution, price: price)
         // add Pack Info to the set
         let SetManagerRef = setManagerCapability.borrow() ?? panic("Set manager not found")
-        log("Se va a añadir el pack info al set ")
-        log(setID)
-        log("Pack Info")
-        log(self.TFPackInfo)
         SetManagerRef.addPackInfo(setID: setID, packInfo: self.TFPackInfo)
-        log(self.TFPackInfo.packID)
-        log(self.TFPackInfo.printingPacksAmount)
-        log(self.TFPackInfo.price)
+        //
+        //
         self.VaultStoragePath = /storage/WnWAlphaPacksVault
         self.ReceiverPublicPath = /public/WnWAlphaPacksVault
         self.ReceiverPrivatePath = /private/WnWAlphaPacksVault
