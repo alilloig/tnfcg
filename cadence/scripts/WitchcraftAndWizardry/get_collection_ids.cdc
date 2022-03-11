@@ -8,7 +8,7 @@ import WnW from 0xf8d6e0586b0a20c7
 pub fun main(address: Address): [UInt64] {
     let account = getAccount(address)
 
-    let collectionRef = account.getCapability(WnW.OwnedCardsCollectionPublicPath).borrow<&{NonFungibleToken.CollectionPublic}>()
+    let collectionRef = account.getCapability(WnW.OwnedTNFCsCollectionPublicPath).borrow<&{NonFungibleToken.CollectionPublic}>()
         ?? panic("Could not borrow capability from public collection")
     
     return collectionRef.getIDs()

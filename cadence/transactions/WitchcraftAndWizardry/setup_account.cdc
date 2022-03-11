@@ -8,16 +8,16 @@ import WnW from 0xf8d6e0586b0a20c7
 transaction {
     prepare(signer: AuthAccount) {
         // if the account doesn't already have a collection
-        if signer.borrow<&WnW.Collection>(from: WnW.OwnedCardsStoragePath) == nil {
+        if signer.borrow<&WnW.Collection>(from: WnW.OwnedTNFCsStoragePath) == nil {
 
             // create a new empty collection
             let collection <- WnW.createEmptyCollection()
             
             // save it to the account
-            signer.save(<-collection, to: WnW.OwnedCardsStoragePath)
+            signer.save(<-collection, to: WnW.OwnedTNFCsStoragePath)
 
             // create a public capability for the collection
-            signer.link<&WnW.Collection{NonFungibleToken.CollectionPublic, WnW.WnWCollectionPublic}>(WnW.OwnedCardsCollectionPublicPath, target: WnW.OwnedCardsStoragePath)
+            signer.link<&WnW.Collection{NonFungibleToken.CollectionPublic, WnW.WnWCollectionPublic}>(WnW.OwnedTNFCsCollectionPublicPath, target: WnW.OwnedTNFCsStoragePath)
         }
     }
 }

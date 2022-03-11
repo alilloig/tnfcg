@@ -16,7 +16,7 @@ pub struct AccountItem {
 }
 
 pub fun main(address: Address, itemID: UInt64): AccountItem? {
-  if let collection = getAccount(address).getCapability<&WnW.Collection{NonFungibleToken.CollectionPublic, WnW.WnWCollectionPublic}>(WnW.OwnedCardsCollectionPublicPath).borrow() {
+  if let collection = getAccount(address).getCapability<&WnW.Collection{NonFungibleToken.CollectionPublic, WnW.WnWCollectionPublic}>(WnW.OwnedTNFCsCollectionPublicPath).borrow() {
     if let item = collection.borrowTNFC(id: itemID) {
       return AccountItem(itemID: itemID, resourceID: item.uuid, owner: address)
     }

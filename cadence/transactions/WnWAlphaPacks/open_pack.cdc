@@ -24,7 +24,7 @@ transaction() {
 
         //get a reference to the buyer's packs receiver
         self.tnfcCollection = signer
-        .getCapability(WnW.OwnedCardsCollectionPublicPath)
+        .getCapability(WnW.OwnedTNFCsCollectionPublicPath)
         .borrow<&{NonFungibleToken.CollectionPublic}>()
         ?? panic("Unable to borrow collection reference")
 
@@ -43,7 +43,7 @@ transaction() {
         .borrow<&{TradingFungiblePack.PackOpener}>() 
         ?? panic("Bad seller address")
 
-        packSellerRef.openPacks(packsToOpen: <- self.packsToOpen, packsOwnerCardCollectionPublic: self.tnfcCollection)
+        packSellerRef.openPacks(packsToOpen: <- self.packsToOpen, owner: self.packsToOpen.owner.address)
     }
 }
  

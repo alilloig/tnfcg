@@ -9,7 +9,7 @@ import WnW from 0xf8d6e0586b0a20c7
 pub fun main(): [UInt64] {
     let account = getAccount(0xf8d6e0586b0a20c7)
 
-    let collectionRef = account.getCapability(WnW.PrintedCardsTNFCGCollectionPath).borrow<&{TradingNonFungibleCardGame.TNFCGCollection}>()
+    let collectionRef = account.getCapability(WnW.PrintedTNFCsPublicTNFCGCollectionPath).borrow<&{TradingNonFungibleCardGame.TNFCGCollection}>()
         ?? panic("Could not borrow capability from public collection")
     
     return collectionRef.getIDs()

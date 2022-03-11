@@ -24,10 +24,10 @@ pub struct TNFC {
 pub fun main(tnfcID: UInt64): TNFC{
     let account = getAccount(0xf8d6e0586b0a20c7)
 
-    let collectionRef = account.getCapability(WnW.PrintedCardsTNFCGCollectionPath).borrow<&{WnW.WnWCollectionPublic}>()
+    let collectionRef = account.getCapability(WnW.PrintedTNFCsPublicTNFCGCollectionPath).borrow<&{WnW.WnWCollectionPublic}>()
         ?? panic("Could not borrow capability from public collection")
     
-    let tnfc = collectionRef.borrowTNFC(id: tnfcID) ?? panic("No such TNFC in printed cards")
+    let tnfc = collectionRef.borrowTNFC(id: tnfcID) ?? panic("No such TNFC in printed TNFCs")
 
     let rarity = tnfc.data.rarityID
 

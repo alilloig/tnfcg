@@ -8,7 +8,7 @@ import WnW from "../../contracts/WitchcraftAndWizardry.cdc"
 pub fun main(address: Address): Int {
     let account = getAccount(address)
 
-    let collectionRef = account.getCapability(WnW.OwnedCardsCollectionPublicPath)!
+    let collectionRef = account.getCapability(WnW.OwnedTNFCsCollectionPublicPath)!
         .borrow<&{NonFungibleToken.CollectionPublic}>()
         ?? panic("Could not borrow capability from public collection")
     

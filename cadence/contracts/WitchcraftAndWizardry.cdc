@@ -27,7 +27,7 @@ The core resource type that represents a TnFCG card in the smart contract.
 
 The resource that stores a user's TnFCG card collection.
 It includes a few functions to allow the owner to easily
-move cards in and out of the collection.
+move TNFCs in and out of the collection.
 
 ## `CardProvider` and `CardReceiver` resource interfaces
 These interfaces declare functions with some pre and post conditions
@@ -36,10 +36,10 @@ that require the Collection to follow certain naming and behavior standards.
 They are separate because it gives the user the ability to share a reference
 to their Collection that only exposes the fields and functions in one or more
 of the interfaces. It also gives users the ability to make custom resources
-that implement these interfaces to do various things with the cards.
+that implement these interfaces to do various things with the TNFCs.
 
 By using resources and interfaces, users of TnFCG smart contracts can send
-and receive cards peer-to-peer, without having to interact with a central ledger
+and receive TNFCs peer-to-peer, without having to interact with a central ledger
 smart contract.
 
 To send a card to another user, a user would simply withdraw the card
@@ -103,14 +103,18 @@ pub contract WnW: NonFungibleToken, TradingNonFungibleCardGame {
     // Variable size dictionary of Set resources
     access(contract) var sets: @{UInt32: WnWSet}
 
+    // Variable holding the IDs of the opened NFTs by each account to retrieve
+    // them after beeing generated secure randomly
+    access(contract) var openedTNFCsIDsByAccount: {Address: [[UInt64]]}
+
     // Named Paths
     //
     //
-    pub let OwnedCardsStoragePath: StoragePath
-    pub let OwnedCardsCollectionPublicPath: PublicPath
-    pub let PrintedCardsPrivateReceiverPath: PrivatePath
-    pub let PrintedCardsPrivateProviderPath: PrivatePath
-    pub let PrintedCardsTNFCGCollectionPath: PublicPath
+    pub let OwnedTNFCsStoragePath: StoragePath
+    pub let OwnedTNFCsCollectionPublicPath: PublicPath
+    pub let PrintedTNFCsPrivateReceiverPath: PrivatePath
+    pub let PrintedTNFCsPrivateProviderPath: PrivatePath
+    pub let PrintedTNFCsPublicTNFCGCollectionPath: PublicPath
     //
     pub let AdminStoragePath: StoragePath
     //
@@ -380,7 +384,7 @@ pub contract WnW: NonFungibleToken, TradingNonFungibleCardGame {
 
         pub fun printRun(packID: UInt8, quantity: UInt64): @NonFungibleToken.Collection{
             let packInfo = self.packsInfo[packID] ?? panic("Pack does not exist in set")
-            let printedCards <- WnW.createEmptyCollection()
+            let printedTNFCs <- WnW.createEmptyCollection()
             var completedPrintRuns: UInt64 = 0
             var sheetQuantity: UInt64 = 0
             var printedSheets: UInt64 = 0
@@ -401,7 +405,7 @@ pub contract WnW: NonFungibleToken, TradingNonFungibleCardGame {
                         for cardID in rarityCardsIDs{
                             let TNFC <- self.mintTNFC(cardID: cardID, setID: self.setID, rarityID: rarityID)
                             self.mintedTNFCsIDsByRarity[rarityID]!.append(TNFC.id)
-                            printedCards.deposit(token: <- TNFC)
+                            printedTNFCs.deposit(token: <- TNFC)
                         }
                         printedSheets = printedSheets + 1
                     }
@@ -409,58 +413,61 @@ pub contract WnW: NonFungibleToken, TradingNonFungibleCardGame {
                 completedPrintRuns = completedPrintRuns + 1
             }
 
-            return <- printedCards
+            return <- printedTNFCs
         }
 
 
 
 
         pub fun fulfilPacks(packID: UInt8, amount: UFix64): [UInt64]{
-            // aqui va la manteca aleatoria no?
-            // amount x packrarity de randoms de cardsPrintedByRarity
-            //
+            // array with the IDs of the NFTs that will be fulfiling the packs
             var openedTNFCsIDs: [UInt64] = []
+            // auxiliar variable for holding the opened tnfc id
             var openedTNFCID: UInt64 = 0
+            //index of the card randomly selected for fulfiling
             var randomTNFCIndex: UInt64 = 0
+            // rarity distribution of the pack
             var rarityDistribution: UFix64 = 0.0
+            // amount of TNFCs at a certain rarity that are going to be selected
             var rarityAmountToFulfil: UInt64 = 0
+            // amount of TNFC (tnfc ids actually) that have already been transfered
             var rartityTransferedAmount: UInt64 = 0
+            //pack info from the set
             var packInfo = self.packsInfo[packID] ?? panic("Pack does not exists in set")
-
+            //for each rarity from the tnfcs that come into the pack get
             for rarity in packInfo.packRaritiesDistribution.keys{
-                log("Fulfiling pack rarity")
-                log(rarity)
+                //get the quantity of tnfcs at that rarity in each pack
                 rarityDistribution = packInfo.packRaritiesDistribution[rarity] ?? panic("PackInfo does not have rarity distribution")
-                log("amount of TNFC in pack for this rarity")
-                log(rarityDistribution)
+                // get the total amount of tnfcs needed at that rarity based on the amount of packs beeing opened
                 rarityAmountToFulfil = UInt64(rarityDistribution) * UInt64(amount)
-                log("total amount of that rarity that is beeing fulfiled")
-                log(rarityAmountToFulfil)
+                // set the counter of rarity's transfered tnfc to 0
                 rartityTransferedAmount = 0
+                // until we transfer as much TNFC as needed
                 while (rartityTransferedAmount < rarityAmountToFulfil){
-                    // Habrá que explicar lo guapo que está esto no?
+                    //get the TNFC IDs minted for that rarity
                     let rarityMintedTNFCsIDs = self.mintedTNFCsIDsByRarity[rarity] ?? panic("No tnfcs minted with this rarity")
+                    //select randomly one of them
                     randomTNFCIndex = TF.generateAcotatedRandom(UInt64(rarityMintedTNFCsIDs.length))
+                    //and save its id
                     openedTNFCID = rarityMintedTNFCsIDs[randomTNFCIndex]
+                    //remove the id from the list of printed TNFCs
                     self.mintedTNFCsIDsByRarity[rarity]!.remove(at: randomTNFCIndex)
+                    // and add it to the array that will be fulfiling the packs
                     openedTNFCsIDs.append(openedTNFCID)
+                    //finally increase the amount of tnfc transfered for this amount
                     rartityTransferedAmount = rartityTransferedAmount + 1
                 }
-
             }
-            //queda pendiente unificar el uso de TNFC en vez de card, todo lo referente a NFT TNFC, card es una struct
-            // printedTNFCs storages y cosas....
-
             return openedTNFCsIDs
         }
 
-        // startPrinting() locks the Set so that no more cards can be printed
+        // startPrinting() locks the Set so that no more tnfcs can be printed
         //
         pub fun startPrinting(){
             self.printingInProgress = true
         }
 
-        // stopPrinting() locks the Set so that no more cards can be printed
+        // stopPrinting() locks the Set so that no more tnfcs can be printed
         //
         pub fun stopPrinting(){
             self.printingInProgress = false
@@ -717,15 +724,15 @@ pub contract WnW: NonFungibleToken, TradingNonFungibleCardGame {
         // createNewPrintRunner
         // Function that creates and returns a new PrintRunner resource
         //
-        pub fun createNewSetPrintRunner(printedCardsCollectionPrivateReceiver: Capability<&{NonFungibleToken.Receiver}>): @SetPrintRunner{
-            return <- create SetPrintRunner(printedCardsCollectionPrivateReceiver: printedCardsCollectionPrivateReceiver)
+        pub fun createNewSetPrintRunner(printedTNFCsCollectionPrivateReceiver: Capability<&{NonFungibleToken.Receiver}>): @SetPrintRunner{
+            return <- create SetPrintRunner(printedTNFCsCollectionPrivateReceiver: printedTNFCsCollectionPrivateReceiver)
         }
 
         // createNewSetPackFulfiler
         // Function that creates and returns a new PackFulfiler resource
         //
-        pub fun createNewSetPackFulfiler(printedCardsCollectionPrivateProvider: Capability<&{NonFungibleToken.Provider}>): @SetPackFulfiler {
-            return <- create SetPackFulfiler(printedCardsCollectionPrivateProvider: printedCardsCollectionPrivateProvider)
+        pub fun createNewSetPackFulfiler(printedTNFCsCollectionPrivateProvider: Capability<&{NonFungibleToken.Provider}>): @SetPackFulfiler {
+            return <- create SetPackFulfiler(printedTNFCsCollectionPrivateProvider: printedTNFCsCollectionPrivateProvider)
         }
 
 
@@ -815,21 +822,21 @@ pub contract WnW: NonFungibleToken, TradingNonFungibleCardGame {
     pub resource SetPrintRunner: TradingNonFungibleCardGame.SetPrintRunner{
         // A capability allowing this resource to deposit the NFTs created 
         // 
-        access(contract) let printedCardsCollectionPrivateReceiver: Capability<&{NonFungibleToken.Receiver}>
+        access(contract) let printedTNFCsCollectionPrivateReceiver: Capability<&{NonFungibleToken.Receiver}>
         
         pub fun printRun(setID: UInt32, packID: UInt8, quantity: UInt64){
             let set = &WnW.sets[setID] as &WnWSet
-            let printedCards <- set.printRun(packID: packID, quantity: quantity)
-            let printedCardsIDs = printedCards.getIDs()
-            let printedCardsReceiverRef = self.printedCardsCollectionPrivateReceiver.borrow() ?? panic("Cannot borrow reference to printed cards collection private receiver")
-            for tnfcID in printedCardsIDs{
-                printedCardsReceiverRef.deposit(token: <-printedCards.withdraw(withdrawID: tnfcID))
+            let printedTNFCs <- set.printRun(packID: packID, quantity: quantity)
+            let printedTNFCsIDs = printedTNFCs.getIDs()
+            let printedTNFCsReceiverRef = self.printedTNFCsCollectionPrivateReceiver.borrow() ?? panic("Cannot borrow reference to printed TNFCs collection private receiver")
+            for tnfcID in printedTNFCsIDs{
+                printedTNFCsReceiverRef.deposit(token: <-printedTNFCs.withdraw(withdrawID: tnfcID))
             }
-            destroy printedCards
+            destroy printedTNFCs
         }
 
-        init(printedCardsCollectionPrivateReceiver: Capability<&{NonFungibleToken.Receiver}>){
-            self.printedCardsCollectionPrivateReceiver = printedCardsCollectionPrivateReceiver
+        init(printedTNFCsCollectionPrivateReceiver: Capability<&{NonFungibleToken.Receiver}>){
+            self.printedTNFCsCollectionPrivateReceiver = printedTNFCsCollectionPrivateReceiver
         }
     }
 
@@ -838,7 +845,7 @@ pub contract WnW: NonFungibleToken, TradingNonFungibleCardGame {
         // This capability allows the resource to withdraw *any* NFT, so you should be careful when giving
         // such a capability to a resource and always check its code to make sure it will use it in the
         // way that it claims.
-        access(contract) let printedCardsCollectionPrivateProvider: Capability<&{NonFungibleToken.Provider}>
+        access(contract) let printedTNFCsCollectionPrivateProvider: Capability<&{NonFungibleToken.Provider}>
 
 
         // fulfilPacks
@@ -846,21 +853,41 @@ pub contract WnW: NonFungibleToken, TradingNonFungibleCardGame {
         // Only method to get new WnW Cards
 		// and deposit it in the recipients collection using their collection reference
         //
-		pub fun fulfilPacks(setID: UInt32, packID: UInt8, amount: UFix64, packsOwnerCardCollectionPublic: &{NonFungibleToken.CollectionPublic}){
-
+		pub fun fulfilPacks(setID: UInt32, packID: UInt8, amount: UFix64, owner: Address){
+            //borrow a reference to the set
             let set = &WnW.sets[setID] as &WnWSet
+            //call to set fulfilPacks
             let openedTNFCsIDs = set.fulfilPacks(packID: packID, amount: amount)
-
-            let printedCardsProviderRef = self.printedCardsCollectionPrivateProvider.borrow() ?? panic("Cannot borrow printed cards provider")
-
-            for tnfcID in openedTNFCsIDs{
-                packsOwnerCardCollectionPublic.deposit(
-                    token: <-printedCardsProviderRef.withdraw(withdrawID: tnfcID))
-            }   
+            //If the account didn't open any packs previusly initialize the dictionary at key "owner"
+            if (WnW.openedTNFCsIDsByAccount[owner] == nil){
+                WnW.openedTNFCsIDsByAccount[owner] = []
+            }
+            // Add the pack's TNFCs IDs to the structure holding the opened packs info
+            WnW.openedTNFCsIDsByAccount[owner]!.append(openedTNFCsIDs)
         }
 
-        init(printedCardsCollectionPrivateProvider: Capability<&{NonFungibleToken.Provider}>){
-            self.printedCardsCollectionPrivateProvider = printedCardsCollectionPrivateProvider
+        // retrieveCards
+        // Only method to get new WnW Cards
+		// and deposit it in the recipients collection using their collection reference
+        //
+        pub fun retrieveCards(owner: Address){
+            // Borrow a reference to the printed TNFCs collection provider of WnW
+            let printedTNFCsProviderRef = self.printedTNFCsCollectionPrivateProvider.borrow() ?? panic("Cannot borrow printed TNFCs provider")
+            let packsOwnerCardCollectionPublic = getAccount(owner)
+                .getCapability(WnW.OwnedTNFCsCollectionPublicPath)
+                .borrow<&{NonFungibleToken.CollectionPublic}>()
+                ?? panic("Unable to borrow collection reference")
+
+            // Get the 
+            let openedTNFCsIDs = WnW.openedTNFCsIDsByAccount[owner] ?? panic("No opened TNFCs for this address")
+            for tnfcID in openedTNFCsIDs{
+                packsOwnerCardCollectionPublic.deposit(
+                    token: <-printedTNFCsProviderRef.withdraw(withdrawID: tnfcID))
+            }  
+        }
+
+        init(printedTNFCsCollectionPrivateProvider: Capability<&{NonFungibleToken.Provider}>){
+            self.printedTNFCsCollectionPrivateProvider = printedTNFCsCollectionPrivateProvider
         }
     }
     
@@ -877,7 +904,7 @@ pub contract WnW: NonFungibleToken, TradingNonFungibleCardGame {
     //
     pub fun fetch(_ from: Address, itemID: UInt64): &NonFungibleToken.NFT? {
         let collection = getAccount(from)
-            .getCapability(WnW.OwnedCardsCollectionPublicPath)!
+            .getCapability(WnW.OwnedTNFCsCollectionPublicPath)!
             .borrow<&WnW.Collection{TradingNonFungibleCardGame.TNFCGCollection}>()
             ?? panic("Couldn't get collection")
         // We trust WnW.Collection.borowTNFCGCard to get the correct itemID
@@ -985,52 +1012,34 @@ pub contract WnW: NonFungibleToken, TradingNonFungibleCardGame {
         }
     }
 
-
-    // initializer
-    //
 	init() {
-        pre{
-        }
-        //
-        // Almacenamiento Cartas impresas
-        self.OwnedCardsStoragePath = /storage/WnWPrintedCardsCollection
-        // Capability pa ver cartas impresas
-        self.OwnedCardsCollectionPublicPath = /public/WnWOwnedCardsCollectionPublic        
-        // Capability pa ver cartas impresas
-        self.PrintedCardsPrivateReceiverPath = /private/WnWPrintedCardsCollectionReceiver
-        //Capability pa sacar cartas
-        self.PrintedCardsPrivateProviderPath = /private/WnWPrintedCardsCollectionProvider
-        //Capability pa ver las cartas imprimidas sin abrir
-        self.PrintedCardsTNFCGCollectionPath = /public/WnWPrintedCardsTNFCGCollection
-
-
-        // Almacenamiento recurso admin
+        // Set storage path for TNFCs and the path to its public capability
+        self.OwnedTNFCsStoragePath = /storage/WnWOwnedTNFCsCollection
+        self.OwnedTNFCsCollectionPublicPath = /public/WnWOwnedTNFCsCollectionPublic
+        self.PrintedTNFCsPublicTNFCGCollectionPath = /public/WnWPrintedTNFCsTNFCGCollection
+        // Set the path for the private capabilities for the printedTNFCs collection
+        self.PrintedTNFCsPrivateReceiverPath = /private/WnWPrintedTNFCsCollectionReceiver
+        self.PrintedTNFCsPrivateProviderPath = /private/WnWPrintedTNFCsCollectionProvider
+        
+        // Set the storage and the private capability paths for the Admin resource
+        // and its administration resources
         self.AdminStoragePath = /storage/WnWAdmin
-        //Almacenamiento y capability pack card creator
         self.CardCreatorStoragePath = /storage/WnWCardCreator
         self.CardCreatorPrivatePath = /private/WnWCardCreator
-        // Almacenamiento y capability pack set manager
         self.SetManagerStoragePath = /storage/WnWSetManager
         self.SetManagerPrivatePath = /private/WnWSetManager
-        // Almacenamiento print runner y Capability para imprimir sets
         self.SetPrintRunnerStoragePath = /storage/WnWSetPrintRunner
         self.SetPrintRunnerPrivatePath = /private/WnWSetPrintRunner
-        // Almacenamiento pack fulfiler y Capability para fulfilear packs
         self.SetPackFulfilerStoragePath = /storage/WnWSetPackFulfiler
         self.SetPackFulfilerPrivatePath = /private/WnWSetPackFulfiler
 
-
-
+        // Initialize the contract state
         self.nextCardID = 1
         self.nextSetID = 1
-        // Initialize the total supply
         self.totalSupply = 0
-
         self.cardDatas = {}
         self.sets <- {}
-
-        /**   
-         **/  
+        self.openedTNFCsIDsByAccount = {}
 
         // Create the one true Admin object and deposit it into the conttract account.
         self.account.save(<- create Administrator(), to: self.AdminStoragePath)

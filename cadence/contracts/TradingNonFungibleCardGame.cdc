@@ -284,7 +284,7 @@ pub contract interface TradingNonFungibleCardGame {
             }
         }
         
-        // startPrinting() locks the Set so that no more cards can be printed
+        // startPrinting() locks the Set so that no more TNFCs can be printed
         //
         // Pre-Conditions:
         // The Set should be currently not beeing printed
@@ -320,7 +320,7 @@ pub contract interface TradingNonFungibleCardGame {
             }
         }
 
-        // stopPrinting() locks the Set so that no more cards can be printed
+        // stopPrinting() locks the Set so that no more TNFCs can be printed
         //
         // Pre-Conditions:
         // The Set should be currently beeing printed
@@ -377,7 +377,7 @@ pub contract interface TradingNonFungibleCardGame {
 
     /// Set PrintRunner
     ///
-    /// The interface that enforces the requirements for creating new copies of the cards in a set
+    /// The interface that enforces the requirements for creating new copies of the cards (tnfcs)in a set
     ///
     pub resource interface SetPrintRunner{
         /// this should create a number of NFTs depending on the number of packs createds

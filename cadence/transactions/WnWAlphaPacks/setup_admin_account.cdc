@@ -46,7 +46,7 @@ transaction() {
                         signer.getCapability<&{TradingNonFungibleCardGame.SetPackFulfiler}>(WnW.SetPackFulfilerPrivatePath)),
                 to: WnWAlphaPacks.PackOpenerStoragePath)
             
-            // Expose a public capability allowing users to open packs, sending it to the account and receiving WnW cards
+            // Expose a public capability allowing users to open packs, sending it to the account and receiving WnW TNFCs
             signer.link<&WnWAlphaPacks.PackOpener{TradingFungiblePack.PackOpener}>(
                 WnWAlphaPacks.PackOpenerPublicPath,
                 target: WnWAlphaPacks.PackOpenerStoragePath
