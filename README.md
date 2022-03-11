@@ -134,9 +134,10 @@ Before you start remember to have installed the VSCode extension and the Flow CL
 11. Finally, switch the emulator account to Alice (or any other than ServiceAccount) and run the setup_account.cdc transaction from FlowToken, WitchcraftAndWizardry and WnWAlphaPacks folder in order to get user account ready to buy and open packs.
 12. Mint flow tokens into the user vault using the Flow CLI and ServiceAccount `flow transactions send ./cadence/transactions/flow/mint_tokens.cdc USER_ADDRESS 1000.0`
 13. Using the VSCode extension and the choosen user account run the buy_pack.cdc and open_pack.cdc transactions in order to buy and open packs.
-14. You can check the state using the following scripts:
+14. The open_pack.cdc transaction keeps the TNFCs selected for fulfiling the packs into the WnW account, so the result of the random selecction isn't known by the user until the transaction it's finished. To actually get the TNFCs into the buyers collection you need to run `flow transactions send ./cadence/transactions/WitchcraftAndWizardry/retrieve_account_cards.cdc USER_ADDRESS`. This will put all the TNFCs for opened but unretrieved packs into the owner Collection. By separating the random generation tx and the transaction where the user actually get to know about which random TNFCs got selected we avoid that malicius users check for the random selected cards and abort the transaction if they don't like the result.
+15. You can check the state using the following scripts:
   - Get the printed but not yet opened NFTs IDs from the account owning WnW `flow scripts execute ./cadence/scripts/WitchcraftAndWizardry/get_printed_tnfc_ids.cdc`
   - Borrow TNFC info from the pool of unopened tnfcs `flow scripts execute ./cadence/scripts/WitchcraftAndWizardry/borrow_tnfc_admin.cdc TNFC_ID`
   (this two scripts include the admin account address hardcoded by the moment)
   - Get the info of all the TNFCs owned by a user  `flow scripts execute ./cadence/scripts/WitchcraftAndWizardry/borrow_tnfc_collection.cdc USER_ADDRESS`
-15. Mess arround and let me know what can be improved!
+16. Mess arround and let me know what can be improved!

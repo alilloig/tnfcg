@@ -35,7 +35,7 @@ transaction() {
         .getCapability(WnWAlphaPacks.PackOpenerPublicPath)
         .borrow<&{TradingFungiblePack.PackOpener}>() 
         ?? panic("Bad seller address")
-
+        // Send the packs to the contract to open them
         packOpenerRef.openPacks(packsToOpen: <- self.packsToOpen, owner: self.packsOwnerAddress)
     }
 }
