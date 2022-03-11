@@ -871,17 +871,24 @@ pub contract WnW: NonFungibleToken, TradingNonFungibleCardGame {
         pub fun retrieveTNFCs(owner: Address){
             // Borrow a reference to the printed TNFCs collection provider of WnW
             let printedTNFCsProviderRef = self.printedTNFCsCollectionPrivateProvider.borrow() ?? panic("Cannot borrow printed TNFCs provider")
-            let packsOwnerCardCollectionPublic = getAccount(owner)
+            // Borrow a reference to the TNFCs owner public collection
+            let packsOwnerCardCollectionPublicRef = getAccount(owner)
                 .getCapability(WnW.OwnedTNFCsCollectionPublicPath)
                 .borrow<&{NonFungibleToken.CollectionPublic}>()
                 ?? panic("Unable to borrow collection reference")
-
-            // Get the 
-            let openedTNFCsIDs = WnW.openedTNFCsIDsByAccount[owner] ?? panic("No opened TNFCs for this address")
-            for tnfcID in openedTNFCsIDs{
-                packsOwnerCardCollectionPublic.deposit(
-                    token: <-printedTNFCsProviderRef.withdraw(withdrawID: tnfcID))
-            }  
+            // Get the array of opened packs TNFCs IDs for the owner
+            let ownerOpenedPacksTNFCsIDs = WnW.openedTNFCsIDsByAccount[owner] ?? panic("No opened TNFCs for this address")
+            // Empty the opened tnfcs ids for the owner in the contract field
+            WnW.openedTNFCsIDsByAccount[owner] = []
+            // for each pack that the user has opened
+            for openedTNFCsIDs in ownerOpenedPacksTNFCsIDs{
+                // for each TNFC ID of the pack
+                for tnfcID in openedTNFCsIDs{
+                    // withdraw the TNFC from the WnW collection and deposit in the owners collection
+                    packsOwnerCardCollectionPublicRef.deposit(
+                        token: <-printedTNFCsProviderRef.withdraw(withdrawID: tnfcID))
+                }
+            }
         }
 
         init(printedTNFCsCollectionPrivateProvider: Capability<&{NonFungibleToken.Provider}>){
