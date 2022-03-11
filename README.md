@@ -74,7 +74,8 @@ When [Interface Implementation Requirements](https://docs.onflow.org/cadence/lan
         pub fun printRun(setID: UInt32, packID: UInt8, quantity: UInt64)
       }
       pub resource interface SetPackFulfiler{
-        pub fun fulfilPacks(setID: UInt32, packID: UInt8, amount: UFix64, packsOwnerCardCollectionPublic: &{NonFungibleToken.CollectionPublic})
+        pub fun fulfilPacks(setID: UInt32, packID: UInt8, amount: UFix64, owner: Address)
+        pub fun retrieveTNFCs(owner: Address)
       }
 ```
 
@@ -106,9 +107,7 @@ When [Interface Implementation Requirements](https://docs.onflow.org/cadence/lan
             amount: UFix64)
     }
     pub resource interface PackOpener{
-      pub fun openPacks(
-            packsToOpen: @FungibleToken.Vault,
-            packsOwnerCardCollectionPublic: &{NonFungibleToken.CollectionPublic})
+      pub fun openPacks(packsToOpen: @FungibleToken.Vault, owner: Address)
     }
 ```
 
