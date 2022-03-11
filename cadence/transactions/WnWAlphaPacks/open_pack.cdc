@@ -13,37 +13,30 @@ import WnWAlphaPacks from 0xf8d6e0586b0a20c7
 
 transaction() {
 
-    //The collection where the opened TNFCs will be deposit
-    let tnfcCollection: &{NonFungibleToken.CollectionPublic}
-
     // The Vault resource that holds the packs that are being opened
     let packsToOpen: @FungibleToken.Vault
+    let packsOwnerAddress: Address
 
 
     prepare(signer: AuthAccount) {
-
-        //get a reference to the buyer's packs receiver
-        self.tnfcCollection = signer
-        .getCapability(WnW.OwnedTNFCsCollectionPublicPath)
-        .borrow<&{NonFungibleToken.CollectionPublic}>()
-        ?? panic("Unable to borrow collection reference")
-
         // Get a reference to the signer's stored pack vault
         let vaultRef = signer.borrow<&WnWAlphaPacks.Vault>(from: WnWAlphaPacks.VaultStoragePath)
             ?? panic("Could not borrow reference to the payer's Vault!")
-
-        // Withdraw tokens from the signer's stored vault
+        // Withdraw one pack from the signer's stored vault
         self.packsToOpen <- vaultRef.withdraw(amount: 1.0)
+        self.packsOwnerAddress = signer.address
     }
 
     execute {
-        //get a reference to the WnW Alpha Packs Seller         
-        let packSellerRef = getAccount(0xf8d6e0586b0a20c7)
+        // Get a reference to the WnW Alpha Packs Seller
+        // The address should be set as a parameter but stays hardcoded for the moment
+        // for easier testing execution         
+        let packOpenerRef = getAccount(0xf8d6e0586b0a20c7)
         .getCapability(WnWAlphaPacks.PackOpenerPublicPath)
         .borrow<&{TradingFungiblePack.PackOpener}>() 
         ?? panic("Bad seller address")
 
-        packSellerRef.openPacks(packsToOpen: <- self.packsToOpen, owner: self.packsToOpen.owner.address)
+        packOpenerRef.openPacks(packsToOpen: <- self.packsToOpen, owner: self.packsOwnerAddress)
     }
 }
  
