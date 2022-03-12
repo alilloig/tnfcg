@@ -27,8 +27,8 @@ The admin only access resource that can mint packs into users vaults
 
 ## Pack Opener
 
-The admin only access resource that can accept TFP to return the TNFCs provided 
-by the TNFCG fulfilPacks function.
+The admin only access resource that can accept TFP to call TNFCG.fulfilPacks()
+and asign the user NFTs to be lately distributed
 
 */
 
@@ -37,6 +37,10 @@ by the TNFCG fulfilPacks function.
 /// The interface that fungible Pack contracts implement.
 ///
 pub contract interface TradingFungiblePack {
+
+    // -----------------------------------------------------------------------
+    // TradingFungiblePack contract interface Events
+    // -----------------------------------------------------------------------
     
     // PacksSelled
     //
@@ -68,21 +72,46 @@ pub contract interface TradingFungiblePack {
     // The event that is emitted when a new opener resource is created
     pub event PackPrinterCreated(allowedAmount: UInt64)
 
+     // -----------------------------------------------------------------------
+    // TFP contract-level fields.
+    // These contain actual values that are stored in the smart contract.
+    // -----------------------------------------------------------------------   
+    
+    // Total supply of Packs in existence
+    pub var totalSupply: UFix64
+    pub var packsToSell: UInt64
+    pub var packsToOpen: UInt64
+
     // Id from the set the packs belongs to
     pub let setID: UInt32
 
     // Info of the pack
     pub let TFPackInfo: {PackInfo}
 
+    // -----------------------------------------------------------------------
+    // Trading Fungible Card interface contract-level Composite Type definitions
+    // -----------------------------------------------------------------------
+
     // PackInfo
+    // When the TradingFungiblePack contract is initialized and the PackInfo is 
+    // created, printingPacksAmount and printingRaritiesSheetsQuantities should
+    // be calculated in fuction of the pack's set's raritiesDistribution
     pub struct interface PackInfo {
         pub let packID: UInt8
         pub let packRaritiesDistribution: {UInt8: UFix64}
+        // Indicates how many packs includes each printing
         pub let printingPacksAmount: UInt64
+        // A sheet represents 1 TNFC of each card in a set at a certain rarity
+        // this stores how many sheets peer rarity need to be printed for each
+        // printing
         pub let printingRaritiesSheetsQuantities: {UInt8: UInt64}
         pub let price: UFix64
     }
 
+
+    // -----------------------------------------------------------------------
+    // TradingFungiblePack contract admin resources
+    // -----------------------------------------------------------------------
 
     /// PackPrinter
     // The interface to allow minting packs and calling the TNFCG to create the 
@@ -90,15 +119,20 @@ pub contract interface TradingFungiblePack {
     pub resource interface PackPrinter{
         // The remaining amount of Packs that the PackPrinterr is allowed to mint
         pub var allowedAmount: UInt64
-        // printRun creates in the TNFCG contract the necessary amount of NFTs
-        // to fulfil the pack amount equal to the printRun times the printed print quantity quantity
+        // printRun() calls the TNFCG set.printRun() and keeps in check the 
+        // distributed amount of packs
+        //
+        // Post-Conditions:
+        // The total amount of packs, determined by the quantity of printings
+        // and the amount of packs per printing, should be less than the remaining
+        // amount of packs to distribute. The allowedAmount should be recuced
+        // accordly
         pub fun printRun(quantity: UInt64): UInt64{
             post{
                 result <= before(self.allowedAmount): "The sum of the desired prints exceeds the allowed amount"
                 self.allowedAmount == before(self.allowedAmount) - result: "The printer's allowed amount must be reduced"
             }
         }
-        
     }
 
     /// Pack Seller
@@ -109,6 +143,12 @@ pub contract interface TradingFungiblePack {
     /// sold in units but not fractions
     ///
     pub resource interface PackSeller{
+        // sellPacks() through a public capability allow users to get packs in 
+        // exchange for a payment made with a FungibleToken Vault
+        //
+        // Pre-Conditions:
+        // The amount of packs buyed should be 1 or greater and should be an 
+        // integer amount of packs despite packs beeing also Fungible Tokens
         pub fun sellPacks(
             payment: @FungibleToken.Vault,
             packsPayerPackReceiver: &{FungibleToken.Receiver},
@@ -124,11 +164,17 @@ pub contract interface TradingFungiblePack {
     ///
     /// The interface that enforces the requirements for opening Packs
     ///
-    /// We define a very specific receiver that asks for a Fungible Token vault
-    /// that will contain the TFP and a NFT collection for depositing the obtained
-    /// NFTs
-    ///
     pub resource interface PackOpener{
+        // openPacks() through a public capability allow users to send back their
+        // packs to get TNFCs. Originally this function will take a public capability
+        // to a TNFC Collection and pass it to fulfilPacks todeposit the opened TNFCs. 
+        // To avoid malicius users getting to check which cards they open and beeing 
+        // able to abort the transaction, the actual transfer of TNFCs is done by
+        // retrieveTNFCs in the TNFCG.
+        //
+        // Pre-Conditions:
+        // The amount of packs buyed should be 1 or greater and should be an 
+        // integer amount of packs despite packs beeing also Fungible Tokens
         pub fun openPacks(packsToOpen: @FungibleToken.Vault, owner: Address){
                 pre{
                     packsToOpen.balance > 0.0: "Amount opened must be greater than zero"

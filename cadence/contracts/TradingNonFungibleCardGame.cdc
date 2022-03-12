@@ -90,7 +90,7 @@ pub contract interface TradingNonFungibleCardGame {
     pub event TNFCDestroyed(id: UInt64)
 
     // -----------------------------------------------------------------------
-    // TNFCG contract-level fields.
+    // TNFCG interface contract-level fields.
     // These contain actual values that are stored in the smart contract.
     // -----------------------------------------------------------------------
 
@@ -109,16 +109,14 @@ pub contract interface TradingNonFungibleCardGame {
     // have been minted to date. Also used as global moment IDs for minting.
     pub var totalSupply: UInt64
 
-
-
     // -----------------------------------------------------------------------
     // Trading Non Fungible Card Game interface contract-level Composite Type definitions
     // -----------------------------------------------------------------------
+
     // These are just *definitions* for Types that this contract
     // and other accounts can use. These definitions do not contain
     // actual stored values, but an instance (or object) of one of these Types
     // can be created by this contract that contains stored values.
-    // -----------------------------------------------------------------------
 
     // Card is a Struct that holds metadata associated 
     // with a specific NBA Card, like the legendary moment when 
@@ -174,80 +172,50 @@ pub contract interface TradingNonFungibleCardGame {
         }
     }
 
-    // A Set is a grouping of Cards that have occured in the real world
-    // that make up a related group of collectibles, like sets of baseball
-    // or Magic cards. A Card can exist in multiple different sets.
-    // Aqui va tiradita de pisto, cards de magic que se imprimen en un set
+    // A Set is a grouping of Cards that exists in the TNFCG, each of them
+    // appearing at a certain rarity. The admin can add Cards to a Set so that 
+    // the set can mint TNFCs that reference that carddata.
+    // The TNFCs that are minted by a Set will be stored in the TNFCG collection
+    // and its IDs stored in mintedTNFCsIDsByRarity for distributing them when
+    // packs are opened
     //
-
-    // The admin can add Cards to a Set so that the set can mint TNFCs
-    // that reference that playdata.
-    // The TNFCs that are minted by a Set will be listed as belonging to
-    // the Set that minted it, as well as the Play it references.
-    //
-    //
-    // If the admin locks the Set, no more Plays can be added to it, but 
-    // TNFCs can still be minted.
-    //
-    // If retireAll() and lock() are called back-to-back, 
-    // the Set is closed off forever and nothing more can be done with it.
     pub resource interface Set{
         
         // Unique ID for the set
         pub let setID: UInt32
         // Name of the Set
-        // ex. "Times when the Toronto Raptors choked in the Cardoffs"
         pub let name: String
 
-        // Indicates if the Set is currently locked.
-        // When a Set is created, it is unlocked 
-        // and Plays are allowed to be added to it.
-        // When a set is locked, Plays cannot be added.
-        // A Set can never be changed from locked to unlocked,
-        // the decision to lock a Set it is final.
-        // If a Set is locked, Plays cannot be added, but
-        // TNFCs can still be minted from Plays
-        // that exist in the Set.
-        // esto lo cambiamos para definir el conceto de printing si se pueden 
-        // imprimir mas sobres del set o no
+        // Indicates if the Set is currently beeing printed. Once a set is beeing
+        // printed no more cards and no more packs could be added to it. Until a 
+        // set's printing isn's in progress (printingInProgress = true) a set can't
+        // run printings. When no more packs of the set are going to be distributed
+        // the set should be stopPrinting()
+        // TO-DO: different flags for not allowing to add more cards&packs and start
+        // printing and to finally stop the set's printing???
         pub var printingInProgress: Bool
 
-        // Toda esta chapa es vieja de antes de definir la Rarity en pack
-        // De aquí no pasa definir las rarities, entiendo que desde aqui 
-        // queda definido el concepto, y hay que ver como afecta eso a cards
-        // que pasa de ser un feliz array a un diccionario con clave la rareza
-        // pues ya esta no? que puto mejor que tener en el set publico:
-        // {1: "Common", 2: "Uncommon", 3: "Rare"}
-        // los sobres referenciarian a esta rareza tambien, tendrán que tener un
-        // diccionario de 
+        // Dictionary containing rarityID and description for rarities in set
         access(contract) let rarities: {UInt8: String}
 
-        access(contract) var raritiesDistribution: {UInt8: UFix64}
-
-        //  INFORMACION DE LOS PACKS QUE SE VENDEN DE UN SET
-        //
-        pub var nextPackID: UInt8
-        access(contract) var packsInfo: {UInt8: {TradingFungiblePack.PackInfo}}
-
-        // Array of card that are a part of this set.
+        // Dictionary of arrays of cardIDs that are a part of this set for each
+        // rarityID.
         // When a card is added to the set, its ID gets appended here.
         access(contract) var cardsByRarity: {UInt8: [UInt32]}
 
-        // Mapping of Card IDs that indicates the number of TNFCs 
-        // that have been minted for specific Cards in this Set.
-        // When a TNFC is minted, this value is stored in the TNFC to
-        // show its place in the Set, eg. 13 of 60.
-        access(contract) var numberMintedPerCard: {UInt32: UInt32}
+        // Dictionary containing the amount of cards asigned to set per rarityID
+        access(contract) var raritiesDistribution: {UInt8: UFix64}
 
+        //  The ID of the next pack to be added to the set
+        pub var nextPackID: UInt8
+        // Dictionary containing packIDs and PackInfo for the set
+        access(contract) var packsInfo: {UInt8: {TradingFungiblePack.PackInfo}}
 
-        // Mapping (no estamos tan mal!!) de los IDs de las cartas minteadas
-        // para hacer el sorteito y saber que id extraer de todas las impresas
+        // Dictionary containing the IDs of the TNFCs minted for each rarityID
         access(contract) var mintedTNFCsIDsByRarity: {UInt8: [UInt64]}
-
-        
-        //
-        // Set public functions
-        //
+        // Dictionary containing the amount of TNFCs per specific cardID that 
+        // have been minted in this Set.
+        access(contract) var numberMintedPerCard: {UInt32: UInt32}
 
         // addPackInfo adds a type of pack to the set
         //
@@ -256,15 +224,11 @@ pub contract interface TradingNonFungibleCardGame {
         //             packRaritiesDistribution: The number of TNFCs of each rarity per pack
         //
         // Pre-Conditions:
-        // ¿?¿?¿?¿? vaya repaso de comentarios guapo que hay que hacer
-        // The Card needs to be an existing card
-        // The Set needs to be not locked
-        // The Card can't have already been added to the Set
+        // The set printing must NOT be in progress
         //
         pub fun addPackInfo(packInfo: {TradingFungiblePack.PackInfo}){
             pre{
                 !self.printingInProgress: "No more packs can be added when the set is beeing printed"
-                //check que el set existe como poco
             }
         }
 
@@ -274,9 +238,7 @@ pub contract interface TradingNonFungibleCardGame {
         //              rarity: The id of the cards' set rarity appearance
         //
         // Pre-Conditions:
-        // The Card needs to be an existing card
-        // The Set needs to be not locked
-        // The Card can't have already been added to the Set
+        // The Set printing must be in progress
         //
         pub fun addCardsByRarity(cardIDs: [UInt32], rarity: UInt8) {
             pre {
@@ -284,12 +246,16 @@ pub contract interface TradingNonFungibleCardGame {
             }
         }
         
-        // startPrinting() locks the Set so that no more TNFCs can be printed
+        // startPrinting() unlocks the set so TNFCs can be minted
         //
         // Pre-Conditions:
         // The Set should be currently not beeing printed
+        // There should be at least one pack added to the set
+        // The set should contain at least one card
         // Post-Conditions:
         // The Set printing should have been started
+        // The set rarities distribution must be initialized for each rarity in set
+        //
         pub fun startPrinting(){
             pre {
                 !self.printingInProgress: "The set is already beeing printed"
@@ -302,17 +268,26 @@ pub contract interface TradingNonFungibleCardGame {
             }
         }
 
+        // printRun mint TNFCs, stores them in the contract account's collection
+        // and stores its IDs by rarity
+        //
+        // Parameters: packID: The id of the packs that the TNFCs will be fulfiling
+        //             quantity: The desired amount of printings to be done
+        //
+        // Pre-Conditions:
+        // Set printing must be in progress
+        //
         pub fun printRun(packID: UInt8, quantity: UInt64): @NonFungibleToken.Collection{
             pre{
                 self.printingInProgress: "The printing must be in progress"
             }
         }
 
-        // fulfilPacks()
+        // fulfilPacks() select the TNFCs IDs among the printedTNFCsIDs for fulfiling
+        // a certain amount of packs
         //
         // Pre-Conditions:
-        //
-        // Post-Conditions:
+        // Set printing must be in progress
         //
         pub fun fulfilPacks(packID: UInt8, amount: UFix64): [UInt64]{
             pre{
@@ -336,6 +311,8 @@ pub contract interface TradingNonFungibleCardGame {
         }
     }
 
+    // An auxiliary data struct for accessing the sets' dictionary data in a 
+    // secure and nil-proof way
     pub struct interface QuerySetData{
         pub let setID: UInt32
         pub let name: String
@@ -347,12 +324,19 @@ pub contract interface TradingNonFungibleCardGame {
         access(contract) let cardsByRarity: {UInt8: [UInt32]}
         access(contract) let numberMintedPerCard: {UInt32: UInt32}
         access(contract) var mintedTNFCsIDsByRarity: {UInt8: [UInt64]}
+        pub fun getSetRarities(): {UInt8: String}?
+        pub fun getRaritiesDistribution(): {UInt8: UFix64}?
+        pub fun getCardsByRarity(): {UInt8: [UInt32]}?
+        pub fun getNumberMintedPerCard(): {UInt32: UInt32}?
+        pub fun getPacksInfo(): {UInt8: {TradingFungiblePack.PackInfo}}?
+        pub fun getMintedTNFCsIDsByRarity(): {UInt8: [UInt64]}?
     }
 
     // -----------------------------------------------------------------------
     // TradingNonFungibleCardGame contract admin resources
     // -----------------------------------------------------------------------
-    /// Pack fulfiler
+    
+    /// Card creator
     ///
     /// The interface that enforces the requirements for opening Packs
     ///
@@ -368,29 +352,46 @@ pub contract interface TradingNonFungibleCardGame {
     /// adding cards and packs to it, and handle its printing status
     ///
     pub resource interface SetManager{
+        // createSet() specifying set's name and rarities
+        // Returns: setID
         pub fun createSet(name: String, rarities: {UInt8: String}): UInt32
+        // addPackInfo() see set.addPackInfo()
         pub fun addPackInfo(setID: UInt32, packInfo: {TradingFungiblePack.PackInfo})
+        // addCardsByRarity() see set.addCardsByRarity()
         pub fun addCardsByRarity(setID: UInt32, cardIDs: [UInt32], rarity: UInt8)
+        // startPrinting() see set.startPrinting()
         pub fun startPrinting(setID: UInt32)
+        // stopPrinting() see set.stopPrinting()
         pub fun stopPrinting(setID: UInt32)
     }
 
     /// Set PrintRunner
     ///
-    /// The interface that enforces the requirements for creating new copies of the cards (tnfcs)in a set
+    /// The interface that defines the function for creating new copies of the 
+    /// cards (tnfcs) in a set 
     ///
     pub resource interface SetPrintRunner{
-        /// this should create a number of NFTs depending on the number of packs createds
+        // printRun() creates the needed amount of NFTs to satisfy the desired
+        // quantity of printings, when called by TradingFungiblePack.printRun() 
+        // through a private capability. The amount of NFTs per printing is calculated
+        // in base to the set's and pack's raritiesDistribution.
         pub fun printRun(setID: UInt32, packID: UInt8, quantity: UInt64)
     }
 
     /// Pack fulfiler
     ///
-    /// The interface that enforces the requirements for opening Packs
+    /// The interface that defines the functions for getting the TNFCs in return
+    /// for the packs
     ///
     pub resource interface SetPackFulfiler{
-        /// openPacks takes a Vault and destroys it returning the number of opened packs
+        // fulfilPacks() selects the cards that should be given to the owner in 
+        // order to fulfil a certain amount of packs and stores its IDs next to 
+        // the TNFCs address, when called by TradingFungiblePack.openPacks() 
+        // through a private capability
         pub fun fulfilPacks(setID: UInt32, packID: UInt8, amount: UFix64, owner: Address)
+        // retrieveTNFCs() transfers the owned cards to the owner's Collection
+        // this should be called by the Admin through a private capability any
+        // time after any user has opened any amount of packs
         pub fun retrieveTNFCs(owner: Address)
     }
 }
