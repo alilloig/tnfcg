@@ -47,6 +47,20 @@ with a central ledger smart contract. To send packs to another user,
 a user would simply withdraw the packs from their Vault, then call
 the deposit function on another user's Vault to complete the transfer.
 
+## PackPrinter
+
+The admin only access resource that can allow packs to be minted and is 
+responsible for calling the set print run function in the TNFCG 
+
+## PackSeller
+
+The admin only access resource that can mint packs into users vaults
+
+## Pack Opener
+
+The admin only access resource that can accept TFP to call TNFCG.fulfilPacks()
+and asign the user NFTs to be lately distributed
+
 */
 
 pub contract WnWAlphaPacks: FungibleToken, TradingFungiblePack{
@@ -98,12 +112,15 @@ pub contract WnWAlphaPacks: FungibleToken, TradingFungiblePack{
 
     // Total supply of Packs in existence
     pub var totalSupply: UFix64
+    // Amount of packs remaining for selling
     pub var packsToSell: UInt64
+    // Amount of packs selled that hasn't been opened
     pub var packsToOpen: UInt64
 
     // Id from the set the packs belongs to
     pub let setID: UInt32
 
+    // Info of the pack
     pub let TFPackInfo: {TradingFungiblePack.PackInfo}
 
     // Named paths
@@ -121,7 +138,10 @@ pub contract WnWAlphaPacks: FungibleToken, TradingFungiblePack{
     pub let PackOpenerStoragePath: StoragePath
     pub let PackOpenerPublicPath: PublicPath
 
-    
+    // PackInfo
+    // When the TradingFungiblePack contract is initialized and the PackInfo is 
+    // created, printingPacksAmount and printingRaritiesSheetsQuantities should
+    // be calculated in fuction of the pack's set's raritiesDistribution  
     pub struct AlphaPackInfo: TradingFungiblePack.PackInfo{
 
         pub let packID: UInt8
@@ -134,8 +154,6 @@ pub contract WnWAlphaPacks: FungibleToken, TradingFungiblePack{
             pre{
                 packRaritiesDistribution.keys.length > 0 : "Pack should contain TNFCs of at least one rarity"
                 price > 0.0 : "Pack price cant be 0"
-                //Hay que explicar muchisimas cosas, lo de calcular el printingSize y lo de calcular el sheetsPrinting size...
-                // explicadas en los panic????
             }
             let setData = WnW.getSetData(setID: setID) ?? panic ("Set does not exists")
             self.packID = setData.nextPackID
@@ -282,7 +300,6 @@ pub contract WnWAlphaPacks: FungibleToken, TradingFungiblePack{
         // such a capability to a resource and always check its code to make sure it will use it in the
         // way that it claims.
         access(contract) let printRunnerCapability: Capability<&{TradingNonFungibleCardGame.SetPrintRunner}>
-
         // The remaining amount of Packs that the PackManager is allowed to mint
         pub var allowedAmount: UInt64
         // printRun creates in the TNFCG contract the necessary amount of NFTs
@@ -291,7 +308,6 @@ pub contract WnWAlphaPacks: FungibleToken, TradingFungiblePack{
             let printRunnerRef = self.printRunnerCapability.borrow() ?? panic ("Cannot borrow reference to WnW Set printer")
             // Creates and stores the necessary NFTs in the contract's collection por the desired quantity of printings
             printRunnerRef.printRun(setID: WnWAlphaPacks.setID, packID: WnWAlphaPacks.TFPackInfo.packID, quantity: quantity)
- 
             // the total amount of packs created for the desireds print runs
             let packsPrintedAmount = WnWAlphaPacks.TFPackInfo.printingPacksAmount * quantity
             // decrease the amount of packs the printer is allowed to create
@@ -310,7 +326,6 @@ pub contract WnWAlphaPacks: FungibleToken, TradingFungiblePack{
     pub resource PackSeller: TradingFungiblePack.PackSeller{
         // A capability allowing this resource to deposit the Flow tokens given as payment
         access(contract) let packSellerFlowTokenCapability: Capability<&{FungibleToken.Receiver}>
-
         // sellPacks
         //
         // Function that sells new Packs, adds them to the total supply,
@@ -371,6 +386,22 @@ pub contract WnWAlphaPacks: FungibleToken, TradingFungiblePack{
 
 
     init(setID: UInt32, packRaritiesDistribution: {UInt8: UFix64}, price: UFix64, setManagerCapability: Capability<&{TradingNonFungibleCardGame.SetManager}>) {
+        
+        // Set storage, public and private capabilities paths
+        //
+        self.VaultStoragePath = /storage/WnWAlphaPacksVault
+        self.ReceiverPublicPath = /public/WnWAlphaPacksVault
+        self.ReceiverPrivatePath = /private/WnWAlphaPacksVault
+        self.ProviderPrivatePath = /private/WnWAlphaPacksVault
+        self.BalancePublicPath = /public/WnWAlphaPacksBalance
+        self.AdminStoragePath = /storage/WnWAlphaPacksAdmin
+        self.PackSellerStoragePath = /storage/WnWAlphaPackSeller
+        self.PackSellerPublicPath = /public/WnWAlphaPackSeller
+        self.PackOpenerStoragePath = /storage/WnWAlphaPackOpener
+        self.PackOpenerPublicPath = /public/WnWAlphaPackOpener
+        self.PackPrinterStoragePath = /storage/WnWAlphaPackPrinter
+        self.PackPrinterPrivatePath = /private/WnWAlphaPackPrinter
+        
         // Initialize contract state.
         //
         self.totalSupply = 0.0
@@ -381,38 +412,13 @@ pub contract WnWAlphaPacks: FungibleToken, TradingFungiblePack{
         // add Pack Info to the set
         let SetManagerRef = setManagerCapability.borrow() ?? panic("Set manager not found")
         SetManagerRef.addPackInfo(setID: setID, packInfo: self.TFPackInfo)
-        //
-        //
-        self.VaultStoragePath = /storage/WnWAlphaPacksVault
-        self.ReceiverPublicPath = /public/WnWAlphaPacksVault
-        self.ReceiverPrivatePath = /private/WnWAlphaPacksVault
-        self.ProviderPrivatePath = /private/WnWAlphaPacksVault
-        self.BalancePublicPath = /public/WnWAlphaPacksBalance
-        // path para guardar el recurso Admin (se guarda aqui en init)
-        self.AdminStoragePath = /storage/WnWAlphaPacksAdmin
-        self.PackSellerStoragePath = /storage/WnWAlphaPackSeller
-        // path para la capability del pack seller
-        self.PackSellerPublicPath = /public/WnWAlphaPackSeller
-        self.PackOpenerStoragePath = /storage/WnWAlphaPackOpener
-        // path pa la capability del opener
-        self.PackOpenerPublicPath = /public/WnWAlphaPackOpener
-        // 
-        self.PackPrinterStoragePath = /storage/WnWAlphaPackPrinter
-        self.PackPrinterPrivatePath = /private/WnWAlphaPackPrinter
-
-
+        
         // Create the one true Admin object and deposit it into the contract account.
-        // este recurso es el que puede vender y abrir packs
-        // recibe y guarda la capability para recibir tokens de flow (para recibir los pagos de la venta de sobres)
-        // y la capability para fulfil sobres de WnW para enviar las NFCards
         //
         self.account.save(<-create Administrator(), to: self.AdminStoragePath)
 
-
-
         // Emit an event that shows that the contract was initialized.
         emit TokensInitialized(initialSupply: self.totalSupply)
-    
     }
 }
  

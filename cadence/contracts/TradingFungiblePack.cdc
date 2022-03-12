@@ -79,7 +79,9 @@ pub contract interface TradingFungiblePack {
     
     // Total supply of Packs in existence
     pub var totalSupply: UFix64
+    // Amount of packs remaining for selling
     pub var packsToSell: UInt64
+    // Amount of packs selled that hasn't been opened
     pub var packsToOpen: UInt64
 
     // Id from the set the packs belongs to
