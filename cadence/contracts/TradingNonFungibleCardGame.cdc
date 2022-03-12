@@ -117,7 +117,6 @@ pub contract interface TradingNonFungibleCardGame {
     // its metadata. The Cards are publicly accessible, so anyone can
     // read the metadata associated with a specific Card ID
     //
-
     pub struct interface Card {
         // The unique ID for the Card
         pub let cardID: UInt32
@@ -324,7 +323,7 @@ pub contract interface TradingNonFungibleCardGame {
     
     /// Card creator
     ///
-    /// The interface that enforces the requirements for opening Packs
+    /// The interface that enforces the requirements for creating cards into the TNFCG
     ///
     pub resource interface CardCreator{
         pub fun createNewCard(metadata: {String: String}): UInt32

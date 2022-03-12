@@ -46,16 +46,54 @@ To send a card to another user, a user would simply withdraw the card
 from their Collection, then call the deposit function on another user's
 Collection to complete the transfer.
 
+## `Provider` and `Receiver` resource interfaces
+
+These interfaces declare functions with some pre and post conditions
+that require the Collection to follow certain naming and behavior standards.
+
+They are separate because it gives the user the ability to share a reference
+to their Collection that only exposes the fields and functions in one or more
+of the interfaces. It also gives users the ability to make custom resources
+that implement these interfaces to do various things with the tokens.
+
+By using resources and interfaces, users of NFT smart contracts can send
+and receive tokens peer-to-peer, without having to interact with a central ledger
+smart contract.
+
+To send an NFT to another user, a user would simply withdraw the NFT
+from their Collection, then call the deposit function on another user's
+Collection to complete the transfer.
+
+## `TradingNonFungibleCard` interface resource
+The interface that NFT resource should conform to be a TNFC
+
+## `TNFCGCollection` interface resource
+Interface for allowing the TNFC collection to get queried but not to get NFTs
+deposited in order to ensure the printed TNFCs pool integrity
+
+## `WnWSet` resource
+The resource that will be ordering the cards and asociate them to one or more
+Trading Fungible Packs
+
+## `CardCreator` interface resource
+The admin only access resource that creates cards into the TNFCG
+
+## `SetManager` interface resource
+The admin only access resource that manages sets state
+
+## `SetPrintRunner` interface resource
+The admin only access resource that mints TNFCs
+
+## `SetPackFulfiler` interface resource
+The admin only access resource in charge of grant users TNFCs in return for
+their packs
+
 */
 
 // The main TnFCG contract interface. Other TnFCG contracts will
 // import and implement this interface
 //
 pub contract WnW: NonFungibleToken, TradingNonFungibleCardGame {
-
-    // -----------------------------------------------------------------------
-    // TradingNonFungibleCardGame contract interface Events
-    // -----------------------------------------------------------------------
 
     // Emitted when a TNFCG contract is created
     pub event ContractInitialized()
@@ -92,9 +130,11 @@ pub contract WnW: NonFungibleToken, TradingNonFungibleCardGame {
     // The ID that is used to create Sets. Every time a Set is created
     // setID is assigned to the new set's ID and then is incremented by 1.
     pub var nextSetID: UInt32
-    // totalSupply
-    // The total number of WnW that have been minted
-    //
+
+    // The total number of Trading Non-Fungible Card NFTs that have been created
+    // Because NFTs can be destroyed, it doesn't necessarily mean that this
+    // reflects the total number of NFTs in existence, just the number that
+    // have been minted to date. Also used as global moment IDs for minting.
     pub var totalSupply: UInt64
 
     // Variable size dictionary of Card structs
@@ -130,6 +170,13 @@ pub contract WnW: NonFungibleToken, TradingNonFungibleCardGame {
     pub let SetPackFulfilerStoragePath: StoragePath
     pub let SetPackFulfilerPrivatePath: PrivatePath
 
+    // Card is a Struct that holds metadata associated 
+    // with a specific TNFCG Card, such as name, cost, types, rules, etc.
+    //
+    // TNFC NFTs will all reference a single Card as the owner of
+    // its metadata. The Cards are publicly accessible, so anyone can
+    // read the metadata associated with a specific Card ID
+    //
     pub struct WnWCard: TradingNonFungibleCardGame.Card {
         pub let cardID: UInt32
         pub let metadata: {String: String}
@@ -140,6 +187,7 @@ pub contract WnW: NonFungibleToken, TradingNonFungibleCardGame {
         }
     }
 
+    // Structure holding the info that makes a NFT a TNFC
     pub struct WnWTNFCData: TradingNonFungibleCardGame.TNFCData {
 
         // The ID of the Play that the Moment references
@@ -175,8 +223,6 @@ pub contract WnW: NonFungibleToken, TradingNonFungibleCardGame {
         pub let cardID: UInt32
         pub let setID: UInt32
         pub let numTNFCsInSet: UInt32?
-        // añadir coste, color, tipo, reglas, fuerza, resistencia... aqui se definiria el game design
-        // con lo que hay queda definido nada más el coleccionable, y sin arte ojo
 
         init(
             name: String?,
@@ -197,8 +243,8 @@ pub contract WnW: NonFungibleToken, TradingNonFungibleCardGame {
         }
     }
 
-    // NFT
-    // A Card as an NFT
+    // NFT & TNFC
+    // A Trading Non-Fungible Card
     //
     pub resource NFT: NonFungibleToken.INFT, MetadataViews.Resolver, TradingNonFungibleCardGame.TradingNonFungibleCard {
         // The token's ID
@@ -267,59 +313,50 @@ pub contract WnW: NonFungibleToken, TradingNonFungibleCardGame {
 
     }
 
+    // A Set is a grouping of Cards that exists in WnW, each of them
+    // appearing at a certain rarity. The admin can add Cards to a Set so that 
+    // the set can mint TNFCs that reference that carddata.
+    // The TNFCs that are minted by a Set will be stored in the WnW collection
+    // and its IDs stored in mintedTNFCsIDsByRarity for distributing them when
+    // packs are opened
+    //
     pub resource WnWSet: TradingNonFungibleCardGame.Set{
         
         // Unique ID for the set
         pub let setID: UInt32
         // Name of the Set
-        // ex. "Times when the Toronto Raptors choked in the Cardoffs"
         pub let name: String
 
-        // Indicates if the Set is currently locked.
-        // When a Set is created, it is unlocked 
-        // and Plays are allowed to be added to it.
-        // When a set is locked, Plays cannot be added.
-        // A Set can never be changed from locked to unlocked,
-        // the decision to lock a Set it is final.
-        // If a Set is locked, Plays cannot be added, but
-        // TNFCs can still be minted from Plays
-        // that exist in the Set.
-        // esto lo cambiamos para definir el conceto de printing si se pueden 
-        // imprimir mas sobres del set o no
+        // Indicates if the Set is currently beeing printed. Once a set is beeing
+        // printed no more cards and no more packs could be added to it. Until a 
+        // set's printing isn's in progress (printingInProgress = true) a set can't
+        // run printings. When no more packs of the set are going to be distributed
+        // the set should be stopPrinting()
+        // TO-DO: different flags for not allowing to add more cards&packs and start
+        // printing and to finally stop the set's printing???
         pub var printingInProgress: Bool
 
-        // De aquí no pasa definir las rarities, entiendo que desde aqui 
-        // queda definido el concepto, y hay que ver como afecta eso a cards
-        // que pasa de ser un feliz array a un diccionario con clave la rareza
-        // pues ya esta no? que puto mejor que tener en el set publico:
-        // {1: "Common", 2: "Uncommon", 3: "Rare"}
-        // los sobres referenciarian a esta rareza tambien, tendrán que tener un
-        // diccionario de 
+        // Dictionary containing rarityID and description for rarities in set
         access(contract) let rarities: {UInt8: String}
 
-        access(contract) var raritiesDistribution: {UInt8: UFix64}
-
-        //  INFORMACION DE LOS PACKS QUE SE VENDEN DE UN SET
-        //
-        pub var nextPackID: UInt8
-
-        access(contract) var packsInfo: {UInt8: {TradingFungiblePack.PackInfo}}
-
-        // Array of plays that are a part of this set.
+        // Dictionary of arrays of cardIDs that are a part of this set for each
+        // rarityID.
         // When a card is added to the set, its ID gets appended here.
-        // The ID does not get removed from this array when a Play is retired.
         access(contract) var cardsByRarity: {UInt8: [UInt32]}
 
-        // Mapping of Card IDs that indicates the number of TNFCs 
-        // that have been minted for specific Plays in this Set.
-        // When a Moment is minted, this value is stored in the Moment to
-        // show its place in the Set, eg. 13 of 60.
-        access(contract) var numberMintedPerCard: {UInt32: UInt32}
+        // Dictionary containing the amount of cards asigned to set per rarityID
+        access(contract) var raritiesDistribution: {UInt8: UFix64}
 
+        //  The ID of the next pack to be added to the set
+        pub var nextPackID: UInt8
+        // Dictionary containing packIDs and PackInfo for the set
+        access(contract) var packsInfo: {UInt8: {TradingFungiblePack.PackInfo}}
 
-        // Mapping (no estamos tan mal!!) de los IDs de las cartas minteadas
-        // para hacer el sorteito y saber que id extraer de todas las impresas
+        // Dictionary containing the IDs of the TNFCs minted for each rarityID
         access(contract) var mintedTNFCsIDsByRarity: {UInt8: [UInt64]}
+        // Dictionary containing the amount of TNFCs per specific cardID that 
+        // have been minted in this Set.
+        access(contract) var numberMintedPerCard: {UInt32: UInt32}
 
         init(name: String, rarities: {UInt8: String}){
             self.setID = WnW.nextSetID
@@ -338,25 +375,13 @@ pub contract WnW: NonFungibleToken, TradingNonFungibleCardGame {
             self.numberMintedPerCard = {}
         }
 
-        //
-        // Set public functions
-        //
-
         // addPackInfo adds a type of pack to the set
         //
         // Parameters: setID: The ID of the Set that the pack that is being added belongs to
         //             packRarities: The rarities of the TNFCs in the packs
         //             packRaritiesDistribution: The number of TNFCs of each rarity per pack
         //
-        // Pre-Conditions:
-        // ¿?¿?¿?¿? vaya repaso de comentarios guapo que hay que hacer
-        // 
-        //
         pub fun addPackInfo(packInfo: {TradingFungiblePack.PackInfo}){
-            log("Adding to set ")
-            log(self.setID)
-            log(" pack Info ")
-            log(self.nextPackID)
             self.packsInfo[self.nextPackID] = packInfo
             // Increment the packID so that it isnt't used again
             self.nextPackID = self.nextPackID + 1
@@ -367,21 +392,25 @@ pub contract WnW: NonFungibleToken, TradingNonFungibleCardGame {
         // Parameters: [cardID]: The IDs of the Cards that are being added
         //              rarity: The id of the cards' set rarity appearance
         //
-        // Pre-Conditions:
-        // The Card needs to be an existing card
-        // The Set needs to be not locked
-        // The Card can't have already been added to the Set
-        //
         pub fun addCardsByRarity(cardIDs: [UInt32], rarity: UInt8) {
             for card in cardIDs {
                 self.addCard(cardID: card, rarity: rarity)
             }
             self.raritiesDistribution[rarity] = UFix64(self.cardsByRarity[rarity]!.length)
         }
-        
 
+        // startPrinting() unlocks the set so TNFCs can be minted
+        //
+        pub fun startPrinting(){
+            self.printingInProgress = true
+        }
 
-
+        // printRun mint TNFCs, stores them in the contract account's collection
+        // and stores its IDs by rarity
+        //
+        // Parameters: packID: The id of the packs that the TNFCs will be fulfiling
+        //             quantity: The desired amount of printings to be done
+        //
         pub fun printRun(packID: UInt8, quantity: UInt64): @NonFungibleToken.Collection{
             let packInfo = self.packsInfo[packID] ?? panic("Pack does not exist in set")
             let printedTNFCs <- WnW.createEmptyCollection()
@@ -416,9 +445,9 @@ pub contract WnW: NonFungibleToken, TradingNonFungibleCardGame {
             return <- printedTNFCs
         }
 
-
-
-
+        // fulfilPacks() select the TNFCs IDs among the printedTNFCsIDs for fulfiling
+        // a certain amount of packs
+        //
         pub fun fulfilPacks(packID: UInt8, amount: UFix64): [UInt64]{
             // array with the IDs of the NFTs that will be fulfiling the packs
             var openedTNFCsIDs: [UInt64] = []
@@ -461,26 +490,16 @@ pub contract WnW: NonFungibleToken, TradingNonFungibleCardGame {
             return openedTNFCsIDs
         }
 
-        // startPrinting() locks the Set so that no more tnfcs can be printed
-        //
-        pub fun startPrinting(){
-            self.printingInProgress = true
-        }
-
-        // stopPrinting() locks the Set so that no more tnfcs can be printed
+        // stopPrinting() locks the Set so that no more TNFCs can be printed
         //
         pub fun stopPrinting(){
             self.printingInProgress = false
         }
+
         // addCard adds a card to the set
         //
         // Parameters: cardID: The ID of the Card that is being added
         //              rarity: The id of the card's set rarity appearance
-        //
-        // Pre-Conditions:
-        // The Card needs to be an existing card
-        // The Set needs to be not locked
-        // The Card can't have already been added to the Set
         //
         access(self) fun addCard(cardID: UInt32, rarity: UInt8) {
             pre {
@@ -506,8 +525,9 @@ pub contract WnW: NonFungibleToken, TradingNonFungibleCardGame {
         }        
     }
 
+    // An auxiliary data struct for accessing the sets' dictionary data in a 
+    // secure and nil-proof way
     pub struct WnWQuerySetData: TradingNonFungibleCardGame.QuerySetData{
-        
         pub let setID: UInt32
         pub let name: String
         pub let printingInProgress: Bool
@@ -576,6 +596,8 @@ pub contract WnW: NonFungibleToken, TradingNonFungibleCardGame {
             }             
         }
     }
+
+    // Public capability shaped interface for borrowing TNFCs
     pub resource interface WnWCollectionPublic {
         // borrowTNFC
         // Gets a reference to an NFT in the collection as a TNFC,
@@ -692,16 +714,6 @@ pub contract WnW: NonFungibleToken, TradingNonFungibleCardGame {
         return <- create Collection()
     }
 
-
-/*****     
-******
-******
-******          Lo del admin de aqui pabajo
-******
-******
-******
-******/
-
     pub resource Administrator{
 
         // createNewCardCreator
@@ -736,6 +748,10 @@ pub contract WnW: NonFungibleToken, TradingNonFungibleCardGame {
 
     }
 
+    /// Card creator
+    ///
+    /// The admin only access resource that creates new cards into WnW
+    ///
     pub resource CardCreator: TradingNonFungibleCardGame.CardCreator{
         
         pub fun createNewCard(metadata: {String: String}): UInt32{
@@ -768,6 +784,10 @@ pub contract WnW: NonFungibleToken, TradingNonFungibleCardGame {
 
     }
 
+    /// Set Manager
+    ///
+    /// The admin only access resource that manages the sets state
+    ///
     pub resource SetManager: TradingNonFungibleCardGame.SetManager{
 
         pub fun createSet(name: String, rarities: {UInt8: String}): UInt32{
@@ -817,6 +837,10 @@ pub contract WnW: NonFungibleToken, TradingNonFungibleCardGame {
 
     }
 
+    /// Set PrintRunner
+    ///
+    /// The admin only access resource that mints tnfcs
+    ///
     pub resource SetPrintRunner: TradingNonFungibleCardGame.SetPrintRunner{
         // A capability allowing this resource to deposit the NFTs created 
         // 
@@ -838,6 +862,12 @@ pub contract WnW: NonFungibleToken, TradingNonFungibleCardGame {
         }
     }
 
+
+    /// Pack fulfiler
+    ///
+    /// The admin only access resource that selects the TNFCs for fulfiling the 
+    /// packs and send them to the packs owner collection
+    ///
     pub resource SetPackFulfiler: TradingNonFungibleCardGame.SetPackFulfiler{
         // A capability allowing this resource to withdraw the NFT with the given ID from its collection.
         // This capability allows the resource to withdraw *any* NFT, so you should be careful when giving
@@ -845,11 +875,10 @@ pub contract WnW: NonFungibleToken, TradingNonFungibleCardGame {
         // way that it claims.
         access(contract) let printedTNFCsCollectionPrivateProvider: Capability<&{NonFungibleToken.Provider}>
 
-
-        // fulfilPacks
+        // fulfilPacks()
         //
-        // Only method to get new WnW Cards
-		// and deposit it in the recipients collection using their collection reference
+        // Calls set fulfilPacks to get the TNFCs IDs that would be distributed to
+        // the owner of the fulfiledPacks
         //
 		pub fun fulfilPacks(setID: UInt32, packID: UInt8, amount: UFix64, owner: Address){
             //borrow a reference to the set
@@ -864,7 +893,7 @@ pub contract WnW: NonFungibleToken, TradingNonFungibleCardGame {
             WnW.openedTNFCsIDsByAccount[owner]!.append(openedTNFCsIDs)
         }
 
-        // retrieveTNFCs
+        // retrieveTNFCs()
         // Only method to get new WnW Cards
 		// and deposit it in the recipients collection using their collection reference
         //
