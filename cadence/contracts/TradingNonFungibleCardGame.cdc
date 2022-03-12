@@ -15,47 +15,39 @@ The interface that all trading non fungible card NFT based games contracts could
 conform to. If a user wants to deploy a new tnfcg contract, their contract would need
 to implement the TradingNonFungibleCardGame interface.
 
-Their contract would have to follow all the rules and naming
-that the interface specifies.
-## `Card` struct
+Their contract would have to follow all the rules and naming that the interface specifies.
 
-## `TNFCData`struct
+## `TradingNonFungibleCard` interface resource
+The interface that NFT resource should conform to be a TNFC
 
+## `TNFCGCollection` interface resource
+Interface for allowing the TNFC collection to get queried but not to get NFTs
+deposited in order to ensure the printed TNFCs pool integrity
 
+## `Set` interface resource
+The resource that will be ordering the cards and asociate them to one or more
+Trading Fungible Packs
 
-## `TradingNonFungibleCard` resource
+## `CardCreator` interface resource
+The admin only access resource that creates cards into the TNFCG
 
-The core resource type that represents an TNFC in the smart contract.
+## `SetManager` interface resource
+The admin only access resource that manages sets state
 
-## `Collection` Resource
+## `SetPrintRunner` interface resource
+The admin only access resource that mints TNFCs
 
-The resource that stores a user's NFT collection.
-It includes a few functions to allow the owner to easily
-move tokens in and out of the collection.
+## `SetPackFulfiler` interface resource
+The admin only access resource in charge of grant users TNFCs in return for
+their packs
 
-## `Provider` and `Receiver` resource interfaces
-
-These interfaces declare functions with some pre and post conditions
-that require the Collection to follow certain naming and behavior standards.
-
-They are separate because it gives the user the ability to share a reference
-to their Collection that only exposes the fields and functions in one or more
-of the interfaces. It also gives users the ability to make custom resources
-that implement these interfaces to do various things with the tokens.
-
-By using resources and interfaces, users of NFT smart contracts can send
-and receive tokens peer-to-peer, without having to interact with a central ledger
-smart contract.
-
-To send an NFT to another user, a user would simply withdraw the NFT
-from their Collection, then call the deposit function on another user's
-Collection to complete the transfer.
 
 */
 
-// The main NFT contract interface. Other NFT contracts will
-// import and implement this interface
-//
+/// TradingNonFungibleCardGame
+/// The main TNFCG contract interface. TNFCG contracts will
+/// import and implement this interface
+///
 pub contract interface TradingNonFungibleCardGame {
     
     // -----------------------------------------------------------------------
@@ -103,7 +95,7 @@ pub contract interface TradingNonFungibleCardGame {
     // setID is assigned to the new set's ID and then is incremented by 1.
     pub var nextSetID: UInt32
 
-    // The total number of Top shot Moment NFTs that have been created
+    // The total number of Trading Non-Fungible Card NFTs that have been created
     // Because NFTs can be destroyed, it doesn't necessarily mean that this
     // reflects the total number of NFTs in existence, just the number that
     // have been minted to date. Also used as global moment IDs for minting.
@@ -113,49 +105,43 @@ pub contract interface TradingNonFungibleCardGame {
     // Trading Non Fungible Card Game interface contract-level Composite Type definitions
     // -----------------------------------------------------------------------
 
-    // These are just *definitions* for Types that this contract
-    // and other accounts can use. These definitions do not contain
-    // actual stored values, but an instance (or object) of one of these Types
-    // can be created by this contract that contains stored values.
+    // These are just *definitions* for Types that any TNFCG will use. 
+    // These definitions do not contain actual stored values, but an instance 
+    // (or object) of one of these Types can be created by this contract that 
+    // contains stored values.
 
     // Card is a Struct that holds metadata associated 
-    // with a specific NBA Card, like the legendary moment when 
-    // Ray Allen hit the 3 to tie the Heat and Spurs in the 2013 finals game 6
-    // or when Lance Stephenson blew in the ear of Lebron James.
+    // with a specific TNFCG Card, such as name, cost, types, rules, etc.
     //
-    // Moment NFTs will all reference a single Card as the owner of
+    // TNFC NFTs will all reference a single Card as the owner of
     // its metadata. The Cards are publicly accessible, so anyone can
     // read the metadata associated with a specific Card ID
     //
 
     pub struct interface Card {
-
         // The unique ID for the Card
         pub let cardID: UInt32
-
         // Stores all the metadata about the Card as a string mapping
-        // This is not the long term way NFT metadata will be stored. It's a temporary
-        // construct while we figure out a better way to do metadata.
+        // This is not the long term way NFT metadata will be stored. It's a 
+        // temporary construct while we figure out a better way to do metadata.
+        // Or is just fine with MetadataViews??
         pub let metadata: {String: String}
     }
 
+    // Structure holding the info that makes a NFT a TNFC
     pub struct interface TNFCData {
-
-        // The ID of the Play that the Moment references
+        // The ID of the Card that the TNFC references
         pub let cardID: UInt32
-
-        // The ID of the Set that the Moment comes from
+        // The ID of the Set that the TNFC comes from
         pub let setID: UInt32
-
-        // The id of the card within the set
+        // The id of the rarity assigned to the card within the set
         pub let rarityID: UInt8
-
-        // The place in the edition that this Moment was minted
+        // The place in the edition that this TNFC was minted
         // Otherwise know as the serial number
         pub let serialNumber: UInt32
-
     }
 
+    // NFTs should conform also to this interface in order to store its TNFCData
     pub resource interface TradingNonFungibleCard{
         pub let data: {TNFCData}
     }
