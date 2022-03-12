@@ -1,3 +1,4 @@
 # Test node_modules
 test/node_modules
+# Flow config file
 flow.json
