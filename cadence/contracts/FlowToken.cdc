@@ -1,3 +1,4 @@
+//import FungibleToken from "./FungibleToken.cdc"
 import FungibleToken from 0xf8d6e0586b0a20c7
 
 pub contract FlowToken: FungibleToken {
@@ -170,41 +171,40 @@ pub contract FlowToken: FungibleToken {
         }
     }
 
-    init(adminAccount: AuthAccount) {
+    init() {
+        
+        self.VaultStoragePath = /storage/MyflowTokenVault
+        self.BalancePublicPath = /public/MyflowTokenBalance
+        self.ReceiverPublicPath = /public/MyflowTokenReceiver
+        self.AdministratorStoragePath = /storage/MyflowTokenAdmin
+
         self.totalSupply = 0.0
-
-        self.VaultStoragePath = /storage/flowTokenMyVault
-        self.BalancePublicPath = /public/flowTokenMyReceiver
-        self.ReceiverPublicPath = /public/flowTokenMyReceiver
-        self.AdministratorStoragePath = /storage/flowTokenMyAdmin
-
 
         // Create the Vault with the total supply of tokens and save it in storage
         //
         let vault <- create Vault(balance: self.totalSupply)
-        adminAccount.save(<-vault, to: self.VaultStoragePath)
+        self.account.save(<-vault, to: self.VaultStoragePath)
 
 
         // Create a public capability to the Vault that only exposes
         // the deposit function through the Receiver interface
-        adminAccount.link<&FlowToken.Vault{FungibleToken.Receiver}>(
+        self.account.link<&FlowToken.Vault{FungibleToken.Receiver}>(
             self.ReceiverPublicPath,
             target: self.VaultStoragePath
         )
         // Create a public capability to the stored Vault that only exposes
         // the `balance` field through the `Balance` interface
         //
-        adminAccount.link<&FlowToken.Vault{FungibleToken.Balance}>(
+        self.account.link<&FlowToken.Vault{FungibleToken.Balance}>(
             self.BalancePublicPath,
             target: self.VaultStoragePath
         )
 
 
         let admin <- create Administrator()
-        adminAccount.save(<-admin, to: self.AdministratorStoragePath)
+        self.account.save(<-admin, to: self.AdministratorStoragePath)
 
         // Emit an event that shows that the contract was initialized
         emit TokensInitialized(initialSupply: self.totalSupply)
     }
 }
- 
